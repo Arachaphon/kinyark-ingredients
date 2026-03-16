@@ -1,1 +1,0 @@
-# kinyark-ingredients
