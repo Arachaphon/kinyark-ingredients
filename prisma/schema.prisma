@@ -1,13 +1,142 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username   String?  @unique
+  email      String   @unique
+  avatar_url String?
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  posts            Post[]
+  reviews          Review[]
+  favorites        Favorite[]
+  search_histories SearchHistory[]
+  review_likes     ReviewLike[]
+
+  @@map("users")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  sub_categories SubCategory[]
+
+  @@map("categories")
+}
+
+model SubCategory {
+  id          Int    @id @default(autoincrement())
+  category_id Int
+  name        String
+
+  category    Category     @relation(fields: [category_id], references: [id])
+  ingredients Ingredient[]
+
+  @@map("sub_categories")
+}
+
+model Ingredient {
+  id              Int    @id @default(autoincrement())
+  sub_category_id Int
+  name            String @unique
+
+  sub_category     SubCategory      @relation(fields: [sub_category_id], references: [id])
+  post_ingredients PostIngredient[]
+
+  @@map("ingredients")
+}
+
+model Post {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String   @db.Uuid
+  menu_name          String
+  featured_image_url String?
+  instructions       String?
+  video_url          String?
+  rating             Float    @default(0)
+  review_count       Int      @default(0)
+  favorite_count     Int      @default(0)
+  created_at         DateTime @default(now()) @db.Timestamptz
+
+  user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post_ingredients PostIngredient[]
+  reviews          Review[]
+  favorites        Favorite[]
+
+  @@map("posts")
+}
+
+model PostIngredient {
+  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id       String @db.Uuid
+  ingredient_id Int
+  quantity      Float
+  unit          String
+
+  post       Post       @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredient_id], references: [id])
+
+  @@map("post_ingredients")
+}
+
+model Favorite {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  post_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@map("favorites")
+}
+
+model SearchHistory {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String   @db.Uuid
+  search_query String
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("search_histories")
+}
+
+model Review {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  post_id      String   @db.Uuid
+  user_id      String   @db.Uuid
+  rating       Int
+  comment      String?
+  is_anonymous Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  post         Post         @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  review_likes ReviewLike[]
+
+  @@map("reviews")
+}
+
+model ReviewLike {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  review_id  String   @db.Uuid
+  user_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  review Review @relation(fields: [review_id], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([review_id, user_id])
+  @@map("review_likes")
 }
