@@ -32,6 +32,12 @@ jobs:
       - name: Lint
         run: npx eslint . --ext .ts,.tsx --max-warnings 0
 
+      - name: Run Prisma Migrations (Production DB)
+        run: npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:

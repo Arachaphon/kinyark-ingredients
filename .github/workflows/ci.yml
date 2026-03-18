@@ -31,4 +31,13 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Lint
-        run: npx eslint . --ext .ts,.tsx --max-warnings 0 --ignore-path .eslintignore
+        run: npx eslint . --ext .ts,.tsx --max-warnings 0
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: npx playwright test
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
