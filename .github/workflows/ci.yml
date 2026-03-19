@@ -32,6 +32,7 @@ jobs:
 
       - name: Lint
         run: npx eslint . --ext .ts,.tsx --max-warnings 0
+<<<<<<< HEAD
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
@@ -41,3 +42,5 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+=======
+>>>>>>> 17e3ed1 (fix: add ci.yml without playwright)
