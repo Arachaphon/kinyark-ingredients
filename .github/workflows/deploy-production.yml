@@ -35,8 +35,8 @@ jobs:
       - name: Run Prisma Migrations (Production DB)
         run: npx prisma migrate deploy
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_URL }}   # port 5432 direct — required for migrations
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}?pgbouncer=true&connection_limit=1
+          DIRECT_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
