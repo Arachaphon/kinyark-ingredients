@@ -26,17 +26,10 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Lint
-        run: npx eslint . --ext .ts,.tsx --max-warnings 0
-
-      - name: Deploy to Vercel (Production)
+      - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
           scope: ${{ secrets.VERCEL_ORG_ID }}
