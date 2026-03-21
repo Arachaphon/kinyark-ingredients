@@ -25,12 +25,6 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Push DB Schema (Staging)
-        run: npx prisma db push --accept-data-loss
-        env:
-          DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.STAGING_DIRECT_URL }}
-
       - name: Deploy to Vercel (Preview)
         uses: amondnet/vercel-action@v25
         with:
