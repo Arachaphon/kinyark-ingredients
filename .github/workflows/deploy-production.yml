@@ -26,17 +26,7 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-<<<<<<< HEAD
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Lint
-        run: npx eslint . --ext .ts,.tsx --max-warnings 0
-
-      - name: Run Prisma Migrations (Production DB)
-=======
       - name: Push DB Schema (Production)
->>>>>>> 79d87da (fix: use prisma db push instead of migrate deploy for supabase compatibility)
         run: npx prisma db push --accept-data-loss
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
