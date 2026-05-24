@@ -111,10 +111,9 @@ export default function Navbar() {
 
       {/* 3. ปุ่ม Create และ รูปโปรไฟล์ (ขวาสุด) */}
       <div className="flex-shrink-0 flex items-start gap-4 pt-4">
-        {/* ใช้ปุ่ม Create CSS ดั้งเดิมของ Homemain 100% */}
-        <button className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg">
+        <Link href="/create-recipe" className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg">
           + Create Recipe
-        </button>
+        </Link>
         
         {/* รูปโปรไฟล์ตั้งค่าเป็น w-14 h-14 (56px) ซึ่งจะพอดีกับปุ่ม Create เดิมของคุณพอดี */}
         <div className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:opacity-80 transition">
