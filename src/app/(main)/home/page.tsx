@@ -35,7 +35,7 @@ export default function HomePage() {
           ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
-          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center xl:text-left">Ingredient Categories</h2>
+          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">Ingredient Categories</h2>
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
             <CategoryCard emoji="🥩" text="Meat & Poultry" />
             <CategoryCard emoji="🍳" text="Kitchen Tools" />
@@ -164,14 +164,17 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-// 🌟 อัปเดตล่าสุด: เพิ่มฟีเจอร์กดหัวใจเปลี่ยนสี
+// 🌟 อัปเดตล่าสุด: แก้บั๊กกดหัวใจไม่ติด (เพิ่ม z-index และ stopPropagation)
 function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string, image: string }) {
-  // สร้าง State เช็คว่ากดหัวใจหรือยัง
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // ฟังก์ชันสลับสถานะหัวใจ
-  const toggleFavorite = () => {
+  // ฟังก์ชันสลับสถานะหัวใจ (อัปเดตให้รับ Event คลิกได้แม่นยำขึ้น)
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 👈 ป้องกันไม่ให้คลิกทะลุไปโดนกล่องด้านหลัง
+    e.preventDefault(); 
+    
     setIsFavorite(!isFavorite);
+    
     if (!isFavorite) {
       console.log(`Added "${title}" to Favorites! ❤️`);
     } else {
@@ -190,36 +193,36 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
         />
       </div>
 
-      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full">
+      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">
         <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
           {title}
         </span>
         
-        {/* ปุ่มหัวใจที่กดแล้วเปลี่ยนสีได้ */}
+        {/* 🌟 ดันปุ่มหัวใจให้มาอยู่เลเยอร์บนสุด (z-50) จะได้ไม่มีอะไรมาบังตอนกด */}
         <div 
           onClick={toggleFavorite}
-          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90"
+          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
         >
           {isFavorite ? (
-            // กดแล้ว: หัวใจสีแดงทึบ
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in">
+            // กดแล้ว: หัวใจสีแดงทึบ (เพิ่ม pointer-events-none ที่รูป SVG กันบั๊กคลิกโดนเส้น)
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           ) : (
             // ยังไม่กด: หัวใจลายเส้นสีเทา
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-2 mb-8 relative z-30">
         <span className="text-[#F1C40F] text-xl">★</span>
         <span className="font-semibold text-white text-lg">5.0</span>
       </div>
 
-      <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5">
+      <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30">
         <span>▶</span> View more
       </button>
     </div>
