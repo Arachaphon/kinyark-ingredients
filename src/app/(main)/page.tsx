@@ -34,6 +34,7 @@ export default function HomePage() {
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">Home</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">My Recipe</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Favorites</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Posts</span>
           </div>
           <div className="w-full relative">
             <input type="text" placeholder="Search ..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg" />

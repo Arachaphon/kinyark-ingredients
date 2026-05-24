@@ -56,6 +56,9 @@ export default function Navbar() {
           <Link href="/favorites" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
             Favorites
           </Link>
+          <Link href="/posts" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
+            Posts
+          </Link>
         </div>
         
         {/* ช่องค้นหา (Search Bar) + กล่อง Dropdown */}
