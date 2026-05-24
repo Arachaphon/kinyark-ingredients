@@ -53,13 +53,13 @@ export default function Navbar() {
         </button>
         
         {/* รูปโปรไฟล์วงกลม มีขอบสีเขียวมินต์ */}
-        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:opacity-80 transition">
+        <Link href="/profile" className="w-14 h-14 md:w-16 md:h-16 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:opacity-80 transition">
           <img 
             src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80" 
             alt="User Profile" 
             className="w-full h-full object-cover"
           />
-        </div>
+        </Link>
       </div>
 
     </header>

@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar"; // 👈 ดึง Navbar เข้ามาใช้งานตรงนี้
+import Navbar from "@/components/Navbar"; 
+import Link from "next/link";
 
 // =========================================
-// 🍱 ข้อมูลจำลอง (Mock Data) อัปเดตชื่อเมนูไทยและรูป
+// 🍱 ข้อมูลจำลอง (Mock Data)
 // ========================================
 const geminiRecipes = [
   { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" },
@@ -13,7 +14,7 @@ const geminiRecipes = [
   { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" },
 ];
 
-const chatGptRecipes = [
+const deepseekRecipes = [
   { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
   { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
   { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
@@ -25,7 +26,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
       
       {/* =========================================
-          1. NAVBAR SECTION (เรียกใช้จาก Component)
+          1. NAVBAR SECTION
           ========================================= */}
       <Navbar />
 
@@ -82,8 +83,8 @@ export default function HomePage() {
           {/* กล่องหมุนได้ของ Gemini */}
           <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
 
-          {/* กล่องหมุนได้ของ ChatGPT */}
-          <MenuCarousel provider="By Chat gpt" recipes={chatGptRecipes} />
+          {/* กล่องหมุนได้ของ Deep Seek */}
+          <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
     </div>
@@ -163,11 +164,24 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
+// 🌟 อัปเดตล่าสุด: เพิ่มฟีเจอร์กดหัวใจเปลี่ยนสี
 function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string, image: string }) {
+  // สร้าง State เช็คว่ากดหัวใจหรือยัง
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  // ฟังก์ชันสลับสถานะหัวใจ
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+    if (!isFavorite) {
+      console.log(`Added "${title}" to Favorites! ❤️`);
+    } else {
+      console.log(`Removed "${title}" from Favorites 🤍`);
+    }
+  };
+
   return (
     <div className={`${bgColor} w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
-      {/* 1. ขยายรูปภาพให้ใหญ่ขึ้น (w-40 h-40) และดันขึ้นให้พ้นการ์ด (-top-16) */}
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <img
           src={image} 
@@ -176,17 +190,30 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
         />
       </div>
 
-      {/* 2. จัดการระยะห่างและบีบความกว้างข้อความ (max-w-[75%]) ไม่ให้ไปชนหัวใจ */}
       <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full">
         <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
           {title}
         </span>
-        <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
-          <span className="text-[#FF4747] text-sm">❤</span>
+        
+        {/* ปุ่มหัวใจที่กดแล้วเปลี่ยนสีได้ */}
+        <div 
+          onClick={toggleFavorite}
+          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90"
+        >
+          {isFavorite ? (
+            // กดแล้ว: หัวใจสีแดงทึบ
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          ) : (
+            // ยังไม่กด: หัวใจลายเส้นสีเทา
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          )}
         </div>
       </div>
 
-      {/* 3. ดันดาวกับปุ่มให้มีช่องไฟกำลังดี */}
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
         <span className="font-semibold text-white text-lg">5.0</span>

@@ -12,7 +12,7 @@ const geminiRecipes = [
   { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" },
 ];
 
-const chatGptRecipes = [
+const deepseekRecipes = [
   { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
   { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
   { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
@@ -104,8 +104,8 @@ export default function HomePage() {
           {/* กล่องหมุนได้ของ Gemini */}
           <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
 
-          {/* กล่องหมุนได้ของ ChatGPT */}
-          <MenuCarousel provider="By Chat gpt" recipes={chatGptRecipes} />
+          {/* กล่องหมุนได้ของ Deep Seek*/}
+          <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
     </div>
