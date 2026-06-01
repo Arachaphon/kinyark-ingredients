@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar"; 
-import Link from "next/link";
+import Link from "next/link"; 
 
 // =========================================
 // 🍱 ข้อมูลจำลอง (Mock Data)
@@ -25,9 +25,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
       
-      {/* =========================================
-          1. NAVBAR SECTION
-          ========================================= */}
       <Navbar />
 
       {/* =========================================
@@ -36,18 +33,20 @@ export default function HomePage() {
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">Ingredient Categories</h2>
+          
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
-            <CategoryCard emoji="🥩" text="Meat & Poultry" />
-            <CategoryCard emoji="🍳" text="Kitchen Tools" />
-            <CategoryCard emoji="🥗" text="Fruits" />
-            <CategoryCard emoji="🦞" text="Seafood" />
+            <CategoryCard emoji="🥩" text="Meat & Poultry" category="Meat" />
+            <CategoryCard emoji="🍳" text="Kitchen Tools" category="Kitchen Tools" />
+            <CategoryCard emoji="🥗" text="Fruits" category="Fruits" />
+            <CategoryCard emoji="🦞" text="Seafood" category="Seafood" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="Vegetables" />
+                <CategoryCard emoji="🥦" text="Vegetables" category="Vegetables" />
               </div>
             </div>
           </div>
         </div>
+
         <div className="xl:col-span-7 flex items-center justify-end relative mt-12 xl:mt-0">
           <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
@@ -60,9 +59,14 @@ export default function HomePage() {
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">5.0</span>
               </div>
-              <button className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base w-fit">
+              
+              {/* 🌟 1. ปรับเมนูแนะนำหลัก (Hero): สมมติให้วิ่งไปดูโพสต์ของสลัด ID: 1 ลิงก์ตรงไปที่หน้าสูตรเลย */}
+              <Link 
+                href="/recipe/1"
+                className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base w-fit block text-center shadow-sm"
+              >
                 <span>▶</span> View more
-              </button>
+              </Link>
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
@@ -80,10 +84,7 @@ export default function HomePage() {
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          {/* กล่องหมุนได้ของ Gemini */}
           <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
-
-          {/* กล่องหมุนได้ของ Deep Seek */}
           <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
@@ -92,8 +93,20 @@ export default function HomePage() {
 }
 
 /* =========================================
-   COMPONENTS ย่อย
+    COMPONENTS ย่อย
    ========================================= */
+
+function CategoryCard({ emoji, text, category }: { emoji: string; text: string; category: string }) {
+  return (
+    <Link 
+      href={`/search?category=${encodeURIComponent(category)}`}
+      className="bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 border-b-2 border-transparent active:translate-y-0 block"
+    >
+      <div className="text-3xl select-none">{emoji}</div>
+      <span className="font-bold text-base text-gray-800">{text}</span>
+    </Link>
+  );
+}
 
 function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -123,25 +136,16 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
       
       <div className="flex justify-center gap-6 mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
-          <RecipeCard title={item1.title} bgColor={item1.color} image={item1.image} />
+          <RecipeCard id={item1.id} title={item1.title} bgColor={item1.color} image={item1.image} />
         </div>
         <div key={`card2-${item2.id}`} className="animate-fade-in relative">
-          <RecipeCard title={item2.title} bgColor={item2.color} image={item2.image} />
+          <RecipeCard id={item2.id} title={item2.title} bgColor={item2.color} image={item2.image} />
         </div>
       </div>
       
       <div className="text-right text-[#A5A5A5] text-base font-medium mt-6 mr-2">
         {provider}
       </div>
-    </div>
-  );
-}
-
-function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
-  return (
-    <div className="bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition">
-      <div className="text-3xl">{emoji}</div>
-      <span className="font-bold text-base text-gray-800">{text}</span>
     </div>
   );
 }
@@ -164,33 +168,20 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-// 🌟 อัปเดตล่าสุด: แก้บั๊กกดหัวใจไม่ติด (เพิ่ม z-index และ stopPropagation)
-function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string, image: string }) {
+function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string, title: string, image: string }) {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // ฟังก์ชันสลับสถานะหัวใจ (อัปเดตให้รับ Event คลิกได้แม่นยำขึ้น)
   const toggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation(); // 👈 ป้องกันไม่ให้คลิกทะลุไปโดนกล่องด้านหลัง
+    e.stopPropagation();
     e.preventDefault(); 
-    
     setIsFavorite(!isFavorite);
-    
-    if (!isFavorite) {
-      console.log(`Added "${title}" to Favorites! ❤️`);
-    } else {
-      console.log(`Removed "${title}" from Favorites 🤍`);
-    }
   };
 
   return (
     <div className={`${bgColor} w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <img
-          src={image} 
-          alt={title}
-          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]" 
-        />
+        <img src={image} alt={title} className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-white" />
       </div>
 
       <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">
@@ -198,18 +189,15 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
           {title}
         </span>
         
-        {/* 🌟 ดันปุ่มหัวใจให้มาอยู่เลเยอร์บนสุด (z-50) จะได้ไม่มีอะไรมาบังตอนกด */}
         <div 
           onClick={toggleFavorite}
           className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
         >
           {isFavorite ? (
-            // กดแล้ว: หัวใจสีแดงทึบ (เพิ่ม pointer-events-none ที่รูป SVG กันบั๊กคลิกโดนเส้น)
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           ) : (
-            // ยังไม่กด: หัวใจลายเส้นสีเทา
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
@@ -222,9 +210,13 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
         <span className="font-semibold text-white text-lg">5.0</span>
       </div>
 
-      <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30">
+      {/* 🌟 2. ปรับตรงนี้: วิ่งตรงเข้าหน้าโพสต์รายละเอียดเมนู /recipe/[id] โดยอิงตาม ID ของแต่ละเมนูเลยครับ */}
+      <Link 
+        href={`/recipe/${id}`}
+        className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center shadow-sm"
+      >
         <span>▶</span> View more
-      </button>
+      </Link>
     </div>
   );
 }

@@ -3,19 +3,41 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import SettingModal from "./SettingModal"; // 🌟 1. นำเข้าคอมโพเนนต์ Setting เข้ามา
+import SettingModal from "./SettingModal"; 
 
-// ... (ส่วนข้อมูล searchData เหมือนเดิมแปลงโค้ดต่อมาได้เลย)
+// 🍱 1. คืนชีพข้อมูลจำลองสำหรับระบบค้นหา (Mock Data)
+const searchData = [
+  "Garden Salad",
+  "Fruit Salad",
+  "Spicy Thai Salad",
+  "Chicken Salad",
+  "Tom Yum Goong",
+  "Pad Thai",
+];
 
 export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSettingOpen, setIsSettingOpen] = useState(false); // 🌟 2. เพิ่ม State เปิด/ปิดโมดอล
+  const [isSettingOpen, setIsSettingOpen] = useState(false); 
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // ... (ฟังก์ชัน filteredResults และ useEffect จัดการเด้งปิดเหมือนเดิม)
+  // 🌟 2. คืนชีพระบบกรองผลลัพธ์การค้นหาจากคำที่พิมพ์
+  const filteredResults = searchData.filter((item) =>
+    item.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // 🌟 3. คืนชีพระบบปิดกล่องค้นหาเมื่อคลิกพื้นที่อื่นบนหน้าเว็บ
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const getMenuClass = (path: string) => {
     const isActive = pathname === path || pathname?.startsWith(`${path}/`);
@@ -44,7 +66,7 @@ export default function Navbar() {
           <Link href="/favorites" className={getMenuClass("/favorites")}>
             Favorites
           </Link>
-          <Link href="/posts" className={getMenuClass("/posts")}>
+          <Link href="/post" className={getMenuClass("/post")}>
             Posts
           </Link>
         </div>
@@ -52,12 +74,52 @@ export default function Navbar() {
         {/* ช่องค้นหา */}
         <div className="w-full relative" ref={dropdownRef}>
           <input 
-            type="text" placeholder="Search ..." value={searchTerm}
-            onChange={(e) => { setSearchTerm(e.target.value); setIsDropdownOpen(true); }}
+            type="text" 
+            placeholder="Search ..." 
+            value={searchTerm}
+            onChange={(e) => { 
+              setSearchTerm(e.target.value); 
+              setIsDropdownOpen(true); 
+            }}
             onFocus={() => setIsDropdownOpen(true)}
             className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm focus:outline-none focus:border-[#71B254] text-lg relative z-20" 
           />
-          {/* ... (ไอคอนแว่นขยายและ Dropdown เมนูค้นหาดึงของเดิมมาวางได้ครบถ้วนเลยครับ) */}
+          
+          {/* 🌟 4. คืนชีพไอคอนแว่นขยายฝั่งขวากลับมาแล้วครับ! */}
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 z-20 pointer-events-none">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+          </div>
+
+          {/* 🌟 5. คืนชีพกล่องเด้งแนะแนวคำค้นหา (Dropdown Suggestions) กลับมาแล้วครับ! */}
+          {isDropdownOpen && searchTerm.length > 0 && (
+            <div className="absolute top-[110%] left-0 w-full bg-white rounded-[24px] shadow-lg border border-gray-100 py-4 z-10 animate-fade-in overflow-hidden">
+              {filteredResults.length > 0 ? (
+                filteredResults.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="px-8 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-4 text-gray-700 transition"
+                    onClick={() => {
+                      setSearchTerm(item);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <svg width="18" height="18" fill="none" stroke="#A5A5A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <span className="text-lg">{item}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="px-8 py-3 text-gray-400 italic text-lg">
+                  No recipes found for "{searchTerm}"
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -67,7 +129,6 @@ export default function Navbar() {
           + Create Recipe
         </Link>
         
-        {/* 🌟 3. ผูกคำสั่ง onClick เข้าไปที่กรอบรูปโปรไฟล์เพื่อเปิด Setting */}
         <div 
           onClick={() => setIsSettingOpen(true)} 
           className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
@@ -79,7 +140,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* 🌟 4. วางตัวคอมโพเนนต์ SettingModal ต่อท้ายสุดใน Navbar */}
       <SettingModal 
         isOpen={isSettingOpen} 
         onClose={() => setIsSettingOpen(false)} 

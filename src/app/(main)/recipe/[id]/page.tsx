@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from "react"; // 🌟 เพิ่ม useState เข้ามาจัดการเปิด-ปิด
+import React, { useState } from "react"; 
 import Navbar from "@/components/Navbar"; 
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation"; // 🌟 เปลี่ยนมา import useRouter เพิ่มตรงนี้ครับ
 
 // =========================================
 // 🍱 ข้อมูลจำลองสำหรับดูโพสต์ (Mock Data)
@@ -33,7 +32,6 @@ const mockRecipeData = {
   ]
 };
 
-// ข้อมูลจำลองสำหรับคอมเมนต์
 const mockComments = [
   {
     id: 1,
@@ -64,11 +62,12 @@ const mockComments = [
 export default function ViewRecipePage() {
   const params = useParams();
   const recipeId = params.id;
+  
+  // 🌟 เรียกใช้งาน useRouter ของ Next.js
+  const router = useRouter();
 
-  // 🌟 State สำหรับเปิด-ปิดคอมเมนต์ (เริ่มต้นเป็น false คือซ่อนไว้)
   const [isCommentOpen, setIsCommentOpen] = useState(false);
 
-  // ฟังก์ชันวาดดาวสีเหลือง
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-1">
@@ -85,7 +84,6 @@ export default function ViewRecipePage() {
     );
   };
 
-  // ฟังก์ชันวาดดาวเปล่าสำหรับช่องพิมพ์คอมเมนต์ใหม่
   const renderEmptyStars = () => {
     return (
       <div className="flex items-center gap-1 cursor-pointer">
@@ -110,15 +108,18 @@ export default function ViewRecipePage() {
             ========================================= */}
         <div className="bg-white border border-[#71B254] rounded-sm p-8 shadow-sm relative mb-6">
           
-          {/* ปุ่ม Back ย้อนกลับ */}
-          <Link href="/my-recipe" className="absolute top-6 left-6 w-8 h-8 bg-[#71B254] text-white rounded-full flex items-center justify-center hover:bg-[#5b9642] transition">
+          {/* 🌟 ปุ่ม Back ย้อนกลับ: เปลี่ยนจาก <Link> เป็น <button> และใส่ onClick={() => router.back()} */}
+          <button 
+            onClick={() => router.back()} 
+            className="absolute top-4 left-6 w-8 h-8 bg-[#71B254] text-white rounded-full flex items-center justify-center hover:bg-[#5b9642] transition z-10 shadow-sm"
+          >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-          </Link>
+          </button>
 
           {/* ส่วนบน: รูปภาพ & หัวข้อ */}
-          <div className="flex flex-col md:flex-row gap-10 mt-12 md:mt-4">
+          <div className="flex flex-col md:flex-row gap-10 mt-14 md:mt-6">
             
             {/* รูปภาพเมนู */}
             <div className="w-full md:w-[350px] h-[350px] flex-shrink-0">
@@ -129,7 +130,7 @@ export default function ViewRecipePage() {
               />
             </div>
 
-            {/* ข้อมูลด้านขวา (Title, Author, Actions) */}
+            {/* ข้อมูลด้านขวา */}
             <div className="flex flex-col justify-center gap-6">
               <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
                 {mockRecipeData.title}
@@ -140,14 +141,13 @@ export default function ViewRecipePage() {
                 <span className="font-bold text-gray-800 text-lg">{mockRecipeData.author}</span>
               </div>
 
-              {/* ไอคอนรีแอคชั่น (หัวใจ, คอมเมนต์, ดาว) */}
+              {/* ไอคอนรีแอคชั่น */}
               <div className="flex items-center gap-8 mt-4">
                 <div className="flex gap-4">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="#FF0000" stroke="#FF0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:scale-110 transition">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
                   
-                  {/* 🌟 ไอคอนข้อความ: เมื่อคลิกจะสลับค่า true/false และเปลี่ยนสี fill */}
                   <svg 
                     onClick={() => setIsCommentOpen(!isCommentOpen)}
                     width="28" 
@@ -205,14 +205,12 @@ export default function ViewRecipePage() {
         </div>
 
         {/* =========================================
-            🌟 กล่องที่ 2: คอมเมนต์ (Comments)
-            จะเรนเดอร์แสดงผลก็ต่อเมื่อระเบิดสถานะ isCommentOpen เป็น true เท่านั้น
+            กล่องที่ 2: คอมเมนต์ (Comments)
             ========================================= */}
         {isCommentOpen && (
           <div className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top">
             <h2 className="text-2xl font-bold text-[#71B254] mb-8">Comment</h2>
             
-            {/* ลิสต์ประวัติคอมเมนต์เดิม */}
             <div className="flex flex-col gap-6 mb-8">
               {mockComments.map((comment) => (
                 <div key={comment.id} className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}>
@@ -231,7 +229,6 @@ export default function ViewRecipePage() {
               ))}
             </div>
 
-            {/* ช่องกรอกคอมเมนต์ตอบกลับสีเขียวอ่อน พร้อมปุ่มส่งไอคอนจรวด */}
             <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
               <img 
                 src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80" 
