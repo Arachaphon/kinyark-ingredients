@@ -47,7 +47,7 @@ export default function Navbar() {
         
         {/* เมนูลิงก์ */}
         <div className="flex gap-16 mb-5 text-lg font-bold">
-          <Link href="/" className="text-black border-b-[3px] border-black pb-1 cursor-pointer">
+          <Link href="/home" className="text-black border-b-[3px] border-black pb-1 cursor-pointer">
             Home
           </Link>
           <Link href="/my-recipe" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
