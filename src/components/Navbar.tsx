@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation"; // 🌟 เพิ่ม usePathname เข้ามา
 
 // 🍱 ข้อมูลจำลองสำหรับระบบค้นหา (Mock Data)
 const searchData = [
@@ -17,6 +18,9 @@ export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // 🌟 เรียกใช้ usePathname เพื่อเช็ค URL ปัจจุบัน
+  const pathname = usePathname();
 
   // กรองผลลัพธ์การค้นหาจากคำที่พิมพ์
   const filteredResults = searchData.filter((item) =>
@@ -34,6 +38,16 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // ฟังก์ชันเช็คว่าหน้าไหนกำลัง Active อยู่
+  const getMenuClass = (path: string) => {
+    // ถ้าหน้าปัจจุบันตรงกับ path หรือกำลังอยู่ในหน้าย่อยของ path นั้น (เช่น /my-recipe/edit/1)
+    const isActive = pathname === path || pathname?.startsWith(`${path}/`);
+    
+    return isActive
+      ? "text-black border-b-[3px] border-black pb-1 cursor-pointer" // 👈 สีดำ + ขีดเส้นใต้
+      : "text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition pb-1 border-b-[3px] border-transparent"; // 👈 สีเทา
+  };
+
   return (
     <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-start justify-between gap-6 relative z-50">
       
@@ -45,18 +59,19 @@ export default function Navbar() {
       {/* 2. เมนูลิงก์ และ ช่องค้นหา (ตรงกลาง) */}
       <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
         
-        {/* เมนูลิงก์ */}
+        {/* เมนูลิงก์ 🌟 เปลี่ยนมาใช้ฟังก์ชัน getMenuClass */}
         <div className="flex gap-16 mb-5 text-lg font-bold">
-          <Link href="/home" className="text-black border-b-[3px] border-black pb-1 cursor-pointer">
+          {/* รองรับทั้ง / และ /home */}
+          <Link href="/home" className={pathname === "/" || pathname === "/home" ? "text-black border-b-[3px] border-black pb-1 cursor-pointer" : "text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition pb-1 border-b-[3px] border-transparent"}>
             Home
           </Link>
-          <Link href="/my-recipe" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
+          <Link href="/my-recipe" className={getMenuClass("/my-recipe")}>
             My Recipe
           </Link>
-          <Link href="/favorites" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
+          <Link href="/favorites" className={getMenuClass("/favorites")}>
             Favorites
           </Link>
-          <Link href="/posts" className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">
+          <Link href="/posts" className={getMenuClass("/posts")}>
             Posts
           </Link>
         </div>
