@@ -71,7 +71,7 @@ export default function Navbar() {
           <Link href="/favorites" className={getMenuClass("/favorites")}>
             Favorites
           </Link>
-          <Link href="/posts" className={getMenuClass("/posts")}>
+          <Link href="/post" className={getMenuClass("/post")}>
             Posts
           </Link>
         </div>
