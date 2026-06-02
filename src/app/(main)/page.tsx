@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import CookieConsent from "@/components/CookieConsent"; // 🌟 1. นำเข้าคอมโพเนนต์แบนเนอร์คุกกี้ตรงนี้ครับ
 
 // =========================================
 // 🍱 ข้อมูลจำลอง (Mock Data) อัปเดตชื่อเมนูไทยและรูป
@@ -88,7 +89,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
           </div>
         </div>
       </main>
@@ -109,6 +110,11 @@ export default function HomePage() {
           <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
+
+      {/* =========================================
+          🌟 2. วาง CookieConsent ทับไว้ท้ายสุดในหน้าหลัก Home
+          ========================================= */}
+      <CookieConsent />
     </div>
   );
 }
@@ -168,12 +174,13 @@ function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   );
 }
 
+// 🌟 เพิ่มเติมเอฟเฟกต์แอนิเมชันปุ่มสไลด์หมุนเมนู
 function ArrowButton({ direction, onClick }: { direction: "left" | "right", onClick: () => void }) {
   const isLeft = direction === "left";
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgb(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
+      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
         isLeft ? "-left-7" : "-right-7"
       }`}
     >
@@ -186,12 +193,10 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-// 🌟 อัปเดตล่าสุด: การ์ดยาวขึ้น ขยายรูป และแก้ปัญหาข้อความทับปุ่มหัวใจ
 function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string, image: string }) {
   return (
     <div className={`${bgColor} w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
-      {/* 1. ขยายรูปภาพให้ใหญ่ขึ้น (w-40 h-40) และดันขึ้นให้พ้นการ์ด (-top-16) */}
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <img
           src={image} 
@@ -200,7 +205,6 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
         />
       </div>
 
-      {/* 2. จัดการระยะห่างและบีบความกว้างข้อความ (max-w-[75%]) ไม่ให้ไปชนหัวใจ */}
       <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full">
         <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
           {title}
@@ -210,7 +214,6 @@ function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string,
         </div>
       </div>
 
-      {/* 3. ดันดาวกับปุ่มให้มีช่องไฟกำลังดี */}
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
         <span className="font-semibold text-white text-lg">5.0</span>

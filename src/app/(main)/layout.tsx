@@ -1,28 +1,33 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../globals.css";
+import Footer from "@/components/footer"; 
 
 const inter = Inter({ subsets: ["latin"] });
 
-// 👇 อัปเดต: เพิ่ม icons สำหรับใส่โลโก้บนแท็บเบราว์เซอร์ 👇
+// 🌟 พอนำ "use client" ออกแล้ว metadata ชุดนี้จะทำงานได้ถูกต้อง 100% ครับ
 export const metadata: Metadata = {
-  title: "KIN YARK - Ingredients", 
+  title: "KINYARK - Ingredients", 
   description: "ค้นหาสูตรอาหารและแนะนำเมนูเด็ดโดนใจคุณ", 
   icons: {
-    icon: "/photo/logoweb.png", // ชี้ไปที่ไฟล์รูปโลโก้ในโฟลเดอร์ public
+    icon: "/photo/logoweb.png", 
   },
 };
 
-export default function RootLayout({
+export default function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className} suppressHydrationWarning>
-  {children}
-  </body>
-    </html>
+    <div className={`${inter.className} flex flex-col min-h-screen`}>
+      
+      <main className="flex-grow">
+        {children}
+      </main>
+      
+      <Footer />
+
+    </div>
   );
 }
