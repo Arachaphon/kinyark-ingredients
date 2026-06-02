@@ -1,0 +1,238 @@
+"use client";
+
+import React, { useState } from "react";
+import Navbar from "@/components/Navbar";
+import Link from "next/link"; // 🌟 สิ่งที่หายไป! เพิ่ม import Link ตรงนี้ครับ
+
+// =========================================
+// 🍱 ข้อมูลจำลองสำหรับหน้า My Recipe (Mock Data)
+// =========================================
+const mockRecipes = [
+  {
+    id: 1,
+    title: "Garden caesar salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
+    tags: ["Tomato", "Sweet Onion", "Pepper", "Cabbage", "Cruton"],
+    likes: 22,
+    rating: 3.0,
+    date: "Published on March 3, 2026",
+    status: "published",
+  },
+  {
+    id: 2,
+    title: "Garden caesar salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
+    tags: ["Tomato", "Sweet Onion", "Pepper", "Cabbage", "Cruton"],
+    likes: 22,
+    rating: 3.0,
+    date: "Published on March 3, 2026",
+    status: "published",
+  },
+  {
+    id: 3,
+    title: "Garden caesar salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
+    tags: ["Tomato", "Sweet Onion", "Pepper", "Cabbage", "Cruton"],
+    likes: 22,
+    rating: 3.0,
+    date: "Published on March 3, 2026",
+    status: "published",
+  },
+  {
+    id: 4,
+    title: "Garden caesar salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
+    tags: ["Tomato", "Sweet Onion", "Pepper", "Cabbage", "Cruton"],
+    likes: 22,
+    rating: 3.0,
+    date: "Published on March 3, 2026",
+    status: "published",
+  },
+  {
+    id: 5,
+    title: "Garden caesar salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
+    tags: ["Tomato", "Sweet Onion", "Pepper", "Cabbage", "Cruton"],
+    likes: 22,
+    rating: 3.0,
+    date: "Published on March 3, 2026",
+    status: "published",
+  },
+  {
+    id: 6,
+    title: "Spicy Beef Salad (Draft)",
+    image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=300&q=80",
+    tags: ["Beef", "Chili", "Lime", "Onion"],
+    likes: 0,
+    rating: 0.0,
+    date: "Last edited on March 4, 2026",
+    status: "draft",
+  },
+  {
+    id: 7,
+    title: "Healthy Fruit Bowl (Draft)",
+    image: "https://images.unsplash.com/photo-1490474418585-ba9f52fce124?auto=format&fit=crop&w=300&q=80",
+    tags: ["Apple", "Banana", "Honey", "Yogurt"],
+    likes: 0,
+    rating: 0.0,
+    date: "Last edited on March 5, 2026",
+    status: "draft",
+  },
+];
+
+export default function MyRecipePage() {
+  // State สำหรับจัดการ Tab (All, Publish, Draft)
+  const [activeTab, setActiveTab] = useState<"All" | "Publish" | "Draft">("All");
+
+  // ฟังก์ชันคำนวณจำนวนโพสต์แต่ละสถานะ
+  const allCount = mockRecipes.length;
+  const publishCount = mockRecipes.filter((r) => r.status === "published").length;
+  const draftCount = mockRecipes.filter((r) => r.status === "draft").length;
+
+  // กรองข้อมูลตาม Tab ที่เลือก
+  const displayedRecipes = mockRecipes.filter((recipe) => {
+    if (activeTab === "All") return true;
+    if (activeTab === "Publish") return recipe.status === "published";
+    if (activeTab === "Draft") return recipe.status === "draft";
+    return true;
+  });
+
+  return (
+    <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
+      
+      {/* 1. Navbar */}
+      <Navbar />
+
+      {/* 2. Main Content */}
+      <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-8">
+        
+        <div className="bg-white border border-[#71B254] rounded-sm p-6 md:p-10 shadow-sm">
+          
+          {/* =========================================
+              ส่วนหัว: Tabs กรองสถานะโพสต์
+              ========================================= */}
+          <div className="flex flex-wrap items-center gap-3 mb-8">
+            <button
+              onClick={() => setActiveTab("All")}
+              className={`px-5 py-2 rounded-md font-medium transition ${
+                activeTab === "All"
+                  ? "bg-[#71B254] text-white border border-[#71B254]"
+                  : "bg-white text-gray-500 border border-gray-300 hover:border-[#71B254] hover:text-[#71B254]"
+              }`}
+            >
+              All ({allCount})
+            </button>
+
+            <button
+              onClick={() => setActiveTab("Publish")}
+              className={`px-5 py-2 rounded-md font-medium transition ${
+                activeTab === "Publish"
+                  ? "bg-[#71B254] text-white border border-[#71B254]"
+                  : "bg-white text-gray-500 border border-gray-300 hover:border-[#71B254] hover:text-[#71B254]"
+              }`}
+            >
+              Publish ({publishCount})
+            </button>
+
+            <button
+              onClick={() => setActiveTab("Draft")}
+              className={`px-5 py-2 rounded-md font-medium transition ${
+                activeTab === "Draft"
+                  ? "bg-[#71B254] text-white border border-[#71B254]"
+                  : "bg-white text-gray-500 border border-gray-300 hover:border-[#71B254] hover:text-[#71B254]"
+              }`}
+            >
+              Draft ({draftCount})
+            </button>
+          </div>
+
+          {/* =========================================
+              ส่วนเนื้อหา: รายการสูตรอาหาร
+              ========================================= */}
+          <div className="flex flex-col gap-4">
+            {displayedRecipes.length > 0 ? (
+              displayedRecipes.map((recipe) => (
+                <div 
+                  key={recipe.id} 
+                  className="flex flex-col md:flex-row items-center gap-6 p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow"
+                >
+                  
+                  {/* รูปภาพเมนู */}
+                  <div className="w-full md:w-36 h-36 flex-shrink-0">
+                    <img 
+                      src={recipe.image} 
+                      alt={recipe.title} 
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+
+                  {/* ข้อมูลเมนูตรงกลาง */}
+                  <div className="flex-grow flex flex-col justify-between w-full">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">{recipe.title}</h3>
+                      
+                      {/* Tags ส่วนผสม */}
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {recipe.tags.map((tag, idx) => (
+                          <span 
+                            key={idx} 
+                            className="bg-[#EAF5E4] text-[#5A9240] text-xs font-semibold px-2.5 py-1 rounded-sm"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Stats & Date */}
+                    <div className="flex items-center gap-5 mt-5 text-gray-500 text-sm font-medium">
+                      <div className="flex items-center gap-1.5">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <span>{recipe.likes}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <svg width="18" height="18" fill="#F1C40F" stroke="#F1C40F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        <span>{recipe.rating.toFixed(1)}</span>
+                      </div>
+                      <div className="text-gray-400">
+                        {recipe.date}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 🌟 ปุ่ม Action 3 ปุ่มขวาสุด (อัปเดตใช้ Link ให้ถูกต้อง) */}
+                  <div className="flex flex-col gap-2 w-full md:w-36 shrink-0 mt-4 md:mt-0">
+                    
+                    {/* ปุ่ม Edit วิ่งไปหน้า /my-recipe/edit/[id] */}
+                    <Link href={`/my-recipe/edit/${recipe.id}`} className="w-full text-center py-1.5 px-4 border border-[#F39C12] text-[#F39C12] rounded-full text-sm font-bold hover:bg-orange-50 transition block">
+                      Edit
+                    </Link>
+                    
+                    <button className="w-full py-1.5 px-4 border border-[#E74C3C] text-[#E74C3C] rounded-full text-sm font-bold hover:bg-red-50 transition">
+                      Delete
+                    </button>
+
+                    {/* ปุ่ม View Recipe วิ่งไปหน้า /recipe/[id] */}
+                    <Link href={`/recipe/${recipe.id}`} className="w-full text-center py-1.5 px-4 border border-gray-700 text-gray-700 rounded-full text-sm font-bold hover:bg-gray-100 transition block">
+                      View Recipe
+                    </Link>
+                  </div>
+
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-20 text-gray-400 italic text-lg">
+                No recipes found in this category.
+              </div>
+            )}
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
