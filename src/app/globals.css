@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F5EFD7; /* 🌟 ปรับเป็นสีครีมหลักของแอป Kin Yark เรียบร้อยครับ */
   --foreground: #171717;
 }
 
@@ -12,12 +12,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ❌ ลบส่วน @media (prefers-color-scheme: dark) ออกไปเรียบร้อย เพื่อไม่ให้พื้นหลังกลายเป็นสีดำ */
 
 body {
   background: var(--background);
