@@ -19,26 +19,33 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#F7F7F7] overflow-hidden">
-      {/* ================= LEFT SIDE ================= */}
+    // 📱 ปรับ flex-col สำหรับมือถือ และ lg:flex-row สำหรับจอใหญ่เดสก์ท็อป
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F7F7F7] overflow-x-hidden">
+      
+      {/* ================= LEFT / TOP SIDE (Logo & Intro) ================= */}
       <div
         className="
-          w-[45%]
-          min-h-screen
+          w-full lg:w-[45%]
+          min-h-[40vh] lg:min-h-screen
           bg-[#F5EFD7]
           flex
           flex-col
           items-center
           justify-center
-          px-8
+          px-6 sm:px-8
+          py-12 lg:py-0
           shrink-0
+          transition-all duration-300
         "
         style={{
-          borderTopRightRadius: "35% 100%",
-          borderBottomRightRadius: "35% 100%",
+          // 🪄 เช็คขนาดหน้าจอผ่าน CSS @media ในสไตล์ (ถ้าจอมือถือโค้งล่าง ถ้าจอใหญ่โค้งขวา)
+          borderBottomRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "35% 100%",
+          borderBottomLeftRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "0px",
+          borderTopRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "0px" : "35% 100%",
         }}
       >
-        <div className="w-48 h-48 flex items-center justify-center mb-8 animate-scale-up">
+        {/* ปรับขนาดโลโก้ให้ยืดหยุ่นตามหน้าจอ */}
+        <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center mb-6 lg:mb-8 animate-scale-up">
           <img 
             src="/photo/logo.png" 
             alt="Kin Yark Logo" 
@@ -46,72 +53,51 @@ export default function ResetPasswordPage() {
           />
         </div>
         
-          <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black mb-2 sm:mb-3 tracking-tight">
             Hello
           </h2>
-
-          <p className="text-gray-700 text-base font-semibold mb-6">
+          <p className="text-gray-700 text-sm sm:text-base font-semibold mb-2 lg:mb-6">
             You forgot your password ?
           </p>
-        
+        </div>
       </div>
 
-      {/* ================= RIGHT SIDE ================= */}
-      <div className="flex-1 flex items-center justify-center">
+      {/* ================= RIGHT / BOTTOM SIDE (Form) ================= */}
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-12 py-12 lg:py-0">
         <div className="w-full max-w-[420px]">
           <form
             onSubmit={handleSubmit}
             className="flex flex-col items-center"
           >
-            {/* Title */}
-            <h1 className="text-[38px] font-serif font-normal text-black mb-16">
+            {/* Title - ลดขนาดและระยะห่างลงบนจอมือถือเพื่อให้กระชับขึ้น */}
+            <h1 className="text-3xl sm:text-[38px] font-serif font-normal text-black mb-8 sm:mb-12 lg:mb-16 text-center">
               Reset Password
             </h1>
 
-            {/* Password */}
-            <div className="w-full relative mb-8">
+            {/* Password Field */}
+            <div className="w-full relative mb-6 sm:mb-8">
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="
-                  w-full py-4.5 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
-              required
+                className="w-full py-4 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+                required
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="
-                  absolute
-                  right-5
-                  top-1/2
-                  -translate-y-1/2
-                  text-black
-                "
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
               >
                 {showPassword ? (
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 ) : (
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                     <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
@@ -121,56 +107,29 @@ export default function ResetPasswordPage() {
               </button>
             </div>
 
-            {/* Confirm Password */}
-            <div className="w-full relative mb-14">
+            {/* Confirm Password Field */}
+            <div className="w-full relative mb-10 sm:mb-14">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
-                }
-                className="
-                  w-full py-4.5 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
-              required
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full py-4 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+                required
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowConfirmPassword(
-                    !showConfirmPassword
-                  )
-                }
-                className="
-                  absolute
-                  right-5
-                  top-1/2
-                  -translate-y-1/2
-                  text-black
-                "
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
               >
                 {showConfirmPassword ? (
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 ) : (
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                     <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
@@ -183,9 +142,8 @@ export default function ResetPasswordPage() {
             {/* Confirm Button */}
             <button
               type="submit"
-              className="
-               w-44 py-2.5 bg-[#F5EFD7] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] hover:bg-[#eae2c5] active:scale-95 transition-all duration-200 text-center cursor-pointer"
-          >
+              className="w-full sm:w-44 py-3 bg-[#F5EFD7] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] hover:bg-[#eae2c5] active:scale-95 transition-all duration-200 text-center cursor-pointer"
+            >
               Confirm
             </button>
           </form>
