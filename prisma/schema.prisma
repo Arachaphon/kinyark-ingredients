@@ -65,6 +65,10 @@ model Post {
   rating             Float    @default(0)
   review_count       Int      @default(0)
   favorite_count     Int      @default(0)
+
+  bg_color           String?          // 🟢 เพิ่ม: สำหรับเก็บสีพื้นหลังการ์ดอาหาร (เช่น bg-[#6F62E4])
+  ai_provider        String?          // 🟢 เพิ่ม: สำหรับระบุตัวตนคัดแยกแผงอาหาร (ใส่คำว่า gemini หรือ deepseek)
+  
   created_at         DateTime @default(now()) @db.Timestamptz
 
   user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)

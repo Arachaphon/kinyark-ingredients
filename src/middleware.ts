@@ -32,9 +32,15 @@ export async function middleware(request: NextRequest) {
 
   const publicRoutes = ["/login", "/register"];
 
+  // 🌟 1. เช็คว่าเส้นทางที่เรียกมา เป็นท่อ API สำหรับดึงข้อมูลหรือไม่ (เช่น /api/posts/recommended)
+  // เพื่อเปิดโอกาสให้หน้าแรกดึงข้อมูลไปโชว์ได้ แม้ผู้ใช้จะยังไม่ได้ Sign इन เข้าสู่ระบบครับ
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api/posts/recommended");
+
   const isPublic =
     request.nextUrl.pathname === "/" ||
+    isApiRoute || // 🟢 ปล่อยผ่านให้ท่อ API นี้เป็นสาธารณะ
     publicRoutes.some((r) => request.nextUrl.pathname.startsWith(r));
+
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
