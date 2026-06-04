@@ -1,63 +1,43 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useActionState } from 'react'
+import { signup } from './actions'
+import PasswordInput from './PasswordInput'
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
-
-  const handleRegister = async () => {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username }),
-    })
-    const data = await res.json()
-    if (!res.ok) return setError(data.error)
-    router.push('/login')
-  }
+  const [state, formAction] = useActionState(signup, { message: '' })
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-4 p-8">
-        <h1 className="text-2xl font-bold">สมัครสมาชิก</h1>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <input
-          type="text"
-          placeholder="ชื่อผู้ใช้"
-          className="w-full border rounded p-2"
-          value={username}
-          onChange={e => setUsername(e.target.value)}
+      <form action={formAction} className="w-full max-w-sm space-y-4 p-8">
+        <h1 className="text-2xl font-bold">Register</h1>
+
+        {/* แสดง error message */}
+        {state?.message && (
+          <p className="text-red-500 text-sm text-center">{state.message}</p>
+        )}
+
+        <input name="username" type="text" placeholder="Username"
+          className="w-full py-4.5 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+          required
         />
-        <input
-          type="email"
-          placeholder="อีเมล"
-          className="w-full border rounded p-2"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
+        <input name="email" type="email" placeholder="Email"
+          className="w-full py-4.5 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+          required
         />
-        <input
-          type="password"
-          placeholder="รหัสผ่าน"
-          className="w-full border rounded p-2"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
-        <button
-          onClick={handleRegister}
+        <PasswordInput />
+
+        <button type="submit"
           className="w-full bg-black text-white rounded p-2"
         >
-          สมัครสมาชิก
+          Register
         </button>
         <p className="text-center text-sm">
-          มีบัญชีแล้ว?{' '}
-          <a href="/login" className="underline">เข้าสู่ระบบ</a>
+          Have an account already?{' '}
+          <Link href="/login" className="underline">Login</Link>
         </p>
-      </div>
+      </form>
     </div>
   )
 }
