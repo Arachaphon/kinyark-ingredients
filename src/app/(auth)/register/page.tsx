@@ -7,11 +7,47 @@ import { signup } from './actions'
 
 export default function RegisterPage() {
   const [state, formAction] = useActionState(signup, { message: '' })
+  const [clientError, setClientError] = useState('') // สเตตสำหรับเก็บข้อความ Error ฝั่งหน้าบ้าน
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSliding, setIsSliding] = useState(false)
   const router = useRouter()
+
+  // 🛠️ ฟังก์ชันตรวจสอบความถูกต้องของรหัสผ่าน (อัปเดตเพิ่มพิมพ์ใหญ่-พิมพ์เล็ก)
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    setClientError('') // รีเซ็ต Error เก่าก่อนตรวจใหม่
+
+    const formData = new FormData(e.currentTarget)
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirmPassword') as string
+
+    // 1. ตรวจสอบความยาวรหัสผ่าน (ไม่ต่ำกว่า 8 ตัว)
+    if (password.length < 8) {
+      e.preventDefault() // สกัดกั้นไม่ให้ฟอร์มส่งข้อมูลไปหลังบ้าน
+      setClientError('Password must be at least 8 characters long.')
+      return
+    }
+
+    // 2. 🌟 ตรวจสอบเงื่อนไขตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก ตัวเลข และอักขระพิเศษ
+    const hasUppercase = /[A-Z]/.test(password)      // มีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว
+    const hasLowercase = /[a-z]/.test(password)      // มีตัวพิมพ์เล็กอย่างน้อย 1 ตัว
+    const hasNumber = /\d/.test(password)             // มีตัวเลขอย่างน้อย 1 ตัว
+    const hasSpecialChar = /[^a-zA-Z0-9]/.test(password) // มีอักขระพิเศษอย่างน้อย 1 ตัว
+
+    if (!hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
+      e.preventDefault()
+      setClientError('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.')
+      return
+    }
+
+    // 3. ตรวจสอบรหัสผ่านว่าตรงกันไหม
+    if (password !== confirmPassword) {
+      e.preventDefault()
+      setClientError('Passwords do not match.')
+      return
+    }
+  }
 
   const handleGoToLogin = () => {
     if (window.innerWidth < 768) {
@@ -33,7 +69,7 @@ export default function RegisterPage() {
           isSliding ? 'translate-x-[81%] opacity-0' : 'translate-x-0'
         }`}
       >
-        <form action={formAction} className="w-full max-w-[420px] flex flex-col items-center">
+        <form onSubmit={handleSubmit} action={formAction} className="w-full max-w-[420px] flex flex-col items-center">
           
           <div className="md:hidden w-44 h-44 mb-4 flex items-center justify-center">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
@@ -43,8 +79,16 @@ export default function RegisterPage() {
             Registration
           </h1>
           
-          {state?.message && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center">
+          {/* แสดง Error แดงจากหน้าบ้าน (Client Validation) */}
+          {clientError && (
+            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200 animate-fade-in">
+              {clientError}
+            </p>
+          )}
+
+          {/* แสดง Error จากหลังบ้าน (Server Action) */}
+          {state?.message && !clientError && (
+            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
               {state.message}
             </p>
           )}
