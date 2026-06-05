@@ -1,33 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useActionState } from 'react'
+import { signup } from './actions'
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [username, setUsername] = useState('')
-  const [error, setError] = useState('')
-  
+  const [state, formAction] = useActionState(signup, { message: '' })
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isSliding, setIsSliding] = useState(false)
   const router = useRouter()
-
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      return setError('รหัสผ่านไม่ตรงกัน')
-    }
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username }),
-    })
-    const data = await res.json()
-    if (!res.ok) return setError(data.error)
-    router.push('/login')
-  }
 
   const handleGoToLogin = () => {
     if (window.innerWidth < 768) {
@@ -41,17 +25,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white overflow-hidden relative font-sans">
+    <div className="flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative font-sans">
       
       {/* ---------------- ฟอร์มสมัครสมาชิก ---------------- */}
       <div 
-        className={`w-full md:w-[55%] flex flex-col items-center justify-center p-6 sm:p-10 md:p-16 z-10 transition-all duration-700 ease-in-out ${
+        className={`w-full md:w-[55%] md:mr-auto flex flex-col items-center justify-center p-6 sm:p-10 md:p-16 z-10 py-16 transition-all duration-700 ease-in-out ${
           isSliding ? 'translate-x-[81%] opacity-0' : 'translate-x-0'
         }`}
       >
-        <div className="w-full max-w-[420px] flex flex-col items-center">
+        <form action={formAction} className="w-full max-w-[420px] flex flex-col items-center">
           
-          {/* 🔍 📍 ปรับขนาดโลโก้เวอร์ชันมือถือเพิ่มเป็น w-44 h-44 */}
           <div className="md:hidden w-44 h-44 mb-4 flex items-center justify-center">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
           </div>
@@ -60,17 +43,21 @@ export default function RegisterPage() {
             Registration
           </h1>
           
-          {error && <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center">{error}</p>}
+          {state?.message && (
+            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center">
+              {state.message}
+            </p>
+          )}
           
           <div className="w-full space-y-5">
             {/* Username */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                name="username"
                 type="text"
                 placeholder="Username"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                required
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -82,11 +69,11 @@ export default function RegisterPage() {
             {/* Email */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                name="email"
                 type="email"
                 placeholder="Email"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                required
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -98,11 +85,11 @@ export default function RegisterPage() {
             {/* Password */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                name="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+                required
               />
               <button
                 type="button"
@@ -125,11 +112,11 @@ export default function RegisterPage() {
             {/* Confirm Password */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
+                required
               />
               <button
                 type="button"
@@ -151,7 +138,7 @@ export default function RegisterPage() {
           </div>
 
           <button
-            onClick={handleRegister}
+            type="submit"
             className="w-44 py-2.5 mt-8 md:mt-12 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
           >
             Register
@@ -163,7 +150,7 @@ export default function RegisterPage() {
               Login
             </button>
           </p>
-        </div>
+        </form>
       </div>
 
       {/* ---------------- แผงโค้งมนสีครีม (โชว์เฉพาะบนคอมพิวเตอร์ md:) ---------------- */}
@@ -175,14 +162,13 @@ export default function RegisterPage() {
         }`}
       >
         <div className="flex flex-col items-center text-center max-w-sm">
-          {/* 🔍 📍 ปรับขนาดกล่องโลโก้เพิ่มเป็น w-64 h-64 ใหญ่สะใจ */}
           <div className="w-64 h-64 mb-8 relative flex items-center justify-center">
             <img src="/photo/logo.png" alt="Kin Yark Ingredients Logo" className="w-full h-full object-contain animate-scale-up" />
           </div>
 
           <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">Welcome Back!</h2>
           <p className="text-gray-700 text-base font-semibold mb-6">Already have an account ?</p>
-          <button onClick={handleGoToLogin} className="w-44 py-2.5 bg-white hover:bg-gray-50 text-gray-800 font-bold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-200">
+          <button type="button" onClick={handleGoToLogin} className="w-44 py-2.5 bg-white hover:bg-gray-50 text-gray-800 font-bold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.05)] transition-all duration-200">
             Login
           </button>
         </div>

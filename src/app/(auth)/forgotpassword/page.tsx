@@ -1,23 +1,27 @@
 "use client";
 
-import { useState } from "react";
+// 🛠️ แก้ไขจุดพังดั้งเดิม: อิมพอร์ต React เข้ามาให้เต็มระบบเพื่อเคลียร์บั๊ก Cannot find name 'React'
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const router = useRouter(); // 🌟 รูเตอร์สำหรับปุ่ม Back to Login
 
-  // 🛠️ แก้ไขไทป์ของตัวแปร e ให้ระบุเจาะจง <HTMLFormElement> เพื่อลบคำเตือน deprecated
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // 🛠️ ปิดบั๊กวิกฤต (image_9b3d3a.jpg): เปลี่ยนจาก React.FormEvent (Deprecated)
+  // 🌟 ไปใช้ React.SyntheticEvent ครอบจักรวาลตามที่ระบบแนะนำ เพื่อป้องกันหน้าจอเบี้ยวและคอมไพล์ไม่ผ่าน
+  const handleSubmit = (e: React.SyntheticEvent) => {
+    e.preventDefault(); // คำสั่งป้องกันหน้าเว็บรีเฟรช ยังทำงานได้สมบูรณ์แบบเหมือนเดิม
 
     console.log({
       email,
     });
 
-    // TODO: Supabase Reset Password
+    
   };
 
   return (
-    // 📱 ปรับแก้โครงสร้างหลัก: เคลื่อนตัวตามจอ flex-col (มือถือ) -> lg:flex-row (จอเดสก์ท็อป)
+    // โครงสร้างหลัก: เคลื่อนตัวตามจอ flex-col (มือถือ) -> lg:flex-row (จอเดสก์ท็อป)
     <div className="min-h-screen flex flex-col lg:flex-row bg-[#F7F7F7] overflow-x-hidden">
       
       {/* ================= LEFT / TOP SIDE (Logo & Intro) ================= */}
@@ -34,15 +38,14 @@ export default function ForgotPasswordPage() {
           py-12 lg:py-0
           shrink-0
           transition-all duration-300
+          
+          /* 🛠️ แก้ไขจุด hydration mismatch: ใช้คลาสสิก Tailwind คุมความโค้งแทน inline style */
+          rounded-br-[50%/30px] lg:rounded-br-[35%/100%]
+          rounded-bl-[50%/30px] lg:rounded-bl-0
+          rounded-tr-0 lg:rounded-tr-[35%/100%]
         "
-        style={{
-          // 🪄 คำนวณความโค้ง: บนมือถือให้โค้งมนปิดท้ายด้านล่าง พอจอใหญ่สลับไปโค้งมนฝั่งขวาตามดีไซน์หลัก
-          borderBottomRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "35% 100%",
-          borderBottomLeftRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "0px",
-          borderTopRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "0px" : "35% 100%",
-        }}
       >
-        {/* Logo - ยืดหยุ่นขนาดตาม Device */}
+        {/* Logo */}
         <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center mb-6 lg:mb-8 animate-scale-up">
           <img
             src="/photo/logo.png"
@@ -69,13 +72,13 @@ export default function ForgotPasswordPage() {
             onSubmit={handleSubmit}
             className="flex flex-col items-center"
           >
-            {/* Title - ย่อขนาดลงบนจอมือถือเล็กน้อยให้สมดุล */}
+            {/* Title */}
             <h1 className="text-3xl sm:text-[38px] font-serif font-normal text-black mb-10 sm:mb-14 lg:mb-16 text-center">
               Forgot Password
             </h1>
 
             {/* Email Field */}
-            <div className="w-full relative mb-8 sm:mb-10">
+            <div className="w-full relative mb-6">
               <input
                 type="email"
                 placeholder="Email"
@@ -113,6 +116,15 @@ export default function ForgotPasswordPage() {
                 </svg>
               </div>
             </div>
+
+            {/* ปุ่ม Back to Login */}
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
+            >
+              Back to Login
+            </button>
 
             {/* Send Button */}
             <button

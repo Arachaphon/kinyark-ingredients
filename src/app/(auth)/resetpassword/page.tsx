@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+// 🛠️ แก้ไขจุดที่ 1: อิมพอร์ต React ให้เต็มระบบเพื่อเคลียร์บั๊กไทป์ และดึง useRouter มารอเปลี่ยนหน้า
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -8,14 +10,19 @@ export default function ResetPasswordPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 🛠️ แก้ไขจุดที่ 2: เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
 
     console.log({
       password,
       confirmPassword,
     });
+    
+    // TODO: Supabase Reset Password
+    // พออัปเดตรหัสผ่านเสร็จจริง สามารถสั่ง router.push("/login") ตรงนี้ได้เลยครับ 🚀
   };
 
   return (
@@ -36,13 +43,12 @@ export default function ResetPasswordPage() {
           py-12 lg:py-0
           shrink-0
           transition-all duration-300
+          
+          /* 🛠️ แก้ไขจุดที่ 3: แทนที่ระบบ inline style ด้วย Tailwind Classes มิติความโค้งจะสลับทิศทางตามขนาดหน้าจอโดยอัตโนมัติ */
+          rounded-br-[50%/30px] lg:rounded-br-[35%/100%]
+          rounded-bl-[50%/30px] lg:rounded-bl-0
+          rounded-tr-0 lg:rounded-tr-[35%/100%]
         "
-        style={{
-          // 🪄 เช็คขนาดหน้าจอผ่าน CSS @media ในสไตล์ (ถ้าจอมือถือโค้งล่าง ถ้าจอใหญ่โค้งขวา)
-          borderBottomRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "35% 100%",
-          borderBottomLeftRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "50% 30px" : "0px",
-          borderTopRightRadius: typeof window !== "undefined" && window.innerWidth < 1024 ? "0px" : "35% 100%",
-        }}
       >
         {/* ปรับขนาดโลโก้ให้ยืดหยุ่นตามหน้าจอ */}
         <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center mb-6 lg:mb-8 animate-scale-up">
@@ -82,14 +88,14 @@ export default function ResetPasswordPage() {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full py-4 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+                className="w-full h-[56px] pl-7 pr-14 rounded-[16px] border border-[#D8D8D8] bg-white text-black placeholder:text-[#CFCFCF] text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_10px_rgba(0,0,0,0.08)]"
                 required
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors focus:outline-none"
               >
                 {showPassword ? (
                   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -108,20 +114,20 @@ export default function ResetPasswordPage() {
             </div>
 
             {/* Confirm Password Field */}
-            <div className="w-full relative mb-10 sm:mb-14">
+            <div className="w-full relative mb-6">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full py-4 pl-6 pr-14 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_12px_rgba(0,0,0,0.03)]"
+                className="w-full h-[56px] pl-7 pr-14 rounded-[16px] border border-[#D8D8D8] bg-white text-black placeholder:text-[#CFCFCF] text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_10px_rgba(0,0,0,0.08)]"
                 required
               />
 
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors"
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors focus:outline-none"
               >
                 {showConfirmPassword ? (
                   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -138,6 +144,15 @@ export default function ResetPasswordPage() {
                 )}
               </button>
             </div>
+
+            {/* ปุ่มกดหักพวงมาลัยเลี้ยวกลับหน้าล็อกอิน */}
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="text-gray-900 font-bold text-sm mb-6 md:mb-10 hover:underline transition-all bg-transparent border-none cursor-pointer"
+            >
+              Back to Login
+            </button>
 
             {/* Confirm Button */}
             <button

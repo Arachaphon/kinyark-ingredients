@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from 'next/navigation'
 
 interface SettingModalProps {
   isOpen: boolean;
@@ -10,6 +11,13 @@ interface SettingModalProps {
 type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+  }
+
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   
   // State สำหรับแท็บ AI Personalization (Toggles)
@@ -95,7 +103,10 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
               Delete Account
             </button>
             {/* 🌟 เปลี่ยนเป็น hover:bg-black/5 */}
-            <button className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-black hover:bg-black/5 transition-colors">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-black hover:bg-black/5 transition-colors"
+            >
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1-2-2h4"></path>
                 <polyline points="16 17 21 12 16 7"></polyline>

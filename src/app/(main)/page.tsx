@@ -4,32 +4,95 @@ import React, { useState, useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 
+// 🌟 เพิ่มเมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
+const fallbackGemini = [
+  {
+    id: "mock-g1",
+    menu_name: "ข้าวผัดต้มยำกุ้งแห้ง",
+    bg_color: "bg-[#6F62E4]",
+    featured_image_url: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+    rating: 4.9
+  },
+  {
+    id: "mock-g2",
+    menu_name: "สเต็กไก่พริกไทยดำ",
+    bg_color: "bg-[#E67E22]",
+    featured_image_url: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d",
+    rating: 4.8
+  },
+  {
+    id: "mock-g3",
+    menu_name: "แกงเขียวหวานไก่โรตี",
+    bg_color: "bg-[#27AE60]",
+    featured_image_url: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd",
+    rating: 4.7
+  },
+  {
+    id: "mock-g4",
+    menu_name: "ผัดไทยกุ้งสดห่อไข่",
+    bg_color: "bg-[#D35400]",
+    featured_image_url: "https://images.unsplash.com/photo-1626804475315-9644b37a2fe4",
+    rating: 5.0
+  }
+];
+
+const fallbackDeepseek = [
+  {
+    id: "mock-d1",
+    menu_name: "สปาเก็ตตี้คาโบนาร่า",
+    bg_color: "bg-[#3AC9B5]",
+    featured_image_url: "https://images.unsplash.com/photo-1612874742237-6526221588e3",
+    rating: 5.0
+  },
+  {
+    id: "mock-d2",
+    menu_name: "แซลมอนย่างซีอิ๊ว",
+    bg_color: "bg-[#E74C3C]",
+    featured_image_url: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2",
+    rating: 4.7
+  },
+  {
+    id: "mock-d3",
+    menu_name: "ซูชิแซลมอนเซ็ตโปร",
+    bg_color: "bg-[#2C3E50]",
+    featured_image_url: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c",
+    rating: 4.9
+  },
+  {
+    id: "mock-d4",
+    menu_name: "พิซซ่าเตาถ่านฮาวายเอี้ยน",
+    bg_color: "bg-[#F39C12]",
+    featured_image_url: "https://images.unsplash.com/photo-1513104890138-7c749659a591",
+    rating: 4.6
+  }
+];
+
 export default function HomePage() {
-  // 🌟 1. สร้าง State มารองรับข้อมูลจริงที่จะดึงมาจากหลังบ้าน Supabase
   const [geminiRecipes, setGeminiRecipes] = useState<any[]>([]);
   const [deepseekRecipes, setDeepseekRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🌟 2. ดึงข้อมูลอัตโนมัติจาก API เส้นทาง /api/posts/recommended เมื่อหน้าเว็บถูกเปิดขึ้นมา
   useEffect(() => {
     const fetchRecommendedMenu = async () => {
       try {
         const res = await fetch("/api/posts/recommended");
         if (res.ok) {
           const data = await res.json();
-          // อัปเดตข้อมูลอาหารฝั่ง AI แต่ละตัวลงในระบบ State
           setGeminiRecipes(data.gemini || []);
           setDeepseekRecipes(data.deepseek || []);
         }
       } catch (error) {
         console.error("เกิดข้อผิดพลาดในการโหลดข้อมูลเมนูแนะนำ:", error);
       } finally {
-        setLoading(false); // ปิดสถานะกำลังโหลด
+        setLoading(false);
       }
     };
 
     fetchRecommendedMenu();
   }, []);
+
+  const geminiToDisplay = geminiRecipes.length > 0 ? geminiRecipes : fallbackGemini;
+  const deepseekToDisplay = deepseekRecipes.length > 0 ? deepseekRecipes : fallbackDeepseek;
 
   return (
     <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
@@ -112,7 +175,6 @@ export default function HomePage() {
           Daily Recommended Menu
         </h2>
         
-        {/* 🌟 3. แสดงหน้า Loading ระหว่างรอข้อมูลยิงมาจากคลาวด์ป้องกันแอปค้างหน้าเปล่า */}
         {loading ? (
           <div className="w-full text-center py-12 flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
@@ -120,23 +182,8 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-            {/* แสดงแผงสไลด์หมุนข้อมูลอาหารจริงของฝั่ง Gemini */}
-            {geminiRecipes.length > 0 ? (
-              <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
-            ) : (
-              <div className="bg-white rounded-[40px] p-12 text-center text-gray-400 font-medium max-w-[650px] mx-auto w-full shadow-sm">
-                คลังข้อมูลว่างเปล่า ยังไม่มีเมนูแนะนำของค่าย Gemini ในฐานข้อมูล
-              </div>
-            )}
-
-            {/* แสดงแผงสไลด์หมุนข้อมูลอาหารจริงของฝั่ง Deep Seek */}
-            {deepseekRecipes.length > 0 ? (
-              <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
-            ) : (
-              <div className="bg-white rounded-[40px] p-12 text-center text-gray-400 font-medium max-w-[650px] mx-auto w-full shadow-sm">
-                คลังข้อมูลว่างเปล่า ยังไม่มีเมนูแนะนำของค่าย Deep Seek ในฐานข้อมูล
-              </div>
-            )}
+            <MenuCarousel provider="By gemini" recipes={geminiToDisplay} />
+            <MenuCarousel provider="By Deep Seek" recipes={deepseekToDisplay} />
           </div>
         )}
       </section>
@@ -147,14 +194,14 @@ export default function HomePage() {
 }
 
 /* =========================================
-    COMPONENTS ย่อย (ปรับปรุงฟิลด์ให้อ่านจากโมเดลเบสจริง)
+    COMPONENTS ย่อย
    ========================================= */
 
 function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    if (recipes.length <= 1) return; // ถ้ามีข้อมูลเมนูเดียวไม่ต้องสั่งเปิด Interval ให้โค้ดกระตุก
+    if (recipes.length <= 1) return;
     const timer = setInterval(() => {
       handleNext();
     }, 3500);
@@ -170,7 +217,6 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
   };
 
   const item1 = recipes[currentIndex];
-  // 🌟 ป้องกันกรณีผู้ใช้กรอกเมนูอาหารในเบสค่ายนั้นๆ ไว้แค่ 1 เมนู ให้วนกลับมาแสดงการ์ดตัวซ้ำแทน
   const item2 = recipes[(currentIndex + 1) % recipes.length] || item1;
 
   return (
@@ -179,7 +225,6 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
       <ArrowButton direction="right" onClick={handleNext} />
       
       <div className="flex justify-center gap-6 mt-12 px-4 relative">
-        {/* 🌟 ดึงข้อมูลฟิลด์จริง: menu_name, bg_color, featured_image_url, rating */}
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
           <RecipeCard 
             title={item1.menu_name} 
@@ -244,18 +289,19 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
         />
       </div>
 
-      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full">
-        <span className="font-bold text-xl sm:text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
+      {/* สไตล์จัดข้อความให้อยู่ตรงกลางการ์ด 100% ไร้รอยบิดเบี้ยว */}
+      <div className="relative w-full mb-5 mt-2 px-10 flex items-center justify-center min-h-[64px]">
+        <span className="font-bold text-xl sm:text-2xl text-white text-center leading-snug block w-full">
           {title}
         </span>
-        <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
+        
+        <div className="absolute right-4 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
           <span className="text-[#FF4747] text-sm">❤</span>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
-        {/* 🌟 แสดงคะแนนจริงทศนิยม 1 ตำแหน่งจากฐานข้อมูลตรงนี้ครับ */}
         <span className="font-semibold text-white text-lg">
           {rating !== undefined && rating !== null ? rating.toFixed(1) : "5.0"}
         </span>
