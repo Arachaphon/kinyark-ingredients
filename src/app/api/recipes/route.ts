@@ -9,3 +9,6 @@ export async function POST(request: Request) {
   return Response.json({ data: body })
 }
 
+// GET → เรียก action แล้ว return Response.json()
+// POST → รับ request.json() → ส่งให้ action → return Response.json()
+// error → return Response.json({ error }, { status: 400/401/500 })

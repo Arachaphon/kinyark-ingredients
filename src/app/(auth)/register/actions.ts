@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { registerSchema } from '../../../../lib/validations/auth.schema'
+import { registerSchema } from '@/lib/validations/auth.schema'
 
 export async function signup(prevState: { message?: string }, formData: FormData) {
   const supabase = await createClient();
