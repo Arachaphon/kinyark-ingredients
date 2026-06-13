@@ -1,14 +1,62 @@
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const page = searchParams.get("page") ?? "1"
-  return Response.json({ page })
-}
+import { prisma } from "@/lib/prisma"
+import { createClient } from "@/lib/supabase/server"
+import { createRecipeSchema } from "@/lib/validations/recipe.schema"
 
 export async function POST(request: Request) {
-  const body = await request.json()
-  return Response.json({ data: body })
-}
+  const supabase = await createClient()
 
-// GET → เรียก action แล้ว return Response.json()
-// POST → รับ request.json() → ส่งให้ action → return Response.json()
-// error → return Response.json({ error }, { status: 400/401/500 })
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    )
+  }
+
+  const body = await request.json()
+
+  const result = createRecipeSchema.safeParse(body)
+
+  if (!result.success) {
+    return Response.json(
+      {
+        error: result.error.flatten(),
+      },
+      {
+        status: 400,
+      }
+    )
+  }
+
+  try {
+    const recipe = await prisma.recipe.create({
+      data: {
+        ...result.data,
+        user_id: user.id,
+      },
+    })
+
+    return Response.json(
+      {
+        data: recipe,
+      },
+      {
+        status: 201,
+      }
+    )
+  } catch (error) {
+    console.error(error)
+
+    return Response.json(
+      {
+        error: "Internal server error",
+      },
+      {
+        status: 500,
+      }
+    )
+  }
+}
