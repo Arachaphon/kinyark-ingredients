@@ -7,6 +7,8 @@
 - AI Orchestration: Google Gemini API via Vercel AI SDK
 
 ## 2. Persistent Agent Rules
+- **Permission Before Action**: Always explain the logic and ask for human confirmation before running database migrations (`prisma migrate`) or updating configuration files.
+- **Strict Scope**: Do not touch files or directories listed in the 'Do Not Touch' section of `HANDOFF.md` under any circumstances.
 1. **Type Safety Absolute**: Explicit types are mandatory. [cite_start]Never introduce implicit `any` definitions[cite: 6].
 2. **Database Isolation**: All database operations must pass exclusively through Prisma Client commands. [cite_start]Raw SQL query strings are banned unless explicitly approved in writing[cite: 7].
 3. [cite_start]**Validation Enforcer**: Every API route payload and Server Action parameter must undergo active run-time verification using Zod schemas before hitting a service layout[cite: 36].
