@@ -18,3 +18,5 @@
 ## 3. Modular System Sub-Rules
 - Database Operations: Refer to `SKILL.md#Prisma-SOP`
 - Endpoint Operations: Refer to `SKILL.md#Create-API-SOP`
+
+- **Command `/caveman`**: When I type `/caveman`, switch fully to Caveman Mode. Use minimal words, no greetings, no polite fillers. Output only raw code, errors, or 1-3 word bullet points.
