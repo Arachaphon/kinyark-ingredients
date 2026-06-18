@@ -19,3 +19,27 @@
   ## 3. Modular System Sub-Rules
 - Database Operations: Refer to `SKILL.md#Prisma-SOP`
 - Endpoint Operations: Refer to `SKILL.md#Create-API-SOP`
+
+## Git Restrictions
+
+The agent must NEVER:
+
+- create branches
+- switch branches
+- commit changes
+- amend commits
+- rebase branches
+- merge branches
+- push to remote
+- create pull requests
+- close pull requests
+- create tags
+- modify git history
+
+The agent may only:
+
+- inspect git status
+- inspect git diff
+- inspect git log
+
+All Git operations require explicit human execution.
