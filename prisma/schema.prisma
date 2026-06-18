@@ -58,13 +58,15 @@ model Ingredient {
 model Recipe {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id            String   @db.Uuid
-  recipe_name          String
+  recipe_name        String
   description        String?
   featured_image_url String?
   instructions       String?
   rating             Float    @default(0)
   review_count       Int      @default(0)
   favorite_count     Int      @default(0)
+  bg_color           String?
+  ai_provider        String?
   created_at         DateTime @default(now()) @db.Timestamptz
 
   user               User               @relation(fields: [user_id], references: [id], onDelete: Cascade)

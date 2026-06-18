@@ -75,7 +75,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchRecommendedMenu = async () => {
       try {
-        const res = await fetch("/api/posts/recommended");
+        const res = await fetch("/api/recipes/recommended");
         if (res.ok) {
           const data = await res.json();
           setGeminiRecipes(data.gemini || []);

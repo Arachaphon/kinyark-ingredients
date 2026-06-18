@@ -6,3 +6,8 @@
 ## 2. Artificial Intelligence Engineering Architecture
 - [cite_start]**Pantry Core Matching Engine**: Utilizes Google Gemini APIs via the unified Vercel AI SDK framework to parse dynamic multi-ingredient prompt inputs[cite: 35, 36].
 - [cite_start]**Index Query System**: Employs structural PostgreSQL Full-Text Search operations for direct matching queries, reserving LLM tokens for recommendation steps[cite: 36].
+
+Playwright Baseline Status:
+- Installed
+- Browser Installed
+- Auth Smoke Tests Passing

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createRecipeSchema } from "@/lib/validations/recipe.schema";
-import prisma from "@/lib/prisma";
+import {prisma} from "@/lib/prisma";
 
 export async function createRecipe(
   prevState: { message?: string },
@@ -37,7 +37,7 @@ export async function createRecipe(
   await prisma.recipe.create({
     data: {
       user_id: user.id,
-      title: result.data.recipe_name,
+      recipe_name: result.data.recipe_name,
       description: result.data.description,
       instructions: result.data.instructions,
       recipe_ingredients: {
