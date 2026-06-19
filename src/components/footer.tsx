@@ -22,7 +22,7 @@ export default function Footer() {
           </div>
           <p className="text-sm font-medium text-gray-500 leading-relaxed">
             เปลี่ยนวัตถุดิบเหลือใช้ในตู้เย็นให้เป็นเมนูจานโปรดด้วยระบบ AI อัจฉริยะ 
-            พัฒนาโดยกลุ่ม <span className="text-[#5A9240] font-bold">The Nexus</span> สาขาวิศวกรรมซอฟต์แวร์ มหาวิทยาลัยพะเยา
+            พัฒนาโดยกลุ่ม <span className="text-[#5A9240] font-bold">KINYARK</span> สาขาวิศวกรรมซอฟต์แวร์ มหาวิทยาลัยพะเยา
           </p>
         </div>
 
@@ -52,10 +52,10 @@ export default function Footer() {
       {/* แถบล่างสุด: Copyright & ปีการศึกษา */}
       <div className="w-[95%] max-w-[1440px] mx-auto px-4 border-t border-[#E2DAB3]/60 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-gray-400">
         <div>
-          © {new Date().getFullYear()} <span className="text-gray-500">The Nexus Team</span>. All rights reserved.
+          © {new Date().getFullYear()} <span className="text-gray-500">KINYARK Team</span>. All rights reserved.
         </div>
         <div className="flex items-center gap-2">
-          <span>ปีการศึกษา 2568</span>
+          <span>ปีการศึกษา 2569</span>
           <span className="text-gray-300">|</span>
           <span>Software Engineering, UP</span>
         </div>
