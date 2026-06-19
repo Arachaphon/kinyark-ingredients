@@ -80,7 +80,7 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          Daily Recommended Menu
+          Weekly Recommended Menu
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
