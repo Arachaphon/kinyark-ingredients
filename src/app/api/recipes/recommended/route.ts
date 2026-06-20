@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
-    const allRecipes = await prisma.post.findMany({
+    const allRecipes = await prisma.recipe.findMany({
       orderBy: { created_at: "desc" }
     });
 
