@@ -71,7 +71,8 @@ export default function RegisterPage() {
       >
         <form onSubmit={handleSubmit} action={formAction} className="w-full max-w-[420px] flex flex-col items-center">
           
-          <div className="md:hidden w-44 h-44 mb-4 flex items-center justify-center">
+          {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือให้เด่นและชัดเจนขึ้น */}
+          <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
           </div>
 
@@ -206,7 +207,8 @@ export default function RegisterPage() {
         }`}
       >
         <div className="flex flex-col items-center text-center max-w-sm">
-          <div className="w-64 h-64 mb-8 relative flex items-center justify-center">
+          {/* 🛠️ แก้ไขจุดนี้: เบิ้ลขนาดกล่อง Container ขึ้นเป็น w-72 h-72 / xl:w-80 xl:h-80 พร้อมใส่ scale-110 ขยายตัวเด่นสะใจถอดบล็อกจากหน้า Home เลยครับ */}
+          <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
             <img src="/photo/logo.png" alt="Kin Yark Ingredients Logo" className="w-full h-full object-contain animate-scale-up" />
           </div>
 

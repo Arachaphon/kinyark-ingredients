@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // 🌟 เพิ่ม useRouter เข้ามาเพื่อสั่งเปลี่ยนหน้า
+import { usePathname, useRouter } from "next/navigation"; 
 import SettingModal from "./SettingModal"; 
 
 // ข้อมูลจำลองสำหรับระบบค้นหา (Mock Data)
@@ -22,8 +22,6 @@ export default function Navbar() {
   
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  
-  // 🌟 เรียกใช้งาน useRouter
   const router = useRouter();
 
   // ระบบกรองผลลัพธ์การค้นหาจากคำที่พิมพ์
@@ -42,13 +40,11 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🌟 ฟังก์ชันส่วนกลางสำหรับส่งคำค้นหาไปหน้าแสดงผลลัพธ์
+  // ฟังก์ชันส่วนกลางสำหรับส่งคำค้นหาไปหน้าแสดงผลลัพธ์
   const handleSearchSubmit = (term: string) => {
-    if (!term.trim()) return; // ถ้าช่องค้นหาว่างเปล่า ไม่ต้องทำอะไร
-    
-    // เปลี่ยนหน้าไปยัง /search/results พร้อมส่ง Query String คำค้นหาไปด้วย
+    if (!term.trim()) return; 
     router.push(`/search/results?query=${encodeURIComponent(term)}`);
-    setIsDropdownOpen(false); // ปิด Dropdown คำแนะนำ
+    setIsDropdownOpen(false); 
   };
 
   const getMenuClass = (path: string) => {
@@ -59,10 +55,12 @@ export default function Navbar() {
   };
 
   return (
-    <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-start justify-between gap-6 relative z-50">
+    // 🛠️ ปรับแก้จุดนี้: สลับไอเท็มหลักบนจอเดสก์ท็อปจาก xl:items-start ไปเป็น xl:items-center 
+    // เพื่อดึงตำแหน่งโลโก้และปุ่ม create/profile ฝั่งขวาลงมาอยู่แนวศูนย์กลางระนาบเดียวกับช่อง Search เรียบร้อย
+    <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6 relative z-50">
       
-      {/* 1. โลโก้ */}
-      <div className="flex-shrink-0 flex items-center justify-center w-32 h-32 xl:w-40 xl:h-40">
+      {/* 1. โลโก้ (🛠️ ขยายขนาดระดับแมกซี่ w-48 / xl:w-64 ให้เท่ากันกับหน้าระบบหลักเป๊ะๆ) */}
+      <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
         <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
       </div>
 
@@ -94,7 +92,6 @@ export default function Navbar() {
               setIsDropdownOpen(true); 
             }}
             onFocus={() => setIsDropdownOpen(true)}
-            // 🌟 ดักจับกิจกรรมเมื่อผู้ใช้กดปุ่มบนคีย์บอร์ด ถ้ากดปุ่ม Enter ให้ส่งค้นหาทันที
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleSearchSubmit(searchTerm);
@@ -119,7 +116,6 @@ export default function Navbar() {
                   <div 
                     key={index}
                     className="px-8 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-4 text-gray-700 transition"
-                    // 🌟 เมื่อคลิกเลือกเมนูใน Dropdown ให้เปลี่ยนค่าคำค้นหาและกระโดดไปหน้าผลลัพธ์ทันที
                     onClick={() => {
                       setSearchTerm(item);
                       handleSearchSubmit(item);
@@ -142,8 +138,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ */}
-      <div className="flex-shrink-0 flex items-start gap-4 pt-4">
+      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ (🛠️ ลบตัวถ่วงความสูงอย่าง pt-4 ออก เพื่อให้ไหลเซนเตอร์ตามภาพดีไซน์) */}
+      <div className="flex-shrink-0 flex items-center gap-4">
         <Link href="/create-recipe" className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg">
           + Create Recipe
         </Link>
