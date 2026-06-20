@@ -81,6 +81,8 @@ model RecipeIngredient {
   id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   recipe_id     String  @db.Uuid
   ingredient_id Int
+  quantity      Float
+  unit          String
 
   recipe     Recipe     @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
   ingredient Ingredient @relation(fields: [ingredient_id], references: [id])
