@@ -22,12 +22,12 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative font-sans">
       
       {/* ================= แผงโค้งมนสีครีม (แสดงเฉพาะบนเดสก์ท็อป md:) ================= */}
-      {/* 🛠️ ใช้ชุดคลาสและ rounded-r-[40%_50%] ถอดบล็อกมาจากหน้าหลัก มั่นใจได้ว่าโค้งมนเท่ากันเป๊ะ */}
+      {/* 🛠️ ปรับสไตล์และขนาดโลโก้ให้แมตช์กับหน้า Login ถอดบล็อกโครงสร้างเดียวกันมาเลยครับ */}
       <div
         className="hidden md:flex absolute top-0 left-0 h-full w-[45%] bg-[#F5ECD7] flex-col items-center justify-center p-12 rounded-r-[40%_50%] transition-all duration-300 ease-in-out"
       >
-        {/* Logo เวอร์ชันเดสก์ท็อป */}
-        <div className="w-64 h-64 mb-6 relative flex items-center justify-center">
+        {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่อง Container ขึ้นเป็น w-72 h-72 / xl:w-80 xl:h-80 พร้อมใส่ scale-110 เพื่อความสวยงามเต็มตา */}
+        <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
           <img
             src="/photo/logo.png"
             alt="Kin Yark Logo"
@@ -54,8 +54,8 @@ export default function ForgotPasswordPage() {
             onSubmit={handleSubmit}
             className="w-full flex flex-col items-center"
           >
-            {/* โลโก้เวอร์ชันมือถือ (จะแสดงออโต้เมื่ออยู่บนจอเล็กกว่า md) */}
-            <div className="md:hidden w-44 h-44 mb-4 flex items-center justify-center">
+            {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือขึ้นเป็น w-48 h-48 sm:w-56 sm:h-56 พร้อมใส่ scale-105 ให้โดดเด่นสมส่วน */}
+            <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
               <img
                 src="/photo/logo.png"
                 alt="Kin Yark Logo"
