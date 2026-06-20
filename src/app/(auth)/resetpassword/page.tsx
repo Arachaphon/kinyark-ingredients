@@ -1,6 +1,6 @@
 "use client";
 
-// 🛠️ แก้ไขจุดที่ 1: อิมพอร์ต React ให้เต็มระบบเพื่อเคลียร์บั๊กไทป์ และดึง useRouter มารอเปลี่ยนหน้า
+// 🛠️ อิมพอร์ต React ให้เต็มระบบเพื่อเคลียร์บั๊กไทป์ และดึง useRouter มารอเปลี่ยนหน้า
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +12,7 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
 
-  // 🛠️ แก้ไขจุดที่ 2: เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
+  // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
 
@@ -44,14 +44,14 @@ export default function ResetPasswordPage() {
           shrink-0
           transition-all duration-300
           
-          /* 🛠️ แก้ไขจุดที่ 3: แทนที่ระบบ inline style ด้วย Tailwind Classes มิติความโค้งจะสลับทิศทางตามขนาดหน้าจอโดยอัตโนมัติ */
+          /* 🛠️ แทนที่ระบบ inline style ด้วย Tailwind Classes มิติความโค้งจะสลับทิศทางตามขนาดหน้าจอโดยอัตโนมัติ */
           rounded-br-[50%/30px] lg:rounded-br-[35%/100%]
           rounded-bl-[50%/30px] lg:rounded-bl-0
           rounded-tr-0 lg:rounded-tr-[35%/100%]
         "
       >
-        {/* ปรับขนาดโลโก้ให้ยืดหยุ่นตามหน้าจอ */}
-        <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center mb-6 lg:mb-8 animate-scale-up">
+        {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่องและสเกลรูปโลโก้ให้ใหญ่ ยืดหยุ่นเด่นสง่าถอดพิมพ์เขียวมาจากหน้าหลัก Login/Register เป๊ะๆ */}
+        <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-72 lg:h-72 xl:w-80 xl:h-80 flex items-center justify-center mb-6 lg:mb-8 scale-110 transition-all duration-300 animate-scale-up">
           <img 
             src="/photo/logo.png" 
             alt="Kin Yark Logo" 
