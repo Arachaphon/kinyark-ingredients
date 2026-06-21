@@ -32,12 +32,43 @@ export async function POST(request: Request) {
   }
 
   try {
+    const ingredientRecords = await Promise.all(
+      result.data.ingredients.map((ing) =>
+        prisma.ingredient.upsert({
+          where: { name: ing.name },
+          update: {},
+          create: { name: ing.name },
+        }),
+      ),
+    );
+
+    const recipeIngredientsData = ingredientRecords.map((dbIng, index) => {
+      const inputIng = result.data.ingredients[index];
+      return {
+        ingredientId: dbIng.id,
+        quantity: inputIng.quantity,
+        unit: inputIng.unit,
+      };
+    });
+
     const recipe = await prisma.recipe.create({
       data: {
-        ...result.data,
-        user_id: user.id,
+        userId: user.id,
+        recipeName: result.data.recipe_name,
+        description: result.data.description,
+        instructions: result.data.instructions,
+        recipeIngredients: {
+          create: recipeIngredientsData,
+        },
+        ...(result.data.featured_image_url ? {
+          images: {
+            create: {
+              imageUrl: result.data.featured_image_url,
+            }
+          }
+        } : {}),
       },
-    })
+    });
 
     return Response.json(
       {
