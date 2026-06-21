@@ -151,7 +151,7 @@ export default function FavoritesPage() {
               ))
             ) : (
               <div className="text-center py-20 text-gray-400 italic text-lg">
-                You haven't liked any recipes yet.
+                {"You haven't liked any recipes yet."}
               </div>
             )}
           </div>

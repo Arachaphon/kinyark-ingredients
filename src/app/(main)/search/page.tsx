@@ -149,7 +149,7 @@ function SearchContent() {
             What ingredients do you have ?
           </h1>
           <p className="text-gray-500 text-base md:text-lg mb-6 font-medium">
-            Select ingredients from your fridge and we'll suggest recipes for you.
+            {"Select ingredients from your fridge and we'll suggest recipes for you."}
           </p>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">

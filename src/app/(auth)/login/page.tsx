@@ -138,7 +138,7 @@ export default function LoginPage() {
           </button>
 
           <p className="md:hidden mt-6 text-sm text-gray-600 font-medium">
-            Don't have an account?{" "}
+            {"Don't have an account? "}
             <button type="button" onClick={handleGoToRegister} className="text-amber-700 font-bold underline">
               Register
             </button>

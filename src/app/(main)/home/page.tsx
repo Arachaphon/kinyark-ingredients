@@ -7,14 +7,21 @@ import Link from "next/link";
 // =========================================
 // 🍱 ข้อมูลจำลอง (Mock Data)
 // ========================================
-const geminiRecipes = [
+interface WeeklyMenuRecipe {
+  id: number;
+  title: string;
+  color: string;
+  image: string;
+}
+
+const geminiRecipes: WeeklyMenuRecipe[] = [
   { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" },
   { id: 2, title: "ไข่เจียวหมูสับ", color: "bg-[#FF8585]", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" },
   { id: 3, title: "ต้มจืดเต้าหู้", color: "bg-[#3AC9B5]", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" },
   { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" },
 ];
 
-const deepseekRecipes = [
+const deepseekRecipes: WeeklyMenuRecipe[] = [
   { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
   { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
   { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
@@ -108,7 +115,13 @@ function CategoryCard({ emoji, text, category }: { emoji: string; text: string; 
   );
 }
 
-function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] }) {
+function MenuCarousel({ 
+  provider, 
+  recipes 
+}: {
+  provider: string; 
+  recipes:WeeklyMenuRecipe[]
+} ) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {

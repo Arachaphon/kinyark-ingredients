@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#EFE9CE] border-t border-[#E2DAB3] mt-20 py-12 text-gray-600 font-sans">
       <div className="w-[95%] max-w-[1440px] mx-auto px-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-        
+
         {/* ฝั่งซ้าย: โลโก้ และ รายละเอียดกลุ่ม */}
         <div className="flex flex-col gap-2 max-w-md">
           <div className="flex items-center gap-3">
@@ -21,7 +21,7 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-sm font-medium text-gray-500 leading-relaxed">
-            เปลี่ยนวัตถุดิบเหลือใช้ในตู้เย็นให้เป็นเมนูจานโปรดด้วยระบบ AI อัจฉริยะ 
+            เปลี่ยนวัตถุดิบเหลือใช้ในตู้เย็นให้เป็นเมนูจานโปรดด้วยระบบ AI อัจฉริยะ
             พัฒนาโดยกลุ่ม <span className="text-[#5A9240] font-bold">KINYARK</span> สาขาวิศวกรรมซอฟต์แวร์ มหาวิทยาลัยพะเยา
           </p>
         </div>
