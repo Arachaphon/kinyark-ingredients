@@ -69,17 +69,12 @@ function SearchContent() {
 
   const categoryParam = searchParams.get("category") || "Meat";
   
-  const [activeCategory, setActiveCategory] = useState(categoryParam);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>(["Chicken"]);
   
   const [ingSearchTerm, setIngSearchTerm] = useState("");
 
-  useEffect(() => {
-    if (searchParams.get("category")) {
-      setActiveCategory(searchParams.get("category")!);
-      setIngSearchTerm(""); 
-    }
-  }, [searchParams]);
+  const activeCategory =
+  searchParams.get("category") ?? "All";
 
   const handleCheckboxChange = (ingredient: string) => {
     if (selectedIngredients.includes(ingredient)) {
@@ -118,7 +113,6 @@ function SearchContent() {
 
                 <button
                   onClick={() => {
-                    setActiveCategory(cat.id);
                     setIngSearchTerm(""); 
                     router.push(`/search?category=${cat.id}`);
                   }}
@@ -210,7 +204,7 @@ function SearchContent() {
               </div>
             ) : (
               <div className="text-center py-16 text-gray-400 italic text-base">
-                No ingredients found for "{ingSearchTerm}"
+                {`No ingredients found for "${ingSearchTerm}"`}
               </div>
             )}
           </div>

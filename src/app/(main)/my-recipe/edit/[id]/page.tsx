@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
 import { useParams } from "next/navigation"; // 🌟 นำเข้าคำสั่งสำหรับดึง ID จาก URL
@@ -10,28 +10,27 @@ export default function EditRecipePage() {
   const recipeId = params.id; // ได้ค่า ID เช่น "1", "2" มาจาก URL
 
   // State สำหรับเก็บข้อมูล
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [ingredients, setIngredients] = useState([""]);
-  const [coverImage, setCoverImage] = useState<string | null>(null);
+const [title, setTitle] = useState("Garden caesar salad (Edited)");
+
+const [description, setDescription] = useState(
+  "This is my updated description for the salad recipe."
+);
+
+const [instructions, setInstructions] = useState(
+  "Step 1: Wash the vegetables...\nStep 2: Chop them finely..."
+);
+
+const [ingredients, setIngredients] = useState([
+  "Tomato",
+  "Sweet Onion",
+  "Pepper",
+]);
+
+const [coverImage, setCoverImage] = useState<string | null>(
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // 🌟 จำลองการดึงข้อมูลเก่าจาก Database (Supabase) เมื่อโหลดหน้าเว็บ
-  useEffect(() => {
-    if (recipeId) {
-      // (อนาคตเราจะเขียนโค้ดดึงข้อมูล Supabase ตรงนี้)
-      console.log(`Fetching data for Recipe ID: ${recipeId}`);
-      
-      // ตอนนี้ใส่ข้อมูลจำลองไปก่อน เพื่อให้เห็นภาพว่าเวลา Edit ข้อมูลเก่าต้องโชว์ขึ้นมา
-      setTitle("Garden caesar salad (Edited)");
-      setDescription("This is my updated description for the salad recipe.");
-      setIngredients(["Tomato", "Sweet Onion", "Pepper"]);
-      setInstructions("Step 1: Wash the vegetables...\nStep 2: Chop them finely...");
-      setCoverImage("https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80");
-    }
-  }, [recipeId]);
 
   // ฟังก์ชันจัดการส่วนผสม
   const handleIngredientChange = (index: number, value: string) => {

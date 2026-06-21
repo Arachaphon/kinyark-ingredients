@@ -176,7 +176,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
           </div>
         </div>
       </main>
@@ -216,11 +216,13 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
 
   useEffect(() => {
     if (recipes.length <= 1) return;
+
     const timer = setInterval(() => {
-      handleNext();
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
     }, 3500);
+
     return () => clearInterval(timer);
-  }, [currentIndex, recipes.length]);
+  }, [recipes.length]);
 
   const handleNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
@@ -298,7 +300,7 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
         <img
           src={image}
           alt={title}
-          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]" 
+          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
         />
       </div>
 

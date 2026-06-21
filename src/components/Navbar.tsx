@@ -130,7 +130,7 @@ export default function Navbar() {
                 ))
               ) : (
                 <div className="px-8 py-3 text-gray-400 italic text-lg">
-                  No recipes found for "{searchTerm}"
+                  {`No recipes found for "${searchTerm}"`}
                 </div>
               )}
             </div>

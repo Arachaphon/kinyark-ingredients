@@ -124,20 +124,20 @@ function MenuCarousel({
 } ) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  const handleNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
+  };
+
+  
+  const handlePrev = () => {
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + recipes.length) % recipes.length);
+  };
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
     }, 3500);
     return () => clearInterval(timer);
   }, [currentIndex]);
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + recipes.length) % recipes.length);
-  };
 
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length];
