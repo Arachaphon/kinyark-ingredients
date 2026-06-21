@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 
-// 🌟 เพิ่มเมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
+// 🌟 เมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
 const fallbackGemini = [
   {
     id: "mock-g1",
@@ -60,7 +60,7 @@ const fallbackDeepseek = [
   },
   {
     id: "mock-d4",
-    menu_name: "พิซซ่าเตาถ่านฮาวายเอี้ยน",
+    menu_name: "พิษซ่าเตาถ่านฮาวายเอี้ยน",
     bg_color: "bg-[#F39C12]",
     featured_image_url: "https://images.unsplash.com/photo-1513104890138-7c749659a591",
     rating: 4.6
@@ -99,10 +99,15 @@ export default function HomePage() {
       {/* =========================================
           1. HEADER & NAVBAR SECTION
           ========================================= */}
-      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-start justify-between gap-6">
-        <div className="flex-shrink-0 flex items-center justify-center w-32 h-32 xl:w-40 xl:h-40">
+      {/* 🛠️ ปรับเปลี่ยนจาก xl:items-start ไปเป็น xl:items-center เพื่อขยับโลโก้และปุ่มด้านข้างลงมาอยู่กึ่งกลางสมมาตรกันพอดี */}
+      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
+        
+        {/* โลโก้ขนาดใหญ่ (กึ่งกลางแนวตั้งเรียบร้อย) */}
+        <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
           <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
         </div>
+
+        {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
           <div className="flex gap-16 mb-5 text-lg font-bold">
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">Home</span>
@@ -117,7 +122,9 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <div className="flex-shrink-0 flex items-start gap-4 pt-4">
+
+        {/* 🛠️ ปุ่มฝั่งขวา: ลบคำสั่ง pt-4 / pt-8 ออก เพื่อปล่อยให้ระบบศูนย์กลางจัดการดึงตำแหน่งลงมาตรงกลางอัตโนมัติ */}
+        <div className="flex-shrink-0 flex items-center gap-4">
           <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-[#71B254] font-bold bg-white hover:bg-green-50 transition text-lg">+ Create</button>
           <Link href="/login" className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
@@ -172,7 +179,7 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          Daily Recommended Menu
+          Weekly Recommended Menu
         </h2>
         
         {loading ? (
@@ -289,7 +296,6 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
         />
       </div>
 
-      {/* สไตล์จัดข้อความให้อยู่ตรงกลางการ์ด 100% ไร้รอยบิดเบี้ยว */}
       <div className="relative w-full mb-5 mt-2 px-10 flex items-center justify-center min-h-[64px]">
         <span className="font-bold text-xl sm:text-2xl text-white text-center leading-snug block w-full">
           {title}

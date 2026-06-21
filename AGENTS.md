@@ -1,45 +1,214 @@
 # AGENTS.md - Global Project Coordination Rules
 
 ## 1. System Environment & Stack
-- Framework: Next.js 15+ (App Router Architecture)
-- Languages: TypeScript (Strict Mode Enabled)
-- Database: Supabase PostgreSQL via Prisma ORM
-- Style Core: Tailwind CSS
-- AI Orchestration: Google Gemini API via Vercel AI SDK
+
+* Framework: Next.js 15+ (App Router Architecture)
+* Language: TypeScript (Strict Mode Enabled)
+* Database: Supabase PostgreSQL via Prisma ORM
+* Styling: Tailwind CSS
+* AI Orchestration: Google Gemini API via Vercel AI SDK
+
+---
 
 ## 2. Persistent Agent Rules
-- **Permission Before Action**: Always explain the logic and ask for human confirmation before running database migrations (`prisma migrate`), executing destructive commands, moving to a new development phase, or updating configuration files.
-  - **Strict Scope**: Do not touch files or directories listed in the 'Do Not Touch' section of `HANDOFF.md` under any circumstances. Stay strictly focused on the currently assigned task/file; do NOT refactor, modify, or explore unrelated parts of the codebase without explicit instructions.
-  1. **Type Safety Absolute**: Explicit types are mandatory. Never introduce implicit `any` definitions.
-  2. **Database Isolation**: All database operations must pass exclusively through Prisma Client commands. Raw SQL query strings are banned unless explicitly approved in writing.
-  3. **Validation Enforcer**: Every API route payload and Server Action parameter must undergo active run-time verification using Zod schemas before hitting a service layout.
-  4. **Dependency Lockdown**: Do not add, strip, or modify entries inside `package.json` without direct developer authorization.
-  5. **Pre-Commit Verification**: Run compile testing checks (`npm run build` or `tsc`) locally prior to marking any individual assignment as finalized.
-  - **Command `/caveman`**: When I type `/caveman` in the prompt, switch fully to Caveman Mode. In this mode, drop all verbose explanations, greetings, and polite fillers. Output ONLY raw, minimal code, syntax errors, or highly concise 1-3 word bullet points to maximize token efficiency and execution speed.
-  ## 3. Modular System Sub-Rules
-- Database Operations: Refer to `SKILL.md#Prisma-SOP`
-- Endpoint Operations: Refer to `SKILL.md#Create-API-SOP`
 
-## Git Restrictions
+### Permission Before Action
+
+Always explain the reasoning and request human approval before:
+
+* Running Prisma migrations
+* Executing destructive commands
+* Updating configuration files
+* Modifying environment variables
+* Installing or removing dependencies
+* Changing project architecture
+* Moving to a new project milestone
+
+Examples of project milestones:
+
+* Database Foundation
+* Authentication System
+* Recipe Management
+* Social Features
+* AI Recommendation System
+
+Human approval is NOT required for normal implementation tasks inside the current milestone.
+
+---
+
+### Strict Scope
+
+Stay focused on the assigned task only.
+
+Do NOT:
+
+* Refactor unrelated code
+* Modify unrelated files
+* Explore unrelated modules
+* Touch files listed under "Do Not Touch" in HANDOFF.md
+
+---
+
+### Type Safety Absolute
+
+* TypeScript strict typing is mandatory.
+* Never introduce implicit `any`.
+* Prefer explicit return types for exported functions.
+
+---
+
+### Database Isolation
+
+* All database operations must use Prisma Client.
+* Raw SQL is prohibited unless explicitly approved.
+
+---
+
+### Validation Enforcer
+
+Every:
+
+* API Route
+* Server Action
+* External Input
+
+must be validated using Zod before reaching the service layer.
+
+---
+
+### Dependency Lockdown
+
+Do not modify:
+
+* package.json
+* package-lock.json
+* pnpm-lock.yaml
+
+without explicit approval.
+
+---
+
+### Pre-Completion Verification
+
+Before marking a task complete:
+
+* Verify TypeScript passes
+* Verify build passes when applicable
+* Verify validation rules exist
+* Verify affected files follow project conventions
+
+---
+
+### Command: /caveman
+
+When the user enters `/caveman`:
+
+* Remove explanations
+* Remove greetings
+* Remove unnecessary text
+* Output only:
+
+  * code
+  * errors
+  * short bullet points
+
+Maximum brevity mode.
+
+---
+
+## 3. Definition of Done
+
+A task is considered complete only when:
+
+* Implementation is finished
+* Type safety is verified
+* Validation is implemented
+* Required documentation is updated
+* Completion summary is generated
+
+Git operations are NOT required for task completion.
+
+---
+
+## 4. Documentation Policy
+
+Do NOT update documentation after every minor code change.
+
+Documentation updates are required when:
+
+* A PLAN.md task is completed
+* A work session ends
+* An architecture decision changes
+* A handoff is required
+
+Relevant files may include:
+
+* PLAN.md
+* STATE.md
+* HANDOFF.md
+
+Before updating documentation:
+
+1. Analyze current progress
+2. Propose documentation changes
+3. Show changes to the developer
+4. Apply only after approval
+
+---
+
+## 5. Completion Workflow
+
+For every completed task:
+
+1. Analyze completed work
+2. Verify implementation
+3. Verify types
+4. Check documentation impact
+5. Propose PLAN.md updates
+6. Propose STATE.md updates
+7. Propose HANDOFF.md updates
+8. Generate completion report
+
+Do not silently modify project documentation.
+
+---
+
+## 6. Modular System Sub-Rules
+
+### Database Operations
+
+Refer to:
+
+`SKILL.md#Prisma-SOP`
+
+### Endpoint Operations
+
+Refer to:
+
+`SKILL.md#Create-API-SOP`
+
+---
+
+## 7. Git Restrictions
 
 The agent must NEVER:
 
-- create branches
-- switch branches
-- commit changes
-- amend commits
-- rebase branches
-- merge branches
-- push to remote
-- create pull requests
-- close pull requests
-- create tags
-- modify git history
+* create branches
+* switch branches
+* commit changes
+* amend commits
+* rebase branches
+* merge branches
+* push to remote
+* create pull requests
+* close pull requests
+* create tags
+* modify git history
 
 The agent may only:
 
-- inspect git status
-- inspect git diff
-- inspect git log
+* inspect git status
+* inspect git diff
+* inspect git log
 
 All Git operations require explicit human execution.

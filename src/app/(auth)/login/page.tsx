@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // 🌟 อิมพอร์ต Link เข้ามาใช้งาน
+import Link from "next/link"; 
 // --- ดึงระบบฝั่งหลังบ้านของเพื่อนมาเชื่อมต่อ (SERVER ACTION) ---
 import { useActionState } from 'react';
 import { login } from "./actions";
@@ -40,7 +40,8 @@ export default function LoginPage() {
         }`}
       >
         <div className="flex flex-col items-center text-center max-w-sm">
-          <div className="w-64 h-64 mb-6 relative flex items-center justify-center">
+          {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่อง Container ขึ้นเป็น w-72 h-72 / xl:w-80 xl:h-80 พร้อมใส่ scale-110 ขยายตัวเด่นสะใจถอดบล็อกจากหน้า Home เลยครับ */}
+          <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain animate-scale-up" />
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">Hello, Welcome</h2>
@@ -57,10 +58,12 @@ export default function LoginPage() {
           isSliding ? "-translate-x-[81%] opacity-0" : "translate-x-0"
         }`}
       >
-        <form action={formAction} className="w-full max-w-[380px] flex flex-col items-center">
-
-          {/* โลโก้เวอร์ชันมือถือ */}
-          <div className="md:hidden w-44 h-44 mb-4 flex items-center justify-center">
+        <form
+          action={formAction}
+          className="w-full max-w-[380px] flex flex-col items-center"
+        >
+          {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือให้เด่นและชัดเจนขึ้นเท่าๆ กับหน้าสมัครสมาชิก */}
+          <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
           </div>
 
@@ -70,7 +73,9 @@ export default function LoginPage() {
 
           {/* กล่องข้อความแจ้งเตือน Error จากหลังบ้าน */}
           {state?.message && (
-            <p className="text-red-500 text-sm text-center mb-5">{state.message}</p>
+            <p className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-2 rounded-lg w-full border border-red-100 animate-fade-in">
+              {state.message}
+            </p>
           )}
 
           <div className="w-full space-y-5 mb-5">
@@ -118,7 +123,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* 🌟 แก้ไขเสร็จสมบูรณ์: ใช้พร็อพ href ตรงๆ ยิงเข้าหาโฟลเดอร์ลืมรหัสผ่านโดยตรง */}
           <Link
             href="/forgotpassword"
             className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
