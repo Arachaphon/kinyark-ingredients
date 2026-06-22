@@ -168,13 +168,13 @@ Phase 3.1 Score: 1/4 🔶
 - [✅] `src/lib/validations/recipe.schema.ts`
   - Fields: `recipe_name`, `description`, `ingredients`, `featured_image_url`, `instructions`
 
-- [🔶] `src/lib/validations/ingredient.schema.ts`
+- [✅] `src/lib/validations/ingredient.schema.ts`
   - Independent ingredient validation schema
 
-- [ ] `src/lib/validations/review.schema.ts`
+- [✅] `src/lib/validations/review.schema.ts`
   - Fields: `rating` (1–5), `comment`, `is_anonymous`
 
-- [ ] `src/lib/validations/search.schema.ts`
+- [✅] `src/lib/validations/search.schema.ts`
   - Fields: `query` (string), `ingredient_ids[]` (int array)
 
 ### 3.2 Service Layer (`src/lib/services/`)

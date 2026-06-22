@@ -15,14 +15,6 @@ export default function ResetPasswordPage() {
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
-
-    console.log({
-      password,
-      confirmPassword,
-    });
-    
-    // TODO: Supabase Reset Password
-    // พออัปเดตรหัสผ่านเสร็จจริง สามารถสั่ง router.push("/login") ตรงนี้ได้เลยครับ 🚀
   };
 
   return (
