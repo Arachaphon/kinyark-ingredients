@@ -21,8 +21,8 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-sm font-medium text-gray-500 leading-relaxed">
-            เปลี่ยนวัตถุดิบเหลือใช้ในตู้เย็นให้เป็นเมนูจานโปรดด้วยระบบ AI อัจฉริยะ 
-            พัฒนาโดยกลุ่ม <span className="text-[#5A9240] font-bold">KINYARK</span> สาขาวิศวกรรมซอฟต์แวร์ มหาวิทยาลัยพะเยา
+            Transform leftover ingredients in your refrigerator into your favorite dishes with an intelligent AI-powered system. 
+            Developed by <span className="text-[#5A9240] font-bold">KINYARK</span>, Software Engineering Program, University of Phayao.
           </p>
         </div>
 
