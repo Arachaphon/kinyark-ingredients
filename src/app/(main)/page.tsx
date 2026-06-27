@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
+import { Anuphan } from "next/font/google";
+
+// 🌟 เรียกใช้งานฟอนต์ Anuphan จาก Google Fonts
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 // 🌟 เมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
 const fallbackGemini = [
@@ -60,7 +68,7 @@ const fallbackDeepseek = [
   },
   {
     id: "mock-d4",
-    menu_name: "พิษซ่าเตาถ่านฮาวายเอี้ยน",
+    menu_name: "พิซซ่าเตาถ่านฮาวายเอี้ยน",
     bg_color: "bg-[#F39C12]",
     featured_image_url: "https://images.unsplash.com/photo-1513104890138-7c749659a591",
     rating: 4.6
@@ -95,14 +103,13 @@ export default function HomePage() {
   const deepseekToDisplay = deepseekRecipes.length > 0 ? deepseekRecipes : fallbackDeepseek;
 
   return (
-    <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
+    <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       {/* =========================================
           1. HEADER & NAVBAR SECTION
           ========================================= */}
-      {/* 🛠️ ปรับเปลี่ยนจาก xl:items-start ไปเป็น xl:items-center เพื่อขยับโลโก้และปุ่มด้านข้างลงมาอยู่กึ่งกลางสมมาตรกันพอดี */}
       <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
         
-        {/* โลโก้ขนาดใหญ่ (กึ่งกลางแนวตั้งเรียบร้อย) */}
+        {/* โลโก้ขนาดใหญ่ */}
         <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
           <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
         </div>
@@ -110,25 +117,25 @@ export default function HomePage() {
         {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
           <div className="flex gap-16 mb-5 text-lg font-bold">
-            <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">Home</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">My Recipe</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Favorites</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Posts</span>
+            <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">โพสต์ทั้งหมด</span>
           </div>
           <div className="w-full relative">
-            <input type="text" placeholder="Search ..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg" />
+            <input type="text" placeholder="ค้นหา..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg " />
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400">
               <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
             </div>
           </div>
         </div>
 
-        {/* 🛠️ ปุ่มฝั่งขวา: ลบคำสั่ง pt-4 / pt-8 ออก เพื่อปล่อยให้ระบบศูนย์กลางจัดการดึงตำแหน่งลงมาตรงกลางอัตโนมัติ */}
+        {/* ปุ่มฝั่งขวา */}
         <div className="flex-shrink-0 flex items-center gap-4">
-          <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-[#71B254] font-bold bg-white hover:bg-green-50 transition text-lg">+ Create</button>
+          <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-lg">+ เผยแพร่สูตรอาหาร</button>
           <Link href="/login" className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            Sign in
+            เข้าสู่ระบบ
           </Link>
         </div>
       </header>
@@ -138,15 +145,15 @@ export default function HomePage() {
           ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20">
         <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
-          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">Ingredient Categories</h2>
+          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
-            <CategoryCard emoji="🥩" text="Meat & Poultry" />
-            <CategoryCard emoji="🍳" text="Kitchen Tools" />
-            <CategoryCard emoji="🥗" text="Fruits" />
-            <CategoryCard emoji="🦞" text="Seafood" />
+            <CategoryCard emoji="🥩" text="เนื้อสัตว์" />
+            <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" />
+            <CategoryCard emoji="🥗" text="ผลไม้" />
+            <CategoryCard emoji="🦞" text="อาหารทะเล" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="Vegetables" />
+                <CategoryCard emoji="🥦" text="ผัก" />
               </div>
             </div>
           </div>
@@ -155,16 +162,16 @@ export default function HomePage() {
           <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
-                <span className="font-bold text-gray-900 text-xl">Recommended menu</span>
+                <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
+                <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">Salad</h1>
+              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">สลัด</h1>
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">5.0</span>
               </div>
               <button className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base">
-                <span>▶</span> View more
+                <span>▶</span> ดูเพิ่มเติม
               </button>
             </div>
           </div>
@@ -179,7 +186,7 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          Weekly Recommended Menu
+          เมนูแนะนำประจำสัปดาห์
         </h2>
         
         {loading ? (
@@ -189,8 +196,8 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-            <MenuCarousel provider="By gemini" recipes={geminiToDisplay} />
-            <MenuCarousel provider="By Deep Seek" recipes={deepseekToDisplay} />
+            <MenuCarousel provider="โดย Gemini" recipes={geminiToDisplay} />
+            <MenuCarousel provider="โดย Deep Seek" recipes={deepseekToDisplay} />
           </div>
         )}
       </section>
@@ -225,9 +232,8 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
 
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length] || item1;
-
   return (
-    <div className="bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px]">
+    <div className={`bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
       
@@ -250,7 +256,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
         </div>
       </div>
       
-      <div className="text-right text-[#A5A5A5] text-base font-medium mt-6 mr-2">
+      <div className="text-right text-[#A5A5A5] text-base font-bold mt-6 mr-2">
         {provider}
       </div>
     </div>
@@ -259,7 +265,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
 
 function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   return (
-    <div className="bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition">
+    <div className={`bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
       <div className="text-3xl">{emoji}</div>
       <span className="font-bold text-base text-gray-800">{text}</span>
     </div>
@@ -286,7 +292,7 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
 
 function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title: string, image: string, rating?: number }) {
   return (
-    <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
+    <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <img
@@ -308,13 +314,13 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
 
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
-        <span className="font-semibold text-white text-lg">
+        <span className="font-bold text-white text-lg">
           {rating !== undefined && rating !== null ? rating.toFixed(1) : "5.0"}
         </span>
       </div>
 
       <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5">
-        <span>▶</span> View more
+        <span>▶</span> ดูเพิ่มเติม
       </button>
     </div>
   );

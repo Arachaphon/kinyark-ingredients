@@ -92,7 +92,7 @@ export default function HomePage() {
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          <MenuCarousel provider="โดย gemini" recipes={geminiRecipes} />
+          <MenuCarousel provider="โดย Gemini" recipes={geminiRecipes} />
           <MenuCarousel provider="โดย Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
