@@ -254,7 +254,7 @@ export default function CreateRecipePage() {
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            <span className="text-lg font-bold">สร้างโพสต์เมนูใหม่</span>
+            <span className="text-lg font-bold">หน้าหลัก</span>
           </Link>
 
           {/* 🌟 TEMP: ตัวสลับบทบาทสำหรับทดสอบหน้านี้โดยตรง — ในระบบจริงค่า postAs ควรมาจาก
