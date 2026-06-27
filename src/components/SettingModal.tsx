@@ -26,14 +26,14 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
   const [dailySug, setDailySug] = useState(false);
 
   // State สำหรับแท็บ Food Preferences
-  const [diet, setDiet] = useState("Vegetarian");
-  const [allergy, setAllergy] = useState("Peanut");
+  const [diet, setDiet] = useState("มังสวิรัติ");
+  const [allergy, setAllergy] = useState("ถั่วลิสง");
 
   if (!isOpen) return null;
 
   return (
     /* 🌟 แก้ไขตรงนี้: จาก bg-black bg-opacity-40 เป็น bg-black/40 เพื่อให้ฉากหลังโปร่งแสงใน Tailwind v4 */
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-fade-in font-anuphan">
       
       {/* กล่อง Modal หลัก */}
       <div className="bg-white w-full max-w-[900px] h-[550px] rounded-[24px] shadow-2xl overflow-hidden flex border border-gray-100 animate-scale-up">
@@ -43,7 +43,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
             ========================================= */}
         <div className="w-[260px] bg-[#FFC700] p-6 flex flex-col justify-between shrink-0 text-black">
           <div>
-            <h2 className="text-3xl font-black mb-8 tracking-wide">Setting</h2>
+            <h2 className="text-3xl font-black mb-8 tracking-wide">ตั้งค่า</h2>
             
             <nav className="flex flex-col gap-2">
               {/* ปุ่ม Profile */}
@@ -58,7 +58,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                Profile
+                โปรไฟล์
               </button>
 
               {/* ปุ่ม Food Preferences */}
@@ -72,7 +72,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                 </svg>
-                Food Preferences
+                ข้อมูลโภชนาการที่ชอบ
               </button>
 
               {/* ปุ่ม AI Personalization */}
@@ -87,7 +87,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                   <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
                   <path d="M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
                 </svg>
-                AI Personalization
+                การปรับแต่งด้วย AI
               </button>
             </nav>
           </div>
@@ -100,7 +100,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               </svg>
-              Delete Account
+              ลบบัญชีผู้ใช้
             </button>
             {/* 🌟 เปลี่ยนเป็น hover:bg-black/5 */}
             <button 
@@ -112,7 +112,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 <polyline points="16 17 21 12 16 7"></polyline>
                 <line x1="21" y1="12" x2="9" y2="12"></line>
               </svg>
-              Logout
+              ออกจากระบบ
             </button>
           </div>
         </div>
@@ -136,7 +136,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
           {activeTab === "profile" && (
             <div className="flex flex-col gap-6 h-full justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Profile</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">โปรไฟล์</h3>
                 
                 <div className="flex items-center gap-4 mb-6">
                   <img 
@@ -144,40 +144,40 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                     alt="Alice" className="w-20 h-20 rounded-full object-cover border-2 border-gray-100" 
                   />
                   <div>
-                    <h4 className="text-xl font-bold text-gray-800">Alice</h4>
+                    <h4 className="text-xl font-bold text-gray-800">อลิส</h4>
                     <p className="text-gray-400 text-sm">Alice@gmail.com</p>
                   </div>
                   <button className="ml-auto py-2 px-4 border border-gray-300 rounded-md text-sm font-bold hover:bg-gray-50 flex items-center gap-2 transition shadow-sm text-gray-700">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    Change Profile
+                    เปลี่ยนรูปโปรไฟล์
                   </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">Username</label>
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">ชื่อผู้ใช้งาน</label>
                     <input type="text" defaultValue="Alice" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">Password</label>
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">รหัสผ่าน</label>
                     <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">Email Address</label>
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">ที่อยู่อีเมล</label>
                     <input type="email" defaultValue="Alice@gmail.com" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">Confirm Password</label>
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">ยืนยันรหัสผ่าน</label>
                     <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                 </div>
 
-                <input type="password" placeholder="Enter your current password to change your information." className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-sm" />
+                <input type="password" placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-sm" />
               </div>
 
               <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
-                <button onClick={onClose} className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-sm">Cancel</button>
-                <button className="px-6 py-2 bg-[#CCCCCC] text-white font-bold rounded-md cursor-not-allowed text-sm">Confirm</button>
+                <button onClick={onClose} className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-sm">ยกเลิก</button>
+                <button className="px-6 py-2 bg-[#CCCCCC] text-white font-bold rounded-md cursor-not-allowed text-sm">ยืนยัน</button>
               </div>
             </div>
           )}
@@ -185,13 +185,13 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
           {activeTab === "preferences" && (
             <div className="flex flex-col h-full justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Food Preferences</h3>
-                <p className="text-gray-400 text-sm mb-6">Manage your food conditions for better recommended dishes.</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">ข้อมูลโภชนาการที่ชอบ</h3>
+                <p className="text-gray-400 text-sm mb-6">จัดการเงื่อนไขด้านอาหารของคุณเพื่อการแนะนำเมนูที่ดียิ่งขึ้น</p>
 
                 <div className="mb-6">
-                  <h4 className="font-bold text-gray-800 mb-3 text-base">Dietary Preferences</h4>
+                  <h4 className="font-bold text-gray-800 mb-3 text-base">ประเภทการทานอาหาร</h4>
                   <div className="flex flex-wrap gap-3">
-                    {["Vegetarian", "Halal", "No Pork"].map((item) => (
+                    {["มังสวิรัติ", "ฮาลาล", "ไม่ทานเนื้อหมู"].map((item) => (
                       <button 
                         key={item} onClick={() => setDiet(item)}
                         className={`px-5 py-2.5 rounded-md font-bold text-sm transition-all ${
@@ -205,9 +205,9 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 </div>
 
                 <div>
-                  <h4 className="font-bold text-gray-800 mb-3 text-base">Allergies</h4>
+                  <h4 className="font-bold text-gray-800 mb-3 text-base">อาหารที่แพ้</h4>
                   <div className="flex flex-wrap gap-3">
-                    {["Peanut", "Seafood", "Milk"].map((item) => (
+                    {["ถั่วลิสง", "อาหารทะเล", "นม"].map((item) => (
                       <button 
                         key={item} onClick={() => setAllergy(item)}
                         className={`px-5 py-2.5 rounded-md font-bold text-sm transition-all ${
@@ -225,14 +225,14 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
 
           {activeTab === "ai" && (
             <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">AI Personalization</h3>
-              <p className="text-gray-400 text-sm mb-8">Customize how AI helps tailor recipes specifically for your taste buds.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">การปรับแต่งด้วย AI</h3>
+              <p className="text-gray-400 text-sm mb-8">ตั้งค่าเพื่อให้ AI ช่วยคัดสรรสูตรอาหารพิเศษให้ตรงกับความชอบของคุณ</p>
 
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <div>
-                    <h4 className="font-bold text-gray-800 text-base">Enable AI Recommendations</h4>
-                    <p className="text-gray-400 text-sm mt-0.5">Use AI to suggest recipes based on your preferences.</p>
+                    <h4 className="font-bold text-gray-800 text-base">เปิดใช้งานการแนะนำด้วย AI</h4>
+                    <p className="text-gray-400 text-sm mt-0.5">ใช้ระบบ AI ในการเสนอสูตรอาหารที่ใช่ตามประวัติและความชอบของคุณ</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={aiRec} onChange={() => setAiRec(!aiRec)} className="sr-only peer" />
@@ -242,8 +242,8 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
 
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <div>
-                    <h4 className="font-bold text-gray-800 text-base">Reset AI History</h4>
-                    <p className="text-gray-400 text-sm mt-0.5">Clear all personalized AI history and restart recommendations.</p>
+                    <h4 className="font-bold text-gray-800 text-base">ล้างประวัติการจำของ AI</h4>
+                    <p className="text-gray-400 text-sm mt-0.5">คืนค่าประวัติเฉพาะบุคคลทั้งหมดเพื่อเริ่มคำนวณการแนะนำใหม่</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={aiHistory} onChange={() => setAiHistory(!aiHistory)} className="sr-only peer" />
@@ -253,8 +253,8 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
 
                 <div className="flex items-center justify-between pb-4">
                   <div>
-                    <h4 className="font-bold text-gray-800 text-base">Daily Suggestions</h4>
-                    <p className="text-gray-400 text-sm mt-0.5">Receive new recipe suggestions daily.</p>
+                    <h4 className="font-bold text-gray-800 text-base">แนะนำประจำวัน</h4>
+                    <p className="text-gray-400 text-sm mt-0.5">รับข้อเสนอแนะสูตรอาหารใหม่ ๆ ในทุก ๆ วัน</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" checked={dailySug} onChange={() => setDailySug(!dailySug)} className="sr-only peer" />

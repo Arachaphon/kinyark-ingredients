@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
+// 🌟 เปลี่ยนมาอิมพอร์ตฟอนต์ Anuphan ที่ตัวผอมโปร่ง มีหัวกลมสวยตรงตามรูปเป๊ะๆ ครับ
+import { Anuphan } from "next/font/google";
+
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 // =========================================
 // 🍱 ข้อมูลจำลอง (Mock Data)
@@ -23,7 +31,8 @@ const deepseekRecipes = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
+    // 🌟 ผูกคลาสฟอนต์ Anuphan เข้าที่นี่ มิติเลย์เอาต์ทุกอย่างจะเป๊ะ ไม่ขยับเขยื้อนแน่นอนครับ
+    <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       
       <Navbar />
 
@@ -32,16 +41,16 @@ export default function HomePage() {
           ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
-          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">Ingredient Categories</h2>
+          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
-            <CategoryCard emoji="🥩" text="Meat & Poultry" category="Meat" />
-            <CategoryCard emoji="🍳" text="Kitchen Tools" category="Kitchen Tools" />
-            <CategoryCard emoji="🥗" text="Fruits" category="Fruits" />
-            <CategoryCard emoji="🦞" text="Seafood" category="Seafood" />
+            <CategoryCard emoji="🥩" text="เนื้อสัตว์" category="Meat" />
+            <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" category="Kitchen Tools" />
+            <CategoryCard emoji="🥗" text="ผลไม้" category="Fruits" />
+            <CategoryCard emoji="🦞" text="อาหารทะเล" category="Seafood" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="Vegetables" category="Vegetables" />
+                <CategoryCard emoji="🥦" text="ผัก" category="Vegetables" />
               </div>
             </div>
           </div>
@@ -52,20 +61,19 @@ export default function HomePage() {
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
-                <span className="font-bold text-gray-900 text-xl">Recommended menu</span>
+                <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">Salad</h1>
+              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">สลัด</h1>
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">5.0</span>
               </div>
               
-              {/* 🌟 1. ปรับเมนูแนะนำหลัก (Hero): สมมติให้วิ่งไปดูโพสต์ของสลัด ID: 1 ลิงก์ตรงไปที่หน้าสูตรเลย */}
               <Link 
                 href="/recipe/1"
                 className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base w-fit block text-center shadow-sm"
               >
-                <span>▶</span> View more
+                <span>▶</span> ดูเพิ่มเติม
               </Link>
             </div>
           </div>
@@ -80,12 +88,12 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          Weekly Recommended Menu
+          เมนูแนะนำประจำสัปดาห์
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
-          <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
+          <MenuCarousel provider="โดย gemini" recipes={geminiRecipes} />
+          <MenuCarousel provider="โดย Deep Seek" recipes={deepseekRecipes} />
         </div>
       </section>
     </div>
@@ -210,12 +218,11 @@ function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string
         <span className="font-semibold text-white text-lg">5.0</span>
       </div>
 
-      {/* 🌟 2. ปรับตรงนี้: วิ่งตรงเข้าหน้าโพสต์รายละเอียดเมนู /recipe/[id] โดยอิงตาม ID ของแต่ละเมนูเลยครับ */}
       <Link 
         href={`/recipe/${id}`}
         className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center shadow-sm"
       >
-        <span>▶</span> View more
+        <span>▶</span> ดูเพิ่มเติม
       </Link>
     </div>
   );

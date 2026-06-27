@@ -7,12 +7,12 @@ import SettingModal from "./SettingModal";
 
 // ข้อมูลจำลองสำหรับระบบค้นหา (Mock Data)
 const searchData = [
-  "Garden Salad",
-  "Fruit Salad",
-  "Spicy Thai Salad",
-  "Chicken Salad",
-  "Tom Yum Goong",
-  "Pad Thai",
+  "สลัดผักสวนครัว",
+  "สลัดผลไม้",
+  "ส้มตำไทยรสจัด",
+  "สลัดไก่",
+  "ต้มยำกุ้ง",
+  "ผัดไทย",
 ];
 
 export default function Navbar() {
@@ -55,11 +55,10 @@ export default function Navbar() {
   };
 
   return (
-    // 🛠️ ปรับแก้จุดนี้: สลับไอเท็มหลักบนจอเดสก์ท็อปจาก xl:items-start ไปเป็น xl:items-center 
-    // เพื่อดึงตำแหน่งโลโก้และปุ่ม create/profile ฝั่งขวาลงมาอยู่แนวศูนย์กลางระนาบเดียวกับช่อง Search เรียบร้อย
-    <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6 relative z-50">
+    // 🛠️ กำหนดคลาสหลักใช้ font-anuphan เพื่อให้ครอบคลุมการแสดงผลภาษาไทยทั้งหมด
+    <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6 relative z-50 font-anuphan">
       
-      {/* 1. โลโก้ (🛠️ ขยายขนาดระดับแมกซี่ w-48 / xl:w-64 ให้เท่ากันกับหน้าระบบหลักเป๊ะๆ) */}
+      {/* 1. โลโก้ */}
       <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
         <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
       </div>
@@ -68,16 +67,16 @@ export default function Navbar() {
       <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
         <div className="flex gap-16 mb-5 text-lg font-bold">
           <Link href="/home" className={pathname === "/" || pathname === "/home" ? "text-black border-b-[3px] border-black pb-1 cursor-pointer" : "text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition pb-1 border-b-[3px] border-transparent"}>
-            Home
+            หน้าแรก
           </Link>
           <Link href="/my-recipe" className={getMenuClass("/my-recipe")}>
-            My Recipe
+            สูตรอาหารของฉัน
           </Link>
           <Link href="/favorites" className={getMenuClass("/favorites")}>
-            Favorites
+            รายการโปรด
           </Link>
           <Link href="/post" className={getMenuClass("/post")}>
-            Posts
+            โพสต์ทั้งหมด
           </Link>
         </div>
         
@@ -85,7 +84,7 @@ export default function Navbar() {
         <div className="w-full relative" ref={dropdownRef}>
           <input 
             type="text" 
-            placeholder="Search ..." 
+            placeholder="ค้นหา..." 
             value={searchTerm}
             onChange={(e) => { 
               setSearchTerm(e.target.value); 
@@ -130,7 +129,7 @@ export default function Navbar() {
                 ))
               ) : (
                 <div className="px-8 py-3 text-gray-400 italic text-lg">
-                  No recipes found for "{searchTerm}"
+                  ไม่พบสูตรอาหารสำหรับ "{searchTerm}"
                 </div>
               )}
             </div>
@@ -138,10 +137,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ (🛠️ ลบตัวถ่วงความสูงอย่าง pt-4 ออก เพื่อให้ไหลเซนเตอร์ตามภาพดีไซน์) */}
+      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ */}
       <div className="flex-shrink-0 flex items-center gap-4">
         <Link href="/create-recipe" className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg">
-          + Create Recipe
+          + เผื่อยแพร่สูตรอาหาร
         </Link>
         
         <div 
