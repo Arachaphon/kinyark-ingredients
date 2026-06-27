@@ -84,8 +84,8 @@ export default function HomePage() {
         </h2>
         
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
-          <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
+          <MenuCarousel provider="" recipes={geminiRecipes} />
+          <MenuCarousel provider="" recipes={deepseekRecipes} />
         </div>
       </section>
     </div>
