@@ -1,8 +1,15 @@
 "use client";
 
-// 🛠️ อิมพอร์ต React ให้เต็มระบบเพื่อเคลียร์บั๊กไทป์ และดึง useRouter มารอเปลี่ยนหน้า
+// 🛠️ อิมพอร์ต React, useRouter และ Google Font (Anuphan)
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Anuphan } from "next/font/google";
+
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -10,11 +17,33 @@ export default function ResetPasswordPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // เพิ่ม state สำหรับจัดการข้อความ Error เพื่อใช้แสดงผลบน UI สไตล์เดียวกับหน้า Login
+  const [errorMessage, setErrorMessage] = useState("");
+  
   const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
 
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
+    setErrorMessage(""); // รีเซ็ตข้อความแจ้งเตือนทุกครั้งที่กด Submit
+
+    // 1. ตรวจสอบเงื่อนไขความปลอดภัยของรหัสผ่าน (พิมพ์ใหญ่ 1, พิมพ์เล็ก 1, ตัวเลข 1, อักษรพิเศษ 1, ยาวอย่างน้อย 8 ตัว)
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < 8 || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+      setErrorMessage("รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวพิมพ์ใหญ่, ตัวพิมพ์เล็ก, ตัวเลข และอักขระพิเศษอย่างละ 1 ตัว");
+      return;
+    }
+
+    // 2. ตรวจสอบว่ารหัสผ่านทั้งสองช่องตรงกันหรือไม่
+    if (password !== confirmPassword) {
+      setErrorMessage("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน");
+      return;
+    }
 
     console.log({
       password,
@@ -26,143 +55,124 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    // 📱 ปรับ flex-col สำหรับมือถือ และ lg:flex-row สำหรับจอใหญ่เดสก์ท็อป
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[#F7F7F7] overflow-x-hidden">
+    // ครอบด้วยคลาส className={`${anuphan.className}`} เพื่อเปิดใช้งานฟอนต์ Anuphan ทั่วทั้งหน้าเว็บ
+    <div className={`${anuphan.className} flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative`}>
       
-      {/* ================= LEFT / TOP SIDE (Logo & Intro) ================= */}
+      {/* ---------------- แผงโค้งมนสีครีม (เดสก์ท็อป) ---------------- */}
       <div
-        className="
-          w-full lg:w-[45%]
-          min-h-[40vh] lg:min-h-screen
-          bg-[#F5EFD7]
-          flex
-          flex-col
-          items-center
-          justify-center
-          px-6 sm:px-8
-          py-12 lg:py-0
-          shrink-0
-          transition-all duration-300
-          
-          /* 🛠️ แทนที่ระบบ inline style ด้วย Tailwind Classes มิติความโค้งจะสลับทิศทางตามขนาดหน้าจอโดยอัตโนมัติ */
-          rounded-br-[50%/30px] lg:rounded-br-[35%/100%]
-          rounded-bl-[50%/30px] lg:rounded-bl-0
-          rounded-tr-0 lg:rounded-tr-[35%/100%]
-        "
+        className="hidden md:flex absolute top-0 left-0 h-full w-[45%] bg-[#F5ECD7] flex-col items-center justify-center p-12 rounded-r-[40%_50%] transition-all duration-700 ease-in-out"
       >
-        {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่องและสเกลรูปโลโก้ให้ใหญ่ ยืดหยุ่นเด่นสง่าถอดพิมพ์เขียวมาจากหน้าหลัก Login/Register เป๊ะๆ */}
-        <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-72 lg:h-72 xl:w-80 xl:h-80 flex items-center justify-center mb-6 lg:mb-8 scale-110 transition-all duration-300 animate-scale-up">
-          <img 
-            src="/photo/logo.png" 
-            alt="Kin Yark Logo" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-        
-        <div className="text-center">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black mb-2 sm:mb-3 tracking-tight">
-            Hello
-          </h2>
-          <p className="text-gray-700 text-sm sm:text-base font-semibold mb-2 lg:mb-6">
-            You forgot your password ?
-          </p>
+        <div className="flex flex-col items-center text-center max-w-sm">
+          {/* ขยายขนาดกล่อง Container ขึ้นพร้อมใส่ scale-110 (ถอดบล็อกจากหน้า Login) */}
+          <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
+            <img 
+              src="/photo/logo.png" 
+              alt="Kin Yark Logo" 
+              className="w-full h-full object-contain animate-scale-up" 
+            />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">สวัสดี ยินดีต้อนรับ</h2>
+          <p className="text-gray-700 text-base font-semibold mb-6">คุณต้องการตั้งรหัสผ่านใหม่ใช่ไหม ?</p>
         </div>
       </div>
 
-      {/* ================= RIGHT / BOTTOM SIDE (Form) ================= */}
-      <div className="flex-1 flex items-center justify-center px-6 sm:px-12 py-12 lg:py-0">
-        <div className="w-full max-w-[420px]">
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col items-center"
-          >
-            {/* Title - ลดขนาดและระยะห่างลงบนจอมือถือเพื่อให้กระชับขึ้น */}
-            <h1 className="text-3xl sm:text-[38px] font-serif font-normal text-black mb-8 sm:mb-12 lg:mb-16 text-center">
-              Reset Password
-            </h1>
+      {/* ---------------- ฟอร์มกรอกข้อมูล ---------------- */}
+      <div
+        className="w-full md:w-[55%] md:ml-auto flex flex-col items-center justify-center p-6 sm:p-10 md:p-16 z-10 py-16 transition-all duration-700 ease-in-out"
+      >
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-[380px] flex flex-col items-center"
+        >
+          {/* ขนาดโลโก้เวอร์ชันมือถือ (ถอดจากหน้า Login) */}
+          <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
+            <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
+          </div>
 
+          <h1 className="text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">
+            รีเซ็ตรหัสผ่าน
+          </h1>
+
+          {/* กล่องข้อความแจ้งเตือน Error สไตล์เดียวกับหน้า Login */}
+          {errorMessage && (
+            <p className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-3 rounded-lg w-full border border-red-100 animate-fade-in leading-relaxed">
+              {errorMessage}
+            </p>
+          )}
+
+          <div className="w-full space-y-5 mb-5">
             {/* Password Field */}
-            <div className="w-full relative mb-6 sm:mb-8">
+            <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder="รหัสผ่านใหม่"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-[56px] pl-7 pr-14 rounded-[16px] border border-[#D8D8D8] bg-white text-black placeholder:text-[#CFCFCF] text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_10px_rgba(0,0,0,0.08)]"
+                className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors focus:outline-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
               >
                 {showPassword ? (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 ) : (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                    <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
                   </svg>
                 )}
               </button>
             </div>
 
             {/* Confirm Password Field */}
-            <div className="w-full relative mb-6">
+            <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
+                placeholder="ยืนยันรหัสผ่านใหม่"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full h-[56px] pl-7 pr-14 rounded-[16px] border border-[#D8D8D8] bg-white text-black placeholder:text-[#CFCFCF] text-sm sm:text-base focus:outline-none focus:border-[#71B254] transition-all shadow-[0_4px_10px_rgba(0,0,0,0.08)]"
+                className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
               />
-
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors focus:outline-none"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
               >
                 {showConfirmPassword ? (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
                 ) : (
-                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                    <path d="M14.12 14.12A3 3 0 1 1 9.88 9.88" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
                   </svg>
                 )}
               </button>
             </div>
+          </div>
 
-            {/* ปุ่มกดหักพวงมาลัยเลี้ยวกลับหน้าล็อกอิน */}
-            <button
-              type="button"
-              onClick={() => router.push("/login")}
-              className="text-gray-900 font-bold text-sm mb-6 md:mb-10 hover:underline transition-all bg-transparent border-none cursor-pointer"
-            >
-              Back to Login
-            </button>
+          <button
+            type="button" 
+            onClick={() => router.push("/login")}
+            className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
+          >
+            กลับสู่หน้าเข้าสู่ระบบ
+          </button>
 
-            {/* Confirm Button */}
-            <button
-              type="submit"
-              className="w-full sm:w-44 py-3 bg-[#F5EFD7] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] hover:bg-[#eae2c5] active:scale-95 transition-all duration-200 text-center cursor-pointer"
-            >
-              Confirm
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
+          >
+            ยืนยัน
+          </button>
+        </form>
       </div>
     </div>
   );

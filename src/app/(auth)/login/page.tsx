@@ -1,17 +1,20 @@
 "use client";
 
+import { Anuphan } from "next/font/google";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; 
-// --- ดึงระบบฝั่งหลังบ้านของเพื่อนมาเชื่อมต่อ (SERVER ACTION) ---
-import { useActionState } from 'react';
+import Link from "next/link";
+import { useActionState } from "react";
 import { login } from "./actions";
 
-export default function LoginPage() {
-  // --- ผูกระบบป้อนข้อมูลของเพื่อนเข้ากับหน้าเว็บของเรา ---
-  const [state, formAction] = useActionState(login, { message: "" });
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
-  // --- เก็บสเตตัสและแอนิเมชันเดิมของเราไว้ครบถ้วน ---
+export default function LoginPage() {
+  const [state, formAction] = useActionState(login, { message: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
   const router = useRouter();
@@ -28,10 +31,9 @@ export default function LoginPage() {
   };
 
   return (
-    // โครงสร้างหลักคุมสไตล์ Tailwind ดั้งเดิมของเรา
-    <div className="flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative font-sans">
-
-      {/* ---------------- แผงโค้งมนสีครีม (เดสก์ท็อป) ---------------- */}
+    <div
+      className={`flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative ${anuphan.className}`}
+    >
       <div
         className={`hidden md:flex absolute top-0 left-0 h-full w-[45%] bg-[#F5ECD7] flex-col items-center justify-center p-12 transition-all duration-700 ease-in-out ${
           isSliding
@@ -40,19 +42,21 @@ export default function LoginPage() {
         }`}
       >
         <div className="flex flex-col items-center text-center max-w-sm">
-          {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่อง Container ขึ้นเป็น w-72 h-72 / xl:w-80 xl:h-80 พร้อมใส่ scale-110 ขยายตัวเด่นสะใจถอดบล็อกจากหน้า Home เลยครับ */}
           <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain animate-scale-up" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">Hello, Welcome</h2>
-          <p className="text-gray-700 text-base font-semibold mb-6">Don’t have an account ?</p>
-          <button type="button" onClick={handleGoToRegister} className="w-44 py-2.5 bg-white text-gray-800 font-bold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">
-            Register
+          <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">สวัสดี ยินดีต้อนรับ</h2>
+          <p className="text-gray-700 text-base font-semibold mb-6">ไม่มีบัญชีใช่ไหม ?</p>
+          <button
+            type="button"
+            onClick={handleGoToRegister}
+            className="w-44 py-2.5 bg-white text-gray-800 font-bold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+          >
+            สมัครสมาชิก
           </button>
         </div>
       </div>
 
-      {/* ---------------- ฟอร์มกรอกข้อมูลล็อกอิน ---------------- */}
       <div
         className={`w-full md:w-[55%] md:ml-auto flex flex-col items-center justify-center p-6 sm:p-10 md:p-16 z-10 py-16 transition-all duration-700 ease-in-out ${
           isSliding ? "-translate-x-[81%] opacity-0" : "translate-x-0"
@@ -62,16 +66,14 @@ export default function LoginPage() {
           action={formAction}
           className="w-full max-w-[380px] flex flex-col items-center"
         >
-          {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือให้เด่นและชัดเจนขึ้นเท่าๆ กับหน้าสมัครสมาชิก */}
           <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
             <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
           </div>
 
-          <h1 className="font-serif text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">
-            Login
+          <h1 className="text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">
+            เข้าสู่ระบบ
           </h1>
 
-          {/* กล่องข้อความแจ้งเตือน Error จากหลังบ้าน */}
           {state?.message && (
             <p className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-2 rounded-lg w-full border border-red-100 animate-fade-in">
               {state.message}
@@ -79,12 +81,11 @@ export default function LoginPage() {
           )}
 
           <div className="w-full space-y-5 mb-5">
-            {/* Username/Email */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="email"
                 type="text"
-                placeholder="Username/Email"
+                placeholder="ชื่อผู้ใช้/อีเมล"
                 className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
               />
@@ -95,12 +96,11 @@ export default function LoginPage() {
               </span>
             </div>
 
-            {/* Password */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Password"
+                placeholder="รหัสผ่าน"
                 className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
               />
@@ -127,23 +127,22 @@ export default function LoginPage() {
             href="/forgotpassword"
             className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
           >
-            Forgot Password
+            ลืมรหัสผ่าน
           </Link>
 
           <button
             type="submit"
             className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
           >
-            Login
+            เข้าสู่ระบบ
           </button>
 
           <p className="md:hidden mt-6 text-sm text-gray-600 font-medium">
-            Don't have an account?{" "}
+            ไม่มีบัญชีใช่ไหม ?{" "}
             <button type="button" onClick={handleGoToRegister} className="text-amber-700 font-bold underline">
-              Register
+              สมัครสมาชิก
             </button>
           </p>
-
         </form>
       </div>
     </div>
