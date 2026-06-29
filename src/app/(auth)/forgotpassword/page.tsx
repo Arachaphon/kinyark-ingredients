@@ -2,6 +2,13 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Anuphan } from "next/font/google";
+
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -18,8 +25,8 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    // 🌟 ใช้โครงสร้าง Layout เดียวกับหน้า Login/Regis เพื่อความ Responsive เป๊ะทุกดีไวซ์
-    <div className="flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative font-sans">
+    // 🌟 ใช้โครงสร้าง Layout เดิม และสลับมาใช้ class ของฟอนต์ Anuphan ครอบองค์ประกอบทั้งหมด
+    <div className={`${anuphan.className} flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative`}>
       
       {/* ================= แผงโค้งมนสีครีม (แสดงเฉพาะบนเดสก์ท็อป md:) ================= */}
       {/* 🛠️ ปรับสไตล์และขนาดโลโก้ให้แมตช์กับหน้า Login ถอดบล็อกโครงสร้างเดียวกันมาเลยครับ */}
@@ -38,10 +45,10 @@ export default function ForgotPasswordPage() {
         {/* Text เวอร์ชันเดสก์ท็อป */}
         <div className="text-center max-w-sm">
           <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">
-            Hello
+            สวัสดี
           </h2>
           <p className="text-gray-700 text-base font-semibold">
-            You forgot your password ?
+            คุณลืมรหัสผ่านใช่ไหม?
           </p>
         </div>
       </div>
@@ -54,7 +61,7 @@ export default function ForgotPasswordPage() {
             onSubmit={handleSubmit}
             className="w-full flex flex-col items-center"
           >
-            {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือขึ้นเป็น w-48 h-48 sm:w-56 sm:h-56 พร้อมใส่ scale-105 ให้โดดเด่นสมส่วน */}
+            {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือขึ้นเป็น w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all */}
             <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
               <img
                 src="/photo/logo.png"
@@ -64,8 +71,8 @@ export default function ForgotPasswordPage() {
             </div>
 
             {/* Title */}
-            <h1 className="font-serif text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium text-center">
-              Forgot Password
+            <h1 className=" text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium text-center">
+              ลืมรหัสผ่าน
             </h1>
 
             {/* Email Field - อัปเกรดดีไซน์สไตล์ช่องอินพุตให้เหมือนหน้า Login */}
@@ -73,7 +80,7 @@ export default function ForgotPasswordPage() {
               <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
                 <input
                   type="email"
-                  placeholder="Email"
+                  placeholder="อีเมล"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
@@ -100,7 +107,7 @@ export default function ForgotPasswordPage() {
               onClick={() => router.push("/login")}
               className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
             >
-              Back to Login
+              กลับไปหน้า Login
             </button>
 
             {/* Send Button */}
@@ -108,7 +115,7 @@ export default function ForgotPasswordPage() {
               type="submit"
               className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
             >
-              Send
+              ยืนยัน
             </button>
 
             {/* ลิงก์สมัครสมาชิกเพิ่มเติมกรณีเปิดบนมือถือ */}
