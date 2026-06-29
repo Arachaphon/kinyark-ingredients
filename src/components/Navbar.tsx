@@ -108,19 +108,11 @@ export default function Navbar() {
       <div className="flex-shrink-0 flex items-center gap-4">
         {/* Dropdown ปุ่มสร้างเมนู */}
         <div className="relative flex items-center">
-          <button 
-            onClick={() => setIsCreateOpen(!isCreateOpen)}
+          <Link  href="/create-recipe" 
             className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg whitespace-nowrap"
           >
             + สร้างเมนูอาหาร
-          </button>
-          
-          {isCreateOpen && (
-            <div className="absolute right-0 top-[120%] w-60 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-fade-in">
-              <Link href="/create-recipe?type=user" className="block px-6 py-3 hover:bg-gray-50 text-gray-700 font-medium">โพสต์ในนามคนทั่วไป</Link>
-              <Link href="/create-recipe?type=shop" className="block px-6 py-3 hover:bg-gray-50 text-gray-700 font-medium">โพสต์ในนามร้านค้า</Link>
-            </div>
-          )}
+          </Link>
         </div>
         
         {/* รูปโปรไฟล์ */}
