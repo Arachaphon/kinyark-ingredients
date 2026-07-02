@@ -109,8 +109,9 @@ export default function RegisterPage() {
               name="role"
               className="w-full py-3.5 px-6 rounded-full bg-white text-gray-700 text-base focus:outline-none transition-all cursor-pointer appearance-none"
               required
+              defaultValue=""
             >
-              <option value="" disabled selected>เลือกสถานะการใช้งาน</option>
+              <option value="" disabled>เลือกสถานะการใช้งาน</option>
               <option value="user">คนทั่วไป</option>
               <option value="shop">ร้านค้า</option>
             </select>
@@ -126,7 +127,7 @@ export default function RegisterPage() {
 
           {state?.message && !clientError && (
             <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
-              {state.message}
+              {state.message === "User already registered" ? "ชื่อผู้ใช้หรืออีเมลนี้ถูกลงทะเบียนแล้ว" : state.message}
             </p>
           )}
 
