@@ -92,6 +92,20 @@ export default function RegisterPage() {
             ลงทะเบียน
           </h1>
 
+          <div className="w-full relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full border border-gray-200/80 bg-white group focus-within:ring-1 focus-within:ring-amber-200 transition-all mb-5">
+            <select
+              name="role"
+              className="w-full py-3.5 px-6 rounded-full bg-white text-gray-700 text-base focus:outline-none transition-all cursor-pointer appearance-none"
+              required
+            >
+              <option value="" disabled selected>เลือกสถานะการใช้งาน</option>
+              <option value="user">คนทั่วไป</option>
+              <option value="shop">ร้านค้า</option>
+            </select>
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-amber-400">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
+            </div>
+          </div>
           {clientError && (
             <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200 animate-fade-in">
               {clientError}

@@ -149,11 +149,6 @@ export default function CreateRecipePage() {
     setPickedRecipe(null);
   };
 
-  // 🌟 บังคับการมองเห็นเป็น "สาธารณะ" เสมอเมื่อโพสต์ในนามร้านค้า
-  useEffect(() => {
-    if (postAs === "shop") setVisibility("public");
-  }, [postAs]);
-
   // 🌟 ฟังก์ชันเลื่อนรูปอัตโนมัติ (Auto-slide)
   useEffect(() => {
     if (coverImages.length <= 1) return;
@@ -917,55 +912,41 @@ export default function CreateRecipePage() {
 
               {/* สาธารณะ (จำกัดสิทธิ์) */}
               <label 
-                className={`flex items-start gap-3 p-4 border-2 rounded-xl transition-all ${
-                  postAs === 'shop'
-                    ? 'border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed'
-                    : visibility === 'protected'
-                      ? 'border-[#71B254] bg-[#F4FAF1] cursor-pointer'
-                      : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50 cursor-pointer'
+                className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                  visibility === 'protected'
+                    ? 'border-[#71B254] bg-[#F4FAF1]'
+                    : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50'
                 }`}
               >
                 <div className="pt-0.5 shrink-0">
-                  <input type="radio" name="visibility" value="protected" checked={visibility === 'protected'} onChange={() => setVisibility('protected')} disabled={postAs === 'shop'} className="w-5 h-5 accent-[#71B254] cursor-pointer disabled:cursor-not-allowed" />
+                  <input type="radio" name="visibility" value="protected" checked={visibility === 'protected'} onChange={() => setVisibility('protected')} className="w-5 h-5 accent-[#71B254] cursor-pointer" />
                 </div>
                 <div>
                   <div className="font-bold text-gray-800 text-base mb-1 flex items-center gap-2">
                     สาธารณะ (จำกัดสิทธิ์)
-                    {postAs === 'shop' && <span className="text-[10px] font-normal text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">ไม่พร้อมใช้งาน</span>}
                   </div>
-                  <div className="text-xs text-gray-500 leading-snug">ร้านค้าเห็นโพสต์ได้ แต่ไม่สามารถดึงเมนูนี้ไปใช้จัดเซ็ตขายได้</div>
+                  <div className="text-xs text-gray-500 leading-snug">ร้านค้าไม่สามารถเห็นสูตรอาหารนี้ได้ </div>
                 </div>
               </label>
 
               {/* ส่วนตัว (Private) */}
               <label 
-                className={`flex items-start gap-3 p-4 border-2 rounded-xl transition-all ${
-                  postAs === 'shop'
-                    ? 'border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed'
-                    : visibility === 'private'
-                      ? 'border-[#71B254] bg-[#F4FAF1] cursor-pointer'
-                      : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50 cursor-pointer'
+                className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                  visibility === 'private'
+                    ? 'border-[#71B254] bg-[#F4FAF1]'
+                    : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50'
                 }`}
               >
                 <div className="pt-0.5 shrink-0">
-                  <input type="radio" name="visibility" value="private" checked={visibility === 'private'} onChange={() => setVisibility('private')} disabled={postAs === 'shop'} className="w-5 h-5 accent-[#71B254] cursor-pointer disabled:cursor-not-allowed" />
+                  <input type="radio" name="visibility" value="private" checked={visibility === 'private'} onChange={() => setVisibility('private')} className="w-5 h-5 accent-[#71B254] cursor-pointer" />
                 </div>
                 <div>
                   <div className="font-bold text-gray-800 text-base mb-1 flex items-center gap-2">
                     ส่วนตัว
-                    {postAs === 'shop' && <span className="text-[10px] font-normal text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">ไม่พร้อมใช้งาน</span>}
                   </div>
                   <div className="text-xs text-gray-500 leading-snug">มีเพียงคุณเท่านั้นที่เห็นเมนูนี้ เก็บไว้ดูและจัดการเองได้</div>
                 </div>
               </label>
-
-              {/* หมายเหตุสำหรับร้านค้า */}
-              {postAs === 'shop' && (
-                <div className="md:col-span-3 flex items-center gap-2 text-xs text-[#5b9642] bg-[#F4FAF1] border border-[#c8e4bb] rounded-lg px-4 py-2.5">
-                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  โพสต์ของร้านค้าจะต้องเป็นสาธารณะเสมอ เพื่อให้ผู้ใช้และร้านค้าอื่นสามารถนำไปจัดเซ็ตวัตถุดิบได้
-                </div>
-              )}
             </div>
           </div>
 
