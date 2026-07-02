@@ -1,7 +1,7 @@
 "use client";
 
 import { Anuphan } from "next/font/google";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { signup } from "./actions";
@@ -19,12 +19,14 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     setClientError("");
 
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -52,7 +54,17 @@ export default function RegisterPage() {
       setClientError("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน");
       return;
     }
+
+    // ผ่านการตรวจสอบฝั่ง client แล้ว เก็บอีเมลไว้ใช้ตอน redirect
+    setSubmittedEmail(email);
   };
+
+  // เมื่อ signup สำเร็จ (server action คืนค่า success: true) ให้ไปหน้าตรวจสอบอีเมล
+  useEffect(() => {
+    if (state?.success) {
+      router.push(`/check-email?email=${encodeURIComponent(submittedEmail)}`);
+    }
+  }, [state, submittedEmail, router]);
 
   const handleGoToLogin = () => {
     if (window.innerWidth < 768) {
