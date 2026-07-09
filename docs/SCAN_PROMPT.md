@@ -10,11 +10,13 @@ and determine commit readiness.
 
 Read:
 
-- AGENTS.md
-- SPEC.md
-- PLAN.md
-- HANDOFF.md
-- STATE.md (if exists)
+- `docs/AGENTS.md`
+- `docs/SPEC.md`
+- `docs/PLAN.md`
+- `docs/HANDOFF.md`
+- `docs/STATE.md` (if exists)
+- `docs/style.md`
+- `docs/validation.md`
 
 ## Audit Process
 
@@ -25,25 +27,25 @@ Read:
 
 ## Status Rules
 
-DONE
+### DONE
 - Fully implemented.
 - Integrated.
 - Functional.
 
-IN_PROGRESS
+### IN_PROGRESS
 - Partial implementation.
 - Placeholder logic.
 - Mock data.
 - Incomplete integration.
 
-TODO
+### TODO
 - Missing implementation.
 
 Never classify as DONE:
 
-- return { ok: true }
-- return []
-- return null
+- `return { ok: true }`
+- `return []`
+- `return null`
 - Not implemented stubs
 - Empty files
 - Placeholder components
@@ -56,3 +58,4 @@ Run:
 
 ```bash
 npx playwright test --reporter=list
+```

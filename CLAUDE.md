@@ -1,1 +1,1 @@
-AGENTS.md
+[AGENTS.md](docs/AGENTS.md)

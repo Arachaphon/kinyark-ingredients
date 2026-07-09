@@ -6,7 +6,7 @@
 * Language: TypeScript (Strict Mode Enabled)
 * Database: Supabase PostgreSQL via Prisma ORM
 * Styling: Tailwind CSS
-* AI Orchestration: Google Gemini API via Vercel AI SDK
+* AI Orchestration: Google Gemini API (`@google/generative-ai`, raw SDK) + DeepSeek (OpenAI-compatible SDK) at `src/app/api/ai/route.ts`. Vercel AI SDK (`streamText()`) is the Phase 4 target, NOT yet implemented — do not assume streaming exists.
 
 ---
 
@@ -187,6 +187,12 @@ Refer to:
 
 `SKILL.md#Create-API-SOP`
 
+### AI Route Operations
+
+Refer to:
+
+`SKILL.md#SOP-003-AI-Prompt-Route`
+
 ---
 
 ## 7. Git Restrictions
@@ -212,3 +218,13 @@ The agent may only:
 * inspect git log
 
 All Git operations require explicit human execution.
+
+### Pre-Commit & Merge Protocol
+
+Before ANY commit or merge, the agent MUST:
+
+1. **Show changes**: Run `git status` and `git diff` and present the full list of changes to the user
+2. **Request approval**: Ask the user for explicit permission to proceed
+3. **Wait for confirmation**: Do NOT commit, merge, or push until the user responds with approval
+
+Violating this protocol (committing, merging, or pushing without approval) is strictly forbidden.
