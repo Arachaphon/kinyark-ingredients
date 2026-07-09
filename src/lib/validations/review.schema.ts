@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const createReviewSchema = z.object({
+  recipe_id: z.string().uuid("Invalid recipe ID"),
+
   rating: z
     .number()
     .int("Rating must be an integer")
