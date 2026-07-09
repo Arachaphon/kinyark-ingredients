@@ -1,1 +1,0 @@
-export type { User, Recipe, Ingredient, Category, SubCategory, Review, Favorite } from '@prisma/client'
