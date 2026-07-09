@@ -13,7 +13,7 @@ const anuphan = Anuphan({
 });
 
 export default function RegisterPage() {
-  const [state, formAction] = useActionState(signup, { message: "" });
+  const [state, formAction] = useActionState(signup, { message: "", success: false });
   const [clientError, setClientError] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);

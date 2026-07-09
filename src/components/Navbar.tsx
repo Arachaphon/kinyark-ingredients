@@ -27,8 +27,6 @@ export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
 
-  const [isSettingOpen, setIsSettingOpen] = useState(false);
-
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -53,9 +51,7 @@ export default function Navbar() {
 
   const handleSearchSubmit = (term: string) => {
     if (!term.trim()) return;
-    if (!term.trim()) return;
     router.push(`/search/results?query=${encodeURIComponent(term)}`);
-    setIsDropdownOpen(false);
     setIsDropdownOpen(false);
   };
 
@@ -109,15 +105,11 @@ export default function Navbar() {
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setIsDropdownOpen(true);
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setIsDropdownOpen(true);
             }}
             onFocus={() => setIsDropdownOpen(true)}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSearchSubmit(searchTerm);
             }}
-            className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm focus:outline-none focus:border-[#71B254] text-lg relative z-20"
             className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm focus:outline-none focus:border-[#71B254] text-lg relative z-20"
           />
 
@@ -144,7 +136,6 @@ export default function Navbar() {
             <div className="absolute top-[110%] left-0 w-full bg-white rounded-[24px] shadow-lg border border-gray-100 py-4 z-10 animate-fade-in overflow-hidden">
               {filteredResults.length > 0 ? (
                 filteredResults.map((item, index) => (
-                  <div
                   <div
                     key={index}
                     className="px-8 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-4 text-gray-700 transition"
@@ -190,9 +181,6 @@ export default function Navbar() {
 
         <div
           onClick={() => setIsSettingOpen(true)}
-
-        <div
-          onClick={() => setIsSettingOpen(true)}
           className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
         >
           <img
@@ -203,9 +191,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      <SettingModal
-        isOpen={isSettingOpen}
-        onClose={() => setIsSettingOpen(false)}
       <SettingModal
         isOpen={isSettingOpen}
         onClose={() => setIsSettingOpen(false)}
