@@ -122,9 +122,9 @@ export default function RegisterPage() {
             </p>
           )}
 
-          {state?.message && !clientError && (
+          {state?.message && (
             <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
-              {state.message === "ชื่อผู้ใช้หรืออีเมลนี้ถูกลงทะเบียนแล้ว" }
+              {state.message}
             </p>
           )}
 
