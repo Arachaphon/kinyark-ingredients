@@ -27,7 +27,7 @@ export async function PATCH(
       data: {
         rating: parsed.data.rating,
         comment: parsed.data.comment,
-        isAnonymous: parsed.data.is_anonymous,
+        isAnonymous: parsed.data.isAnonymous,
       },
     })
 

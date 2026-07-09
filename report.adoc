@@ -1,0 +1,136 @@
+= Schema Alignment Report
+:toc: left
+:toclevels:3
+
+== Summary
+
+Aligns `prisma/schema.prisma`, backend API routes, validation schemas (`zod`), server actions, and frontend mock code to use consistent naming conventions (camelCase) and field definitions.
+
+Branch: `chore/schema-alignment` (created from `docs/plan-v2-update`)
+
+== Changes Made
+
+=== 1. Naming Convention: snake_case → camelCase
+
+All validation schema keys and API request JSON keys were changed from snake_case to camelCase to match Prisma model fields.
+
+==== 1.1 `src/lib/validations/recipe.schema.ts`
+
+|===
+| Before | After
+| `recipe_name` | `recipeName`
+| `featured_image_url` | `featuredImageUrl`
+|===
+
+**Files affected:**
+- `src/lib/validations/recipe.schema.ts`
+- `src/app/api/recipes/route.ts` (field mapping + imageUrl reference)
+- `src/app/(main)/create-recipe/action.ts` (form data mapping)
+
+==== 1.2 `src/lib/validations/review.schema.ts`
+
+|===
+| Before | After
+| `recipe_id` | `recipeId`
+| `is_anonymous` | `isAnonymous`
+|===
+
+**Files affected:**
+- `src/lib/validations/review.schema.ts`
+- `src/app/api/reviews/route.ts` (POST)
+- `src/app/api/reviews/[id]/route.ts` (PATCH)
+
+==== 1.3 `src/lib/validations/ingredient.schema.ts`
+
+|===
+| Before | After
+| `ingredient_id` | `ingredientId`
+|===
+
+**Files affected:**
+- `src/lib/validations/ingredient.schema.ts`
+
+==== 1.4 `src/lib/validations/search.schema.ts`
+
+|===
+| Before | After
+| `ingredient_ids` | `ingredientIds`
+|===
+
+**Files affected:**
+- `src/lib/validations/search.schema.ts`
+
+==== 1.5 `src/app/api/favorites/route.ts`
+
+Request body key `recipe_id` → `recipeId`.
+
+**Files affected:**
+- `src/app/api/favorites/route.ts` (POST)
+
+==== 1.6 Tests: `tests/validation.test.ts`
+
+Updated all test data to use camelCase keys for parity with validation schemas.
+
+=== 2. Schema Additions & Removals
+
+==== 2.1 Added: `Recipe.visibility` field
+
+Frontend create-recipe page uses 3 visibility states: `public`, `protected`, `private`.
+The schema did not have this field.
+
+**Command:** Added `visibility String @default("public")` to Recipe model.
+
+==== 2.2 Added: `RecipeEquipment` model
+
+Frontend create-recipe page allows adding equipment items (e.g., "หม้อทอดไร้น้ำมัน", "เครื่องปั่น").
+No model existed for this.
+
+**Command:** Added `RecipeEquipment` model with fields: `id`, `recipeId`, `name`, `createdAt`.
+Table mapping: `recipe_equipment`.
+
+==== 2.3 Removed: `Ingredient.role` and `Ingredient.discount`
+
+These fields existed in the schema but were never referenced anywhere in the codebase (no API, no form, no validation, no mock data). Likely leftover from an older design.
+
+=== 3. Naming Convention Audit
+
+|===
+| Layer | Convention | Status
+| Prisma models | camelCase (`recipeName`, `isAnonymous`, `createdAt`) ✅ | Fixed
+| Table names (`@@map`) | snake_case (`recipes`, `recipe_ingredients`) ✅ | Already consistent
+| Zod validation keys | camelCase (was snake_case ❌ → now camelCase ✅) | Fixed
+| API request JSON keys | camelCase (was snake_case ❌ → now camelCase ✅) | Fixed
+| Frontend mock data | camelCase (already consistent) ✅ | No change needed
+| Server action form data | reads from `formData.get("title")`, `formData.get("description")` — flat keys, no nesting issue ✅ | No change needed
+|===
+
+=== 4. Future / Not Yet Connected
+
+The following frontend features have **no corresponding schema model** yet (documented here for future work):
+
+- `SubCategory` model exists but search page uses hardcoded `categoriesData` array — no API integration
+- `Category` model exists but no API endpoint returns categories
+- `Shop` / store-front related fields (`shopName`, `sellingPrice`, `shopDescription`, `shopLocation`, `shopIngredientImages`) are frontend-only — no backend model exists
+- `RecipeIngredient` has `quantity Float` and `unit String`, but create-recipe page tracks `category` per ingredient (meat, seafood, vegetable, fruit, seasoning) — this is purely UI state, not persisted
+- `Recipe.status` / `bgColor` — only partially in schema (`bgColor` exists, `visibility` now added); no `status` (draft/published) field exists
+
+=== 5. Files Modified
+
+[source]
+----
+prisma/schema.prisma
+src/lib/validations/recipe.schema.ts
+src/lib/validations/review.schema.ts
+src/lib/validations/ingredient.schema.ts
+src/lib/validations/search.schema.ts
+src/app/api/recipes/route.ts
+src/app/api/reviews/route.ts
+src/app/api/reviews/[id]/route.ts
+src/app/api/favorites/route.ts
+src/app/(main)/create-recipe/action.ts
+tests/validation.test.ts
+----
+
+== Conclusion
+
+All existing mismatches between Prisma schema, backend API, validation schemas, and frontend code have been resolved. Naming is now consistently camelCase across all layers. No migrations have been run. No commits have been made.

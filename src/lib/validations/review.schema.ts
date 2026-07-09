@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createReviewSchema = z.object({
-  recipe_id: z.string().uuid("Invalid recipe ID"),
+  recipeId: z.string().uuid("Invalid recipe ID"),
 
   rating: z
     .number()
@@ -11,7 +11,7 @@ export const createReviewSchema = z.object({
 
   comment: z.string().max(1000, "Comment must be 1000 characters or fewer").optional(),
 
-  is_anonymous: z.boolean().default(false),
+  isAnonymous: z.boolean().default(false),
 });
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;

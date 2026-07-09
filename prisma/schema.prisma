@@ -49,8 +49,7 @@ model Ingredient {
   id              Int      @id @default(autoincrement())
   name            String   @unique
   subCategoryId  Int?
-  role            String?
-  discount        Float?
+  
 
   subCategory       SubCategory?       @relation(fields: [subCategoryId], references: [id])
   recipeIngredients RecipeIngredient[]
@@ -73,11 +72,13 @@ model Recipe {
 
   bgColor        String?
   aiProvider     String?
+  visibility     String   @default("public")
 
   createdAt      DateTime @default(now()) @db.Timestamptz
 
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   recipeIngredients  RecipeIngredient[]
+  equipmentItems     RecipeEquipment[]
   reviews            Review[]
   favorites          Favorite[]
 
@@ -117,6 +118,15 @@ model RecipeVideo {
   createdAt DateTime @default(now()) @db.Timestamptz
   recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   @@map("recipe_videos")
+}
+
+model RecipeEquipment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@map("recipe_equipment")
 }
 
 model Favorite {

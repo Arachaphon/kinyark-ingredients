@@ -7,7 +7,7 @@ const ingredientItemSchema = z.object({
 })
 
 export const createRecipeSchema = z.object({
-  recipe_name: z
+  recipeName: z
     .string()
     .min(1, "Recipe name is required"),
 
@@ -17,7 +17,7 @@ export const createRecipeSchema = z.object({
     .array(ingredientItemSchema)
     .min(1, "Please add at least one ingredient"),
 
-  featured_image_url: z.string().optional(),
+  featuredImageUrl: z.string().optional(),
 
   instructions: z.string().optional(),
 })
