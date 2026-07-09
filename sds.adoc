@@ -1,0 +1,658 @@
+= เอกสารการออกแบบระบบ (System Design Specification: SDS)
+== โครงการ: กินยาร์ค อินกรีเดี้ยนต์ (KINYARK INGREDIENTS)
+
+*เวอร์ชัน:* 1.0
+*หน่วยงาน:* มหาวิทยาลัยพะเยา
+*อ้างอิงจาก:* ข้อเสนอโครงการ (Proposal_KINYARK.pdf) และแบบจำลองฐานข้อมูล (schema.prisma)
+
+'''
+
+== 1. บทนำ (Introduction)
+
+=== 1.1 วัตถุประสงค์ของเอกสาร (Purpose)
+เอกสารฉบับนี้จัดทำขึ้นเพื่ออธิบายรายละเอียดการออกแบบระบบ (System Design) ของโครงการ
+กินยาร์ค อินกรีเดี้ยนต์ ซึ่งเป็นระบบแนะนำสูตรอาหารและจับคู่วัตถุดิบเหลือใช้จากร้านค้ากับ
+นักศึกษา โดยครอบคลุมสถาปัตยกรรมซอฟต์แวร์ การออกแบบฐานข้อมูล ส่วนประกอบของระบบ
+API การรักษาความปลอดภัย และแนวทางการทดสอบ เพื่อใช้เป็นแนวทางให้ทีมพัฒนาดำเนินการ
+สร้างระบบให้สอดคล้องกับความต้องการที่ระบุไว้ในเอกสารข้อกำหนดความต้องการ (Requirements)
+
+=== 1.2 ขอบเขตของระบบ (Scope)
+ระบบเป็นแพลตฟอร์มที่เชื่อมโยงนักศึกษาที่ต้องการวัตถุดิบราคาประหยัดและสูตรอาหารที่เหมาะสม
+กับร้านขายของชำรอบมหาวิทยาลัยพะเยาที่ต้องการระบายวัตถุดิบก่อนหมดอายุ โดยใช้แนวคิด
+เศรษฐกิจแบ่งปัน (Sharing Economy) และปัญญาประดิษฐ์เชิงสร้างสรรค์ (Generative AI) ในการ
+แนะนำและสร้างสูตรอาหารให้เหมาะกับวัตถุดิบของผู้ใช้แต่ละราย
+
+=== 1.3 คำนิยามและคำย่อ (Definitions & Acronyms)
+|===
+| คำย่อ | ความหมาย
+
+| SDS
+| System Design Specification (เอกสารการออกแบบระบบ)
+
+| SRS
+| Software Requirements Specification
+
+| ORM
+| Object-Relational Mapping
+
+| API
+| Application Programming Interface
+
+| LLM
+| Large Language Model
+
+| RBAC
+| Role-Based Access Control
+
+| JWT
+| JSON Web Token
+
+| CI/CD
+| Continuous Integration / Continuous Deployment
+
+| E2E
+| End-to-End (การทดสอบแบบครบวงจร)
+
+| ERD
+| Entity-Relationship Diagram
+
+| SDGs
+| Sustainable Development Goals
+|===
+
+=== 1.4 ผู้มีส่วนได้เสีย (Stakeholders)
+|===
+| ผู้มีส่วนได้เสีย | บทบาท | ความกังวล (Concerns)
+
+| นักศึกษา / ผู้บริโภค
+| ใช้งานระบบเพื่อค้นหาสูตรอาหารและวัตถุดิบ
+| UX ที่ใช้งานง่าย, ความถูกต้องของสูตร, ความเร็วในการตอบสนอง, ข้อมูลส่วนตัวปลอดภัย
+
+| ร้านค้า
+| เผยแพร่วัตถุดิบที่ต้องการระบาย
+| การจัดการวัตถุดิบสะดวก, การเข้าถึงกลุ่มเป้าหมาย, ราคาและส่วนลด
+
+| ทีมพัฒนา (Backend)
+| พัฒนาและบำรุงรักษา API, DB, AI integration
+| โค้ดที่ maintainable, testing coverage, scalability, documentation ชัดเจน
+
+| ทีมพัฒนา (Frontend)
+| พัฒนาส่วนติดต่อผู้ใช้
+| API contract ที่ชัดเจน, component reusability, state management
+
+| ผู้ดูแลระบบ (Admin)
+| จัดการผู้ใช้และข้อมูลในระบบ
+| dashboard ที่ครบถ้วน, audit log, role management
+|===
+
+'''
+
+== 2. ภาพรวมสถาปัตยกรรมระบบ (System Architecture Overview)
+
+=== 2.1 แนวทางสถาปัตยกรรม
+ระบบออกแบบเป็นสถาปัตยกรรมแบบ Client-Server บน Framework สมัยใหม่ ประกอบด้วย:
+
+* *Frontend / Application Layer:* Next.js (App Router), React, TypeScript
+* *Backend / Database Layer:* Supabase (PostgreSQL) เข้าถึงผ่าน Prisma ORM
+* *AI Layer:* Google Gemini API และ DeepSeek API สำหรับสร้างและแนะนำสูตรอาหาร
+* *Validation Layer:* Zod สำหรับตรวจสอบความถูกต้องของข้อมูลก่อนบันทึกลงฐานข้อมูล
+* *Testing Layer:* Playwright สำหรับ E2E testing
+
+=== 2.2 รูปแบบการออกแบบ (Design Pattern)
+ระบบใช้แนวคิด *Recommender System แบบผสมผสาน (Hybrid)* ร่วมกับ *Generative AI*
+เพื่อประมวลผลข้อมูลวัตถุดิบและพฤติกรรมผู้ใช้ (ประวัติการค้นหา การกดถูกใจ และคะแนนรีวิว)
+ในการคัดเลือกและสร้างสูตรอาหารที่เหมาะสมกับผู้ใช้แต่ละราย
+
+=== 2.3 การตัดสินใจทางสถาปัตยกรรม (Architectural Decisions)
+|===
+| การตัดสินใจ | ตัวเลือกที่เลือก | ตัวเลือกที่ปฏิเสธ | เหตุผล
+
+| Frontend Framework
+| Next.js 14 (App Router)
+| Create React App, Vue, Svelte
+| SSR/SEO, file-based routing, API routes ใน project เดียวกัน, React ecosystem
+
+| Database
+| Supabase PostgreSQL
+| MongoDB, MySQL, Firebase
+| relational data, Row Level Security, real-time capability, integrated auth
+
+| ORM
+| Prisma
+| Drizzle, TypeORM, raw SQL
+| type-safety, auto-migration, schema-first approach, และการ integrate กับ TypeScript
+
+| AI Provider
+| Gemini + DeepSeek
+| OpenAI GPT-4, Claude
+| ต้นทุนต่ำกว่า (Gemini ฟรีในระดับหนึ่ง), DeepSeek รองรับภาษาไทยดี
+
+| Auth
+| Supabase SSR Auth (cookie-based)
+| JWT แบบ standalone, NextAuth
+| ใช้งาน Supabase ร่วมกันได้ทันที, Row Level Security support, cookie secure
+|===
+
+=== 2.4 แผนภาพสถาปัตยกรรม (Architecture Diagram)
+....
+               +-------------------+
+               |   Web Browser     |
+               | (React / Next.js) |
+               +--------+----------+
+                        |
+                        | HTTPS
+                        |
+               +--------+----------+
+               |   Next.js Server  |
+               | (App Router)      |
+               +--------+----------+
+                        |
+            +-----------+-----------+
+            |                       |
+    +-------v--------+    +--------v-------+
+    |  API Routes    |    |  Server Actions|
+    | (REST)         |    | (Form/Mutation)|
+    +-------+--------+    +--------+-------+
+            |                       |
+            +-----------+-----------+
+                        |
+            +-----------+-----------+
+            |                       |
+    +-------v--------+    +--------v-------+
+    |  Supabase      |    |  AI Layer      |
+    |  (PostgreSQL)  |    |  Gemini API    |
+    |  + Auth        |    |  DeepSeek API  |
+    +-------+--------+    +--------+-------+
+            |                       |
+            |        +--------------+
+            |        |
+    +-------v--------v--+
+    |  Prisma ORM       |
+    |  (Type-safe)      |
+    +-------------------+
+....
+
+'''
+
+== 3. การออกแบบฐานข้อมูล (Data Design)
+
+ฐานข้อมูลออกแบบเป็นฐานข้อมูลเชิงสัมพันธ์ (Relational Database) บน PostgreSQL
+จัดการผ่าน Prisma ORM ประกอบด้วยตารางหลัก 11 โมเดล
+
+=== 3.1 โครงสร้างตาราง (Entity Overview)
+
+|===
+| ตาราง (Model) | หน้าที่ | คีย์หลัก | เชื่อมกับ
+
+| `users`
+| เก็บข้อมูลบัญชีผู้ใช้ (username, email, role, avatar) — role: `USER`, `STORE`, `ADMIN`
+| `id` (UUID)
+| `recipes`, `favorites`, `reviews`, `review_likes`, `search_histories`
+
+| `categories`
+| หมวดหมู่วัตถุดิบระดับบน
+| `id` (Int)
+| `sub_categories`
+
+| `sub_categories`
+| หมวดหมู่วัตถุดิบระดับย่อย
+| `id` (Int)
+| `categories`, `ingredients`
+
+| `ingredients`
+| รายการวัตถุดิบ มี `role` (`STORE_OFFER` / `USER_RECIPE`) และ `discount`
+| `id` (UUID)
+| `sub_categories`, `recipe_ingredients`
+
+| `recipes`
+| สูตรอาหาร มีคะแนนเฉลี่ย จำนวนรีวิว ผู้ให้บริการ AI
+| `id` (UUID)
+| `users`, `recipe_ingredients`, `reviews`, `favorites`
+
+| `recipe_ingredients`
+| ตารางเชื่อม many-to-many ระหว่าง recipe กับ ingredient
+| `id` (Int)
+| `recipes`, `ingredients`
+
+| `recipe_images` / `recipe_videos`
+| สื่อประกอบสูตรอาหาร
+| `id` (UUID)
+| `recipes`
+
+| `favorites`
+| สูตรอาหารที่ผู้ใช้กดถูกใจ
+| `id` (UUID)
+| `users`, `recipes`
+
+| `search_histories`
+| ประวัติการค้นหาของผู้ใช้
+| `id` (UUID)
+| `users`
+
+| `reviews`
+| รีวิวและคะแนนของสูตรอาหาร
+| `id` (UUID)
+| `users`, `recipes`, `review_likes`
+
+| `review_likes`
+| การกดถูกใจรีวิว
+| `id` (UUID)
+| `reviews`, `users`
+|===
+
+=== 3.2 ความสัมพันธ์หลัก (Key Relationships)
+* ผู้ใช้ 1 คน สามารถสร้างสูตรอาหารได้หลายสูตร (`User 1—N Recipe`)
+* สูตรอาหาร 1 สูตร มีวัตถุดิบได้หลายรายการ ผ่านตารางเชื่อม `RecipeIngredient` (`M—N`)
+* สูตรอาหาร 1 สูตร มีรีวิวและรูปภาพ/วิดีโอได้หลายรายการ (`Recipe 1—N Review/Image/Video`)
+* การลบผู้ใช้หรือสูตรอาหารหลักจะลบข้อมูลที่เกี่ยวข้องแบบ Cascade เพื่อรักษาความ
+สมบูรณ์ของข้อมูล (Referential Integrity)
+
+=== 3.3 กลไกป้องกันข้อมูลซ้ำซ้อน
+ใช้ข้อจำกัด `@@unique` เพื่อป้องกันการกดถูกใจซ้ำ (`favorites`, `review_likes`) และ
+ป้องกันวัตถุดิบซ้ำในสูตรเดียวกัน (`recipe_ingredients`)
+
+'''
+
+== 4. การออกแบบส่วนประกอบระบบ (Component Design)
+
+=== 4.1 โมดูลจัดการผู้ใช้ (User Management Module)
+*Input:* email, password, username, avatar URL
+*Output:* session token, user profile data
+*Dependencies:* Supabase Auth (cookie-based SSR)
+*API endpoints:*
+* `POST /api/auth/register` — ลงทะเบียน
+* `POST /api/auth/login` — เข้าสู่ระบบ
+* `POST /api/auth/logout` — ออกจากระบบ
+* `GET /api/users/me` — ดูโปรไฟล์
+* `PATCH /api/users/me` — แก้ไขโปรไฟล์
+* `DELETE /api/users/me` — ลบบัญชี (cascade)
+
+=== 4.2 โมดูล AI สร้างและแนะนำสูตรอาหาร (AI Recipe Generation & Recommendation Module)
+*Input:* รายการวัตถุดิบที่ผู้ใช้มี (optionally quantity/unit), user context (allergies, favorites)
+*Output:* JSON recipe object {name, ingredients_needed, steps[], serving_size}
+*Dependencies:* Google Gemini API, DeepSeek API
+*Flow:*
+. รับรายการวัตถุดิบจากผู้ใช้
+. เรียก `buildIngredientPrompt()` → สร้าง prompt คำสั่ง
+. ส่ง prompt ไปยัง AI API (Gemini หรือ DeepSeek)
+. parse response JSON และส่งกลับให้ frontend
+*API endpoints:*
+* `GET /api/ai` — สร้างสูตรอาหารจากวัตถุดิบที่ระบุ
+*หมายเหตุ:* ยังไม่ใช้ Vercel AI SDK `streamText()` — ใช้ raw SDK โดยตรง (Phase 4)
+
+=== 4.3 โมดูลรีวิวและให้คะแนน (Review & Rating Module)
+*Input:* recipe_id, rating (1-5), comment (optional)
+*Output:* review object + updated recipe average rating
+*Dependencies:* Prisma (transaction: insert review + update recipe avg_rating)
+*Flow:*
+. ตรวจสอบสิทธิ์ผู้ใช้ (ต้อง login)
+. ตรวจสอบความถูกต้องด้วย Zod schema (รวม `recipe_id`)
+. insert review + recalc `avg_rating` และ `review_count` ของ recipe
+*API endpoints:*
+* `POST /api/reviews` — สร้างรีวิว
+* `PATCH /api/reviews/[id]` — แก้ไขรีวิว (เจ้าของเท่านั้น)
+* `DELETE /api/reviews/[id]` — ลบรีวิว (เจ้าของเท่านั้น)
+* `POST /api/reviews/[id]/like` — toggle ถูกใจรีวิว
+
+=== 4.4 โมดูลตรวจสอบข้อมูล (Validation Module)
+*Input:* ข้อมูลจาก request body (JSON)
+*Output:* ข้อมูลที่ผ่านการ validate แล้ว หรือ ValidationError
+*Dependencies:* Zod schemas
+*Schemas ที่มีอยู่:*
+* `auth` — register, login validation
+* `recipe` — create/update recipe validation
+* `ingredient` — create/update ingredient validation
+* `search` — search query validation
+* `review` — create review validation (มี `recipe_id`)
+
+=== 4.5 โมดูลจัดการรายการโปรด (Favorite Module)
+*Input:* recipe_id
+*Output:* toggle state + favorite count
+*Dependencies:* Prisma (upsert / delete)
+*API endpoints:*
+* `POST /api/favorites` — toggle ถูกใจ/เลิกถูกใจ
+* `GET /api/favorites` — รายการสูตรที่ผู้ใช้ถูกใจ
+
+'''
+
+== 5. ข้อกำหนดที่ไม่ใช่หน้าที่การทำงาน (Non-functional Requirements)
+
+=== 5.1 ประสิทธิภาพ (Performance)
+* API response time เฉลี่ย < 500ms (ไม่รวม AI generation)
+* AI recipe generation < 10 seconds (with timeout fallback)
+* Page load (SSR) < 2 seconds (First Contentful Paint)
+
+=== 5.2 ความสามารถในการขยาย (Scalability)
+* ฐานข้อมูล PostgreSQL ผ่าน Supabase รองรับ Row-Level Security สำหรับ multi-tenant
+* API routes เป็นแบบ stateless — สามารถ scale horizontally ได้
+* AI API calls ใช้ fallback ระหว่าง Gemini และ DeepSeek เพื่อลด single-provider risk
+
+=== 5.3 ความพร้อมใช้งาน (Availability)
+* Supabase SLA 99.9%
+* AI API failure → return error message ให้ผู้ใช้ทราบ พร้อม suggestion ให้ลองใหม่
+* Graceful degradation: เมื่อ AI ล้มเหลว ระบบยังคงแสดงสูตรอาหารที่มีอยู่ได้
+
+=== 5.4 การบำรุงรักษา (Maintainability)
+* โค้ด TypeScript ทั้ง project — type-safe
+* Prisma schema-first — เปลี่ยน schema แล้ว auto-migrate
+* Zod validation — logic ตรวจสอบอยู่ที่เดียว ไม่กระจายใน route handlers
+* ESLint + Prettier — consistent code style
+
+'''
+
+== 6. การออกแบบการรักษาความปลอดภัย (Security Design)
+
+=== 6.1 การยืนยันตัวตน (Authentication)
+* Supabase SSR Auth — cookie-based session (httpOnly, secure, sameSite)
+* ใช้ `supabase.auth.getUser()` เสมอ (verify token กับ Supabase ทุก request)
+* ห้ามใช้ `getSession()` (อ่านจาก cookie ฝั่ง client ไม่ปลอดภัย)
+* Session timeout ตามค่าเริ่มต้นของ Supabase (3600 วินาที)
+
+=== 6.2 การควบคุมสิทธิ์ (Authorization - RBAC)
+* Role: `USER`, `STORE`, `ADMIN`
+* USER: ดูสูตร, สร้างสูตร, รีวิว, ถูกใจ
+* STORE: เผยแพร่วัตถุดิบ + role-based ingredient management
+* ADMIN: จัดการผู้ใช้ทั้งหมด, ดู audit trail
+* ตรวจสอบ ownership ใน route handlers (เช่น แก้ไขรีวิวได้เฉพาะเจ้าของ)
+
+=== 6.3 การตรวจสอบข้อมูล (Input Validation)
+* Zod Schema validation ก่อนทุก operation ที่เขียนข้อมูล
+* Error format มาตรฐาน: `{error: string, details?: ZodError[]}`
+* HTTP status codes: 400 (validation), 401 (unauthorized), 403 (forbidden), 404 (not found), 409 (conflict)
+
+=== 6.4 การเข้ารหัสข้อมูล (Data Encryption)
+* Data in transit: HTTPS (TLS) — Next.js + Supabase
+* Data at rest: Supabase PostgreSQL encryption ตามมาตรฐาน
+* Password: Supabase Auth handles hashing (bcrypt) — ไม่ต้อง implement เอง
+* ไม่เก็บ secrets/api keys ในโค้ด — ใช้ environment variables (`process.env`)
+
+'''
+
+== 7. การออกแบบ API (API Design)
+
+=== 7.1 รูปแบบ (Conventions)
+* RESTful API ผ่าน Next.js App Router Route Handlers
+* URL: kebab-case (`/api/favorites`, `/api/reviews/[id]/like`)
+* Request/Response body: JSON
+* Auth header: Supabase SSR cookie (ไม่ใช้ Bearer token)
+
+=== 7.2 ตาราง Endpoints
+
+|===
+| Method | Path | หน้าที่ | Auth | Validation
+
+| GET
+| `/api/ingredients`
+| รายการวัตถุดิบทั้งหมด (พร้อม category)
+| Optional
+| -
+
+| GET
+| `/api/recipes`
+| รายการสูตรอาหาร พร้อม filter/search
+| Optional
+| Zod (search schema)
+
+| GET
+| `/api/recipes/[id]`
+| รายละเอียดสูตรอาหาร
+| Optional
+| -
+
+| POST
+| `/api/recipes`
+| สร้างสูตรอาหารใหม่
+| Required
+| Zod (recipe schema)
+
+| POST
+| `/api/reviews`
+| สร้างรีวิว
+| Required
+| Zod (review schema)
+
+| PATCH
+| `/api/reviews/[id]`
+| แก้ไขรีวิว (เจ้าของ)
+| Required (owner)
+| Zod (review schema)
+
+| DELETE
+| `/api/reviews/[id]`
+| ลบรีวิว (เจ้าของ)
+| Required (owner)
+| -
+
+| POST
+| `/api/reviews/[id]/like`
+| toggle ถูกใจรีวิว
+| Required
+| -
+
+| POST
+| `/api/favorites`
+| toggle ถูกใจสูตร
+| Required
+| -
+
+| GET
+| `/api/favorites`
+| รายการสูตรที่ถูกใจ
+| Required
+| -
+
+| GET
+| `/api/users/me`
+| ดูโปรไฟล์ตัวเอง
+| Required
+| -
+
+| PATCH
+| `/api/users/me`
+| แก้ไขโปรไฟล์ตัวเอง
+| Required
+| Zod (auth schema)
+
+| DELETE
+| `/api/users/me`
+| ลบบัญชีตัวเอง (cascade)
+| Required
+| -
+
+| GET
+| `/api/ai`
+| สร้างสูตรอาหารด้วย AI
+| Required
+| Zod (ingredient schema)
+|===
+
+=== 7.3 รูปแบบการตอบกลับ (Response Format)
+
+*Success:*
+```json
+{
+  "data": { ... },
+  "message": "string (optional)"
+}
+```
+
+*Error:*
+```json
+{
+  "error": "Human-readable error message",
+  "details": []
+}
+```
+
+=== 7.4 การจำกัดอัตราการเรียกใช้ (Rate Limiting)
+* ยังไม่มี rate limiting ในปัจจุบัน (สามารถเพิ่มด้วย middleware ใน Phase 3)
+* AI endpoint ควรมีการ rate limit แยก (จำกัดจำนวนครั้งต่อ user ต่อวัน)
+
+'''
+
+== 8. การปรับใช้ระบบ (Deployment & DevOps)
+
+=== 8.1 สภาพแวดล้อม (Environments)
+|===
+| Environment | URL | วัตถุประสงค์
+
+| Development
+| `localhost:3000`
+| พัฒนาและทดสอบในเครื่อง
+
+| Production
+| Vercel (auto-deploy from `main`)
+| ผู้ใช้จริง
+|===
+
+=== 8.2 CI/CD Pipeline
+* Platform: GitHub Actions
+* Trigger: push to `main` หรือ PR merge
+* Steps:
+  . Lint (ESLint)
+  . Type check (TypeScript)
+  . Test (Vitest / Playwright)
+  . Deploy to Vercel (auto)
+* ข้าม migration ใน production: Prisma migrate deploy (manual หรือ CI step)
+
+=== 8.3 ตัวแปรสภาพแวดล้อม (Environment Variables)
+|===
+| ตัวแปร | แหล่งที่มา | วัตถุประสงค์
+
+| `DATABASE_URL`
+| Supabase connection string
+| Prisma เชื่อมต่อ PostgreSQL
+
+| `NEXT_PUBLIC_SUPABASE_URL`
+| Supabase project URL
+| Supabase client
+
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+| Supabase anon key
+| Supabase client
+
+| `GEMINI_API_KEY`
+| Google AI Studio
+| Gemini API
+
+| `DEEPSEEK_API_KEY`
+| DeepSeek platform
+| DeepSeek API
+|===
+
+=== 8.4 การตรวจสอบและเฝ้าระวัง (Monitoring)
+* Vercel Analytics — performance monitoring
+* Supabase Dashboard — database health, queries
+* Error logging — `console.error` + (future) Sentry integration
+* AI API cost tracking — log token usage ต่อ request
+
+'''
+
+== 9. การออกแบบส่วนติดต่อผู้ใช้ (User Interface Design)
+
+ส่วนติดต่อผู้ใช้พัฒนาด้วย React บน Next.js (App Router) รองรับการแสดงผลผ่านเว็บเบราว์เซอร์
+แบ่งกลุ่มผู้ใช้งานหลักเป็น 2 กลุ่ม:
+
+1. *นักศึกษา/ผู้บริโภค* — ค้นหาสูตรอาหาร, บันทึกรายการโปรด, รีวิวสูตรอาหาร, รับคำแนะนำ
+   สูตรอาหารจาก AI ตามวัตถุดิบที่มี, แก้ไขโปรไฟล์
+2. *ร้านค้า* — เผยแพร่ข้อมูลวัตถุดิบที่ต้องการระบายก่อนหมดอายุ, จัดการส่วนลด
+
+=== 9.1 โครงสร้างหน้า (Page Structure)
+|===
+| เส้นทาง (Route) | หน้าที่
+
+| `/`
+| หน้าแรก — แสดงสูตรแนะนำ, ค้นหา
+
+| `/recipes`
+| รายการสูตรอาหาร พร้อม filter
+
+| `/recipes/[id]`
+| รายละเอียดสูตรอาหาร, รีวิว
+
+| `/create`
+| สร้างสูตรอาหารใหม่ / AI generate
+
+| `/profile`
+| โปรไฟล์ผู้ใช้
+
+| `/favorites`
+| รายการสูตรที่ถูกใจ
+
+| `/auth/login`
+| เข้าสู่ระบบ
+
+| `/auth/register`
+| ลงทะเบียน
+|===
+
+=== 9.2 Component Tree (ระดับสูง)
+....
+App Layout
+ +-- Navbar (auth state, search, links)
+ +-- Page Content
+      +-- RecipeCard (image, title, rating)
+      +-- RecipeDetail (ingredients, steps, reviews)
+      +-- ReviewSection (list reviews + form)
+      +-- AIGenerator (input ingredients -> AI result)
+      +-- ProfileForm (edit username, avatar)
+      +-- FavoriteButton (toggle, count)
+....
+
+'''
+
+== 10. ข้อจำกัดและข้อสมมติฐาน (Constraints & Assumptions)
+
+* ระบบต้องเชื่อมต่ออินเทอร์เน็ตเพื่อเรียกใช้งาน AI API (Gemini, DeepSeek)
+* ความแม่นยำของสูตรอาหารที่ AI สร้างขึ้นขึ้นอยู่กับคุณภาพของข้อมูลวัตถุดิบที่ผู้ใช้ป้อน
+* ฐานข้อมูล Supabase ต้องรองรับการขยายตัวของข้อมูลผู้ใช้และสูตรอาหารในอนาคต
+* ผู้ใช้ต้องมีเบราว์เซอร์ที่รองรับ JavaScript และ cookies สำหรับ authentication
+* การ deploy ใช้ Vercel Free Tier (อาจมีข้อจำกัดด้าน bandwidth และ execution time)
+* AI API อาจมีค่าใช้จ่ายเมื่อเกินขอบเขตฟรี — ต้องติดตามและจำกัดการใช้งาน
+
+'''
+
+== 11. แนวทางการทดสอบระบบ (Testing Strategy)
+
+=== 11.1 ระดับการทดสอบ (Testing Levels)
+|===
+| ระดับ | เครื่องมือ | ขอบเขต | สิ่งที่ทดสอบ
+
+| Unit Test
+| Vitest
+| Functions, utilities, Zod schemas
+| validation logic, prompt builders, data transformation
+
+| Integration Test
+| Vitest + Supertest
+| API endpoints (route handlers)
+| request/response, auth guard, DB operations, error cases
+
+| End-to-End (E2E)
+| Playwright
+| User flows เต็มรูปแบบ
+| register → login → search → create recipe → review → logout
+|===
+
+=== 11.2 แนวทางปฏิบัติ (Practices)
+* Mock external dependencies: AI API calls, Supabase auth (ในการทดสอบ unit/integration)
+* Database: ใช้ test database หรือ mock Prisma client
+* CI: รัน test ทุกครั้งก่อน deploy (GitHub Actions)
+* Coverage target: > 70% สำหรับ business logic, > 50% โดยรวม
+
+=== 11.3 Test Scenarios หลัก
+* User registration → login flow
+* Create recipe with validation
+* Review + rating calculation
+* AI prompt building (test prompt structure ไม่ใช่ test AI output)
+* Favorite toggle (unique constraint)
+* Error handling: 401, 403, 404, 400
+
+'''
+
+== 12. เอกสารอ้างอิง (References)
+
+* ข้อเสนอโครงการ: กินยาร์ค อินกรีเดี้ยนต์ (KINYARK INGREDIENTS), มหาวิทยาลัยพะเยา
+* schema.prisma ของโครงการ (แบบจำลองฐานข้อมูล)
+* IEEE 1016-2009 — Software Design Descriptions (แนวทางการจัดทำ SDD)
+* ISO/IEC/IEEE 42010:2011 — Systems and software engineering (architecture description)
