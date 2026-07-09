@@ -16,7 +16,7 @@ export default function Footer() {
       className={`w-full bg-[#EFE9CE] border-t border-[#E2DAB3] mt-20 py-12 text-gray-600 ${anuphan.className}`}
     >
       <div className="w-[95%] max-w-[1440px] mx-auto px-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-        
+
         {/* ฝั่งซ้าย: โลโก้ และ รายละเอียดกลุ่ม */}
         <div className="flex flex-col gap-2 max-w-md">
           <div className="flex items-center gap-3">

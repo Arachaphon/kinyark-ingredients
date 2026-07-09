@@ -3,27 +3,43 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { registerSchema } from '@/lib/validations/auth.schema'
+import { createClient as createAdmin } from "@supabase/supabase-js";
+import { registerSchema } from "@/lib/validations/auth.schema";
 
-export async function signup(prevState: { message?: string }, formData: FormData) {
-  const supabase = await createClient();
-
+export async function signup(
+  prevState: { message?: string },
+  formData: FormData
+) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const username = formData.get("username") as string;
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) return { message: error.message };
+   console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  console.log("SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "มีค่า ✅" : "ไม่มีค่า ❌")
 
+  // 1. Validate ก่อนทำอะไรทั้งนั้น
   const result = registerSchema.safeParse({ email, password, username });
   if (!result.success) return { message: result.error.issues[0].message };
+
+  // 2. สมัคร Auth
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) return { message: error.message };
 
   const userId = data.user?.id;
   if (!userId) return { message: "Failed to create user" };
 
-  const { error: dbError } = await supabase
-    .from("users")
-    .upsert({ id: userId, email, username });
+  // 3. ใช้ Admin client insert users (ข้าม RLS ได้)
+  const admin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+const { error: dbError } = await admin
+  .from("users") 
+  .upsert({ id: userId, email, username })
+
+  console.log("DB Error:", JSON.stringify(dbError))
 
   if (dbError) return { message: dbError.message };
 

@@ -8,12 +8,12 @@ export async function GET() {
   try {
     // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
     const allRecipes = await prisma.recipe.findMany({
-      orderBy: { created_at: "desc" }
+      orderBy: { createdAt: "desc" }
     });
 
     // ✂️ คัดแยกกลุ่มตาม AI Provider (ตัวพิมพ์เล็ก)
-    const gemini = allRecipes.filter(r => r.ai_provider?.toLowerCase() === "gemini");
-    const deepseek = allRecipes.filter(r => r.ai_provider?.toLowerCase() === "deepseek");
+    const gemini = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "gemini");
+    const deepseek = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "deepseek");
 
     return NextResponse.json({ gemini, deepseek });
   } catch (error) {

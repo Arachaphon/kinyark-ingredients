@@ -15,13 +15,7 @@ export default function ForgotPasswordPage() {
   const router = useRouter(); // รูเตอร์สำหรับปุ่ม Back to Login
 
   const handleSubmit = (e: React.SyntheticEvent) => {
-    e.preventDefault(); 
-
-    console.log({
-      email,
-    });
-
-    // TODO: Supabase Reset Password
+    e.preventDefault();
   };
 
   return (
@@ -120,7 +114,7 @@ export default function ForgotPasswordPage() {
 
             {/* ลิงก์สมัครสมาชิกเพิ่มเติมกรณีเปิดบนมือถือ */}
             <p className="md:hidden mt-6 text-sm text-gray-600 font-medium">
-              Don't have an account?{" "}
+              {"Don't have an account?"}
               <button
                 type="button"
                 onClick={() => router.push("/register")}

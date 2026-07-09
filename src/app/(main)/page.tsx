@@ -13,7 +13,14 @@ const anuphan = Anuphan({
 });
 
 // 🌟 เมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
-const fallbackGemini = [
+interface RecommendedRecipe {
+  id: string;
+  menu_name: string;
+  bg_color?: string;
+  featured_image_url?: string;
+  rating?: number;
+}
+const fallbackGemini: RecommendedRecipe[] = [
   {
     id: "mock-g1",
     menu_name: "ข้าวผัดต้มยำกุ้งแห้ง",
@@ -44,7 +51,7 @@ const fallbackGemini = [
   }
 ];
 
-const fallbackDeepseek = [
+const fallbackDeepseek: RecommendedRecipe[] = [
   {
     id: "mock-d1",
     menu_name: "สปาเก็ตตี้คาโบนาร่า",
@@ -76,8 +83,8 @@ const fallbackDeepseek = [
 ];
 
 export default function HomePage() {
-  const [geminiRecipes, setGeminiRecipes] = useState<any[]>([]);
-  const [deepseekRecipes, setDeepseekRecipes] = useState<any[]>([]);
+  const [geminiRecipes, setGeminiRecipes] = useState<RecommendedRecipe[]>([]);
+  const [deepseekRecipes, setDeepseekRecipes] = useState<RecommendedRecipe[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -176,7 +183,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
           </div>
         </div>
       </main>
@@ -188,7 +195,7 @@ export default function HomePage() {
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           เมนูแนะนำประจำสัปดาห์
         </h2>
-        
+
         {loading ? (
           <div className="w-full text-center py-12 flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
@@ -211,16 +218,18 @@ export default function HomePage() {
     COMPONENTS ย่อย
    ========================================= */
 
-function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] }) {
+function MenuCarousel({ provider, recipes }: { provider: string, recipes: RecommendedRecipe[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     if (recipes.length <= 1) return;
+
     const timer = setInterval(() => {
-      handleNext();
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
     }, 3500);
+
     return () => clearInterval(timer);
-  }, [currentIndex, recipes.length]);
+  }, [recipes.length]);
 
   const handleNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
@@ -236,21 +245,21 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
     <div className={`bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
-      
+
       <div className="flex justify-center gap-6 mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
-          <RecipeCard 
-            title={item1.menu_name} 
-            bgColor={item1.bg_color || "bg-[#6F62E4]"} 
-            image={item1.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"} 
+          <RecipeCard
+            title={item1.menu_name}
+            bgColor={item1.bg_color || "bg-[#6F62E4]"}
+            image={item1.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
             rating={item1.rating}
           />
         </div>
         <div key={`card2-${item2.id}`} className="animate-fade-in relative">
-          <RecipeCard 
-            title={item2.menu_name} 
-            bgColor={item2.bg_color || "bg-[#3AC9B5]"} 
-            image={item2.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"} 
+          <RecipeCard
+            title={item2.menu_name}
+            bgColor={item2.bg_color || "bg-[#3AC9B5]"}
+            image={item2.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
             rating={item2.rating}
           />
         </div>
@@ -277,9 +286,8 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
-        isLeft ? "-left-7" : "-right-7"
-      }`}
+      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${isLeft ? "-left-7" : "-right-7"
+        }`}
     >
       {isLeft ? (
         <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -296,9 +304,9 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <img
-          src={image} 
+          src={image}
           alt={title}
-          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]" 
+          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
         />
       </div>
 
@@ -306,7 +314,7 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
         <span className="font-bold text-xl sm:text-2xl text-white text-center leading-snug block w-full">
           {title}
         </span>
-        
+
         <div className="absolute right-4 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
           <span className="text-[#FF4747] text-sm">❤</span>
         </div>
