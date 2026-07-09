@@ -13,6 +13,7 @@ model User {
   username   String?  @unique
   email      String   @unique
   avatarUrl String?
+  role       String   @default("USER")
   createdAt DateTime @default(now()) @db.Timestamptz
 
   recipes          Recipe[]
@@ -45,9 +46,11 @@ model SubCategory {
 }
 
 model Ingredient {
-  id              Int     @id @default(autoincrement())
-  name            String  @unique
-  subCategoryId Int?
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  subCategoryId  Int?
+  role            String?
+  discount        Float?
 
   subCategory       SubCategory?       @relation(fields: [subCategoryId], references: [id])
   recipeIngredients RecipeIngredient[]
