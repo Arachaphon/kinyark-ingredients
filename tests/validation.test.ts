@@ -83,18 +83,20 @@ describe("ingredient.schema.ts", () => {
 // review.schema.ts
 // ---------------------------------------------------------------------------
 describe("review.schema.ts", () => {
+  const validReviewBase = { recipe_id: "00000000-0000-0000-0000-000000000000" };
+
   test("rating 1-5 ผ่าน — accepts rating of 3", () => {
-    const result = createReviewSchema.safeParse({ rating: 3 });
+    const result = createReviewSchema.safeParse({ ...validReviewBase, rating: 3 });
     expect(result.success).toBe(true);
   });
 
   test("rating 0 reject — rejects rating below minimum", () => {
-    const result = createReviewSchema.safeParse({ rating: 0 });
+    const result = createReviewSchema.safeParse({ ...validReviewBase, rating: 0 });
     expect(result.success).toBe(false);
   });
 
   test("rating 6 reject — rejects rating above maximum", () => {
-    const result = createReviewSchema.safeParse({ rating: 6 });
+    const result = createReviewSchema.safeParse({ ...validReviewBase, rating: 6 });
     expect(result.success).toBe(false);
   });
 });

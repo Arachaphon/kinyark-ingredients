@@ -50,3 +50,4 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 docs/Kinyark_timeline.xlsx
+opencode.json

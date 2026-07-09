@@ -55,11 +55,9 @@ export default function RegisterPage() {
       return;
     }
 
-    // ผ่านการตรวจสอบฝั่ง client แล้ว เก็บอีเมลไว้ใช้ตอน redirect
     setSubmittedEmail(email);
   };
 
-  // เมื่อ signup สำเร็จ (server action คืนค่า success: true) ให้ไปหน้าตรวจสอบอีเมล
   useEffect(() => {
     if (state?.success) {
       router.push(`/check-email?email=${encodeURIComponent(submittedEmail)}`);
@@ -81,7 +79,6 @@ export default function RegisterPage() {
     <div
       className={`flex min-h-screen w-full bg-white flex-col md:flex-row overflow-x-hidden relative ${anuphan.className}`}
     >
-      {/* ---------------- ฟอร์มสมัครสมาชิก ---------------- */}
       <div
         className={`w-full md:w-[55%] md:mr-auto flex flex-col items-center justify-center p-6 sm:p-10 md:p-16 z-10 py-16 transition-all duration-700 ease-in-out ${
           isSliding ? "translate-x-[81%] opacity-0" : "translate-x-0"
@@ -127,12 +124,11 @@ export default function RegisterPage() {
 
           {state?.message && !clientError && (
             <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
-              {state.message === "User already registered" ? "ชื่อผู้ใช้หรืออีเมลนี้ถูกลงทะเบียนแล้ว" : state.message}
+              {state.message === "ชื่อผู้ใช้หรืออีเมลนี้ถูกลงทะเบียนแล้ว" }
             </p>
           )}
 
           <div className="w-full space-y-5">
-            {/* Username */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="username"
@@ -159,7 +155,6 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            {/* Email */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="email"
@@ -186,7 +181,6 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            {/* Password */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="password"
@@ -235,7 +229,6 @@ export default function RegisterPage() {
               </button>
             </div>
 
-            {/* Confirm Password */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
                 name="confirmPassword"
@@ -305,7 +298,6 @@ export default function RegisterPage() {
         </form>
       </div>
 
-      {/* ---------------- แผงโค้งมนสีครีม (โชว์เฉพาะบนคอมพิวเตอร์ md:) ---------------- */}
       <div
         className={`hidden md:flex absolute top-0 right-0 h-full w-[45%] bg-[#F5ECD7] flex-col items-center justify-center p-12 transition-all duration-700 ease-in-out ${
           isSliding
