@@ -1,0 +1,181 @@
+================================================================================
+TECH STACK ANALYSIS — kinyark-ingredients
+Generated: 2026-07-02
+================================================================================
+
+--------------------------------------------------------------------------------
+FRONTEND
+--------------------------------------------------------------------------------
+- Next.js 16 (App Router)
+  Evidence: "next": "^16.2.9" in package.json; App Router directory structure
+  confirmed under src/app/ with layout.tsx, route groups (auth), and page files.
+
+- React 19
+  Evidence: "react": "^19.2.7" and "react-dom": "^19.2.7" in package.json;
+  JSX used throughout all .tsx component files.
+
+- TypeScript 5 (strict mode)
+  Evidence: "typescript": "^5" in package.json; tsconfig.json has "strict": true;
+  all source files use .ts/.tsx extensions.
+
+- Geist Font (Google Fonts via next/font)
+  Evidence: Geist and Geist_Mono imported from "next/font/google" in layout.tsx
+  and applied as CSS variables.
+
+--------------------------------------------------------------------------------
+BACKEND
+--------------------------------------------------------------------------------
+- Next.js API Routes (Route Handlers)
+  Evidence: src/app/api/ directory contains route.ts files for /api/ai,
+  /api/auth/logout, /api/ingredients, and /api/recipes — all using
+  Next.js NextResponse handler pattern.
+
+- Google Gemini AI (gemini-1.5-flash)
+  Evidence: "@google/generative-ai": "^0.24.1" in package.json; GoogleGenerativeAI
+  instantiated in src/app/api/ai/route.ts using GEMINI_API_KEY env var.
+
+- DeepSeek AI (via OpenAI-compatible SDK)
+  Evidence: "openai": "^6.39.0" in package.json; OpenAI client in
+  src/app/api/ai/route.ts is pointed to https://api.deepseek.com with
+  DEEPSEEK_API_KEY, using "deepseek-chat" model.
+
+- Vercel AI SDK
+  Evidence: "ai": "^6.0.116" and "@ai-sdk/google": "^3.0.43" in package.json
+  (installed alongside direct SDKs; Vercel AI SDK wrappers are available
+  for streaming support).
+
+--------------------------------------------------------------------------------
+DATABASE
+--------------------------------------------------------------------------------
+- PostgreSQL (via Supabase)
+  Evidence: prisma/schema.prisma declares provider = "postgresql" with
+  DATABASE_URL and DIRECT_URL env vars pointing to Supabase; Supabase
+  secrets referenced in GitHub Actions workflows.
+
+- Prisma ORM (v5)
+  Evidence: "@prisma/client": "^5.22.0" and "prisma": "^5.22.0" in package.json;
+  full schema defined in prisma/schema.prisma with 10 models (User, Recipe,
+  Ingredient, Review, Favorite, etc.); prisma/migrations/ directory present;
+  "prisma generate" run in CI/build scripts.
+
+--------------------------------------------------------------------------------
+AUTHENTICATION
+--------------------------------------------------------------------------------
+- Supabase Auth (with SSR helpers)
+  Evidence: "@supabase/ssr": "^0.9.0" and "@supabase/supabase-js": "^2.99.1"
+  in package.json; createServerClient from @supabase/ssr used in
+  src/lib/supabase/server.ts with cookie-based session management;
+  src/app/auth/callback/ route handles OAuth redirects;
+  NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY referenced
+  in env files and GitHub Actions secrets.
+
+--------------------------------------------------------------------------------
+STATE MANAGEMENT
+--------------------------------------------------------------------------------
+- Zustand (v5) — installed but not actively used in source
+  Evidence: "zustand": "^5.0.12" listed in package.json dependencies;
+  however, no "from 'zustand'" import was found in any .ts/.tsx source file,
+  suggesting it is installed but not yet integrated into the codebase.
+
+- TanStack React Query (v5) — installed but not actively used in source
+  Evidence: "@tanstack/react-query": "^5.90.21" in package.json; grep for
+  useQuery/useMutation/QueryClient returned no results in src/, indicating
+  it is installed but not yet wired up.
+
+--------------------------------------------------------------------------------
+UI / CSS
+--------------------------------------------------------------------------------
+- Tailwind CSS v4
+  Evidence: "tailwindcss": "^4" and "@tailwindcss/postcss": "^4" in
+  package.json; postcss.config.mjs uses "@tailwindcss/postcss" plugin;
+  Tailwind utility classes used throughout component files (e.g., Navbar.tsx,
+  SettingModal.tsx).
+
+- PostCSS
+  Evidence: postcss.config.mjs present at the root, configured to process
+  Tailwind CSS v4.
+
+- Geist Design Tokens (CSS variables)
+  Evidence: CSS variables --font-geist-sans and --font-geist-mono set in
+  layout.tsx and applied globally via globals.css.
+
+--------------------------------------------------------------------------------
+API
+--------------------------------------------------------------------------------
+- Next.js Route Handlers (REST-style API)
+  Evidence: src/app/api/ contains four route groups: /ai, /auth/logout,
+  /ingredients, and /recipes — each exporting async HTTP handler functions
+  using NextResponse from "next/server".
+
+- Zod Validation
+  Evidence: "zod": "^4.3.6" in package.json; src/lib/validations/ contains
+  auth.schema.ts, ingredient.schema.ts, and recipe.schema.ts, all using Zod
+  to validate API input before reaching the service layer.
+
+--------------------------------------------------------------------------------
+TESTING
+--------------------------------------------------------------------------------
+- Playwright (E2E Testing)
+  Evidence: "@playwright/test": "^1.58.2" in devDependencies; playwright.config.ts
+  at project root configures chromium-only E2E tests against localhost:3000;
+  playwright-report/ and test-results/ directories present; separate
+  playwright.yml GitHub Actions workflow exists.
+
+--------------------------------------------------------------------------------
+BUILD TOOLS
+--------------------------------------------------------------------------------
+- Next.js Build System (via Turbopack/Webpack)
+  Evidence: "next dev" / "next build" / "next start" scripts in package.json;
+  next.config.mjs present; next-env.d.ts and .next/ output directory present.
+
+- TypeScript Compiler (tsc)
+  Evidence: tsconfig.json with strict mode; "npx tsc --noEmit" run in CI
+  as a type-check step.
+
+- ESLint 9 (with Next.js config)
+  Evidence: "eslint": "^9" and "eslint-config-next": "16.1.6" in
+  devDependencies; eslint.config.mjs extends nextVitals and nextTs presets.
+
+- npm (package manager)
+  Evidence: package-lock.json present at root; "npm ci" used in all
+  GitHub Actions workflows.
+
+--------------------------------------------------------------------------------
+DEVOPS / DEPLOYMENT
+--------------------------------------------------------------------------------
+- GitHub Actions (CI/CD)
+  Evidence: .github/workflows/ contains 5 YAML files: ci.yml (type-check,
+  lint, E2E tests on PRs to main/dev), deploy-production.yml (push to main),
+  deploy-staging.yml (push to dev), playwright.yml (dedicated E2E run),
+  keepalive.yml (scheduled ping).
+
+- Vercel (Hosting/Deployment)
+  Evidence: deploy-production.yml and deploy-staging.yml both use the
+  amondnet/vercel-action@v42 GitHub Action with VERCEL_TOKEN,
+  VERCEL_ORG_ID, and VERCEL_PROJECT_ID secrets.
+
+- Node.js 20 (runtime target)
+  Evidence: "node-version: 20" specified in all GitHub Actions workflow
+  setup-node steps.
+
+--------------------------------------------------------------------------------
+OTHER TOOLS
+--------------------------------------------------------------------------------
+- Supabase Storage (implied)
+  Evidence: RecipeImage.imageUrl and RecipeVideo.videoUrl fields in
+  schema.prisma suggest external media storage; Supabase JS SDK is present
+  which includes Storage client capabilities.
+
+- Prisma Migrate / db push
+  Evidence: prisma/migrations/ directory present; build script in package.json
+  runs "prisma db push && next build" combining schema sync with build.
+
+- Environment Variable Management (.env / .env.local)
+  Evidence: Both .env and .env.local files are present at the project root
+  (each ~823 bytes); referenced variables include DATABASE_URL, DIRECT_URL,
+  NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, GEMINI_API_KEY,
+  DEEPSEEK_API_KEY.
+
+================================================================================
+END OF REPORT
+================================================================================
