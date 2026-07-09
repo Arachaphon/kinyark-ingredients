@@ -16,16 +16,16 @@ export async function POST(request: Request) {
   try {
     const review = await prisma.review.create({
       data: {
-        recipeId: parsed.data.recipe_id,
+        recipeId: parsed.data.recipeId,
         userId: user.id,
         rating: parsed.data.rating,
         comment: parsed.data.comment,
-        isAnonymous: parsed.data.is_anonymous,
+        isAnonymous: parsed.data.isAnonymous,
       },
     })
 
     await prisma.recipe.update({
-      where: { id: parsed.data.recipe_id },
+      where: { id: parsed.data.recipeId },
       data: {
         reviewCount: { increment: 1 },
       },
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     // Recalculate average rating
     const agg = await prisma.review.aggregate({
-      where: { recipeId: parsed.data.recipe_id },
+      where: { recipeId: parsed.data.recipeId },
       _avg: { rating: true },
     })
     await prisma.recipe.update({

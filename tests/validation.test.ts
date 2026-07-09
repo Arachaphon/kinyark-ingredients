@@ -20,19 +20,19 @@ import {
 // ---------------------------------------------------------------------------
 describe("recipe.schema.ts", () => {
   const validBase = {
-    recipe_name: "Tom Kha Gai",
+    recipeName: "Tom Kha Gai",
     ingredients: [{ name: "Chicken", quantity: 200, unit: "g" }],
   };
 
-  test("recipe_name valid — accepts non-empty name", () => {
+  test("recipeName valid — accepts non-empty name", () => {
     const result = createRecipeSchema.safeParse(validBase);
     expect(result.success).toBe(true);
   });
 
-  test("recipe_name วางแล้ว reject — rejects empty string", () => {
+  test("recipeName empty reject — rejects empty string", () => {
     const result = createRecipeSchema.safeParse({
       ...validBase,
-      recipe_name: "",
+      recipeName: "",
     });
     expect(result.success).toBe(false);
   });
@@ -63,18 +63,18 @@ describe("recipe.schema.ts", () => {
 // ingredient.schema.ts
 // ---------------------------------------------------------------------------
 describe("ingredient.schema.ts", () => {
-  test("ingredient_id valid — accepts positive integer", () => {
-    const result = ingredientIdSchema.safeParse({ ingredient_id: 42 });
+  test("ingredientId valid — accepts positive integer", () => {
+    const result = ingredientIdSchema.safeParse({ ingredientId: 42 });
     expect(result.success).toBe(true);
   });
 
-  test("ingredient_id ติดลบ reject — rejects negative number", () => {
-    const result = ingredientIdSchema.safeParse({ ingredient_id: -1 });
+  test("ingredientId negative reject — rejects negative number", () => {
+    const result = ingredientIdSchema.safeParse({ ingredientId: -1 });
     expect(result.success).toBe(false);
   });
 
-  test("ingredient_id เป็น string reject — rejects string value", () => {
-    const result = ingredientIdSchema.safeParse({ ingredient_id: "abc" });
+  test("ingredientId string reject — rejects string value", () => {
+    const result = ingredientIdSchema.safeParse({ ingredientId: "abc" });
     expect(result.success).toBe(false);
   });
 });
@@ -83,7 +83,7 @@ describe("ingredient.schema.ts", () => {
 // review.schema.ts
 // ---------------------------------------------------------------------------
 describe("review.schema.ts", () => {
-  const validReviewBase = { recipe_id: "00000000-0000-0000-0000-000000000000" };
+const validReviewBase = { recipeId: "00000000-0000-0000-0000-000000000000" };
 
   test("rating 1-5 ผ่าน — accepts rating of 3", () => {
     const result = createReviewSchema.safeParse({ ...validReviewBase, rating: 3 });
@@ -110,16 +110,16 @@ describe("search.schema.ts", () => {
     expect(result.success).toBe(true);
   });
 
-  test("ingredient_ids valid — accepts array of positive integers", () => {
+  test("ingredientIds valid — accepts array of positive integers", () => {
     const result = searchByIngredientsSchema.safeParse({
-      ingredient_ids: [1, 2, 3],
+      ingredientIds: [1, 2, 3],
     });
     expect(result.success).toBe(true);
   });
 
   test("invalid array reject — rejects array with non-integer items", () => {
     const result = searchByIngredientsSchema.safeParse({
-      ingredient_ids: ["chicken", "rice"],
+      ingredientIds: ["chicken", "rice"],
     });
     expect(result.success).toBe(false);
   });

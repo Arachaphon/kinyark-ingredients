@@ -1,79 +1,16 @@
-= Registration Implementation Report
+= Schema Alignment + Registration Implementation Report
 :toc: left
 :toclevels: 3
 
 == Summary
 
-Implements end-to-end user registration with validation, duplicate checking, role assignment, and comprehensive test coverage. All changes follow existing project conventions (camelCase, Zod validation, Next.js server actions, Prisma ORM).
+This branch merges two feature sets:
 
-Branch: `feature/register-user` (created from `docs/plan-v2-update`)
+1. **Schema Alignment** (`chore/schema-alignment`) — Renamed all validation schema keys and API JSON body keys from snake_case to camelCase to match Prisma conventions. Added `Recipe.visibility` and `RecipeEquipment` model. Removed unused `Ingredient.role` and `Ingredient.discount` fields.
 
-== Changes Made
+2. **Registration** (`feature/register-user`) — End-to-end user registration with password strength validation, duplicate email/username checks, role assignment, and comprehensive test coverage.
 
-=== 1. Enhanced Validation Schema (`src/lib/validations/auth.schema.ts`)
-
-**Password strength rules** (matching frontend client-side validation):
-- Minimum 8 characters
-- At least 1 uppercase letter
-- At least 1 lowercase letter
-- At least 1 number
-- At least 1 special character
-
-**New field: `role`**
-- Type: `z.enum(['user', 'shop'])`
-- Default: `'user'`
-- Maps to Prisma: `'user'` → `'USER'`, `'shop'` → `'SHOP'`
-
-=== 2. Rebuilt Server Action (`src/app/(auth)/register/actions.ts`)
-
-Previously used raw Supabase admin client to insert into `users` table.
-Now uses **Prisma** for:
-
-1. **Duplicate email check** — `prisma.user.findUnique({ where: { email } })` before Supabase signup
-2. **Duplicate username check** — `prisma.user.findUnique({ where: { username } })` before Supabase signup
-3. **User creation** — `prisma.user.create()` with proper `id`, `email`, `username`, `role` mapping
-4. **Error handling** — Specific Thai error messages for each failure case
-
-=== 3. Frontend (`src/app/(auth)/register/page.tsx`)
-
-No UI changes required — the form already had:
-- Client-side password strength validation (8+ chars, uppercase, lowercase, number, special)
-- Confirm password matching
-- Role dropdown (คนทั่วไป/ร้านค้า)
-- Server error display
-
-The server action now properly reads `role` from `formData` and passes it to the validation schema.
-
-=== 4. Test Files
-
-==== 4.1 Unit Tests (`tests/register.test.ts`)
-
-|===
-| Category | Tests | Description
-| Schema validation | 12 | Email, password strength, username length, role defaults/enum
-| Duplicate detection | 3 | Pure logic: email taken, username taken, both available
-| Role mapping | 3 | `user`→`USER`, `shop`→`SHOP`, fallback→`USER`
-|===
-
-**Edge cases covered:**
-- Empty email, invalid email format
-- Password missing each requirement (uppercase, lowercase, number, special)
-- Password under 8 characters
-- Username too short (< 2) or too long (> 30)
-- Invalid role value (`'admin'`)
-- Role defaults to `'user'` when omitted
-
-**4.2 Integration Tests (`tests/register.api.test.ts`)**
-
-|===
-| Category | Tests | Description
-| Validation rejection | 2 | Rejects invalid email/password at Zod level
-| Duplicate rejection | 2 | Rejects duplicate email and duplicate username
-| Success flow | 2 | Valid registration with USER and SHOP roles
-| Error handling | 2 | Supabase failure, Prisma create failure
-|===
-
-All dependencies (Prisma, Supabase, Next.js navigation/cache) are mocked.
+Branch: `feature/register-user` (schema-alignment merged in)
 
 == Test Results
 
@@ -81,28 +18,30 @@ All dependencies (Prisma, Supabase, Next.js navigation/cache) are mocked.
 ----
 Test Suites: 4 passed, 4 total
 Tests:       19 todo, 40 passed, 59 total
-Time:        1.751 s
+Time:        1.798 s
 ----
 
-New tests: 27 (13 unit + 14 integration)
-Pre-existing: 13 validation tests (updated to pass with current schema)
-
-== File Changes
+== Files Modified (combined)
 
 [source]
 ----
-src/lib/validations/auth.schema.ts          (enhanced: password strength + role)
-src/app/(auth)/register/actions.ts          (rebuilt: Prisma + duplicate check)
-src/app/(auth)/register/page.tsx            (unchanged UI, formData passes role)
+prisma/schema.prisma
+src/lib/validations/auth.schema.ts          (enhanced: password strength + role + login by username)
+src/lib/validations/recipe.schema.ts        (snake_case → camelCase)
+src/lib/validations/review.schema.ts        (snake_case → camelCase)
+src/lib/validations/ingredient.schema.ts    (snake_case → camelCase)
+src/lib/validations/search.schema.ts        (snake_case → camelCase)
+src/app/api/recipes/route.ts                (updated field references)
+src/app/api/reviews/route.ts                (updated field references)
+src/app/api/reviews/[id]/route.ts           (updated field references)
+src/app/api/favorites/route.ts              (recipe_id → recipeId)
+src/app/(main)/create-recipe/action.ts      (updated field references)
+src/app/(auth)/register/actions.ts          (rebuilt: Prisma + duplicate check + role)
+src/app/(auth)/register/page.tsx            (unchanged UI, role passed via formData)
+src/app/(auth)/login/actions.tsx            (login by username/email)
 tests/register.test.ts                      (NEW: 13 unit tests)
 tests/register.api.test.ts                  (NEW: 14 integration tests)
-tests/validation.test.ts                    (fixed: review tests now include recipe_id)
+tests/validation.test.ts                    (camelCase test data + review base fix)
 ----
-5 files changed, 275 insertions(+), 10 deletions(-)
 
-== Notes
-
-- No database migrations were run
-- No commits were made
-- Password hashing is handled by Supabase Auth (not in Prisma schema — no `passwordHash` field on User model)
-- Role is stored as `'USER'` | `'SHOP'` in DB (uppercase convention), form sends `'user'` | `'shop'` (lowercase)
+See detailed reports under each section for full breakdown.

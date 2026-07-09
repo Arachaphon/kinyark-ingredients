@@ -5,7 +5,7 @@ export const searchQuerySchema = z.object({
 });
 
 export const searchByIngredientsSchema = z.object({
-  ingredient_ids: z
+  ingredientIds: z
     .array(z.number().int().positive("Each ingredient ID must be a positive integer"))
     .min(1, "At least one ingredient ID is required"),
 });

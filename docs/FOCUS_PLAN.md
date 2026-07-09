@@ -11,7 +11,7 @@
 ### Solo Tasks
 | ID | Task | DueDate | Estimate | STATUS |
 |---|---|---|---|---|
-| W1-4 | Update Database Schema | 2026-07-14 | 5.0 | ToDO |
+| W1-4 | Update Database Schema | 2026-07-14 | 5.0 | Done |
 | W1-8 | Register User | 2026-07-15 | 6.0 | ToDO |
 | W1-9 | Login User | 2026-07-16 | 5.0 | ToDO |
 | W1-11 | Get Profile | 2026-07-18 | 4.0 | ToDO |

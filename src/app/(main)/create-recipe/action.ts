@@ -30,7 +30,7 @@ export async function createRecipe(
 
   // 2. ประกอบ body ดิบ ส่งเข้า Zod (ห้ามมี syntax ของ Prisma ปนเข้ามา)
   const body = {
-    recipe_name: formData.get("title") as string,
+    recipeName: formData.get("title") as string,
     description: (formData.get("description") as string) || undefined,
     instructions: (formData.get("instructions") as string) || undefined,
     ingredients: ingredientsInput,
@@ -59,7 +59,7 @@ export async function createRecipe(
   await prisma.recipe.create({
     data: {
       userId: user.id,
-      recipeName: result.data.recipe_name,
+      recipeName: result.data.recipeName,
       description: result.data.description,
       instructions: result.data.instructions,
       recipeIngredients: {

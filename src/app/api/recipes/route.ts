@@ -54,16 +54,16 @@ export async function POST(request: Request) {
     const recipe = await prisma.recipe.create({
       data: {
         userId: user.id,
-        recipeName: result.data.recipe_name,
+        recipeName: result.data.recipeName,
         description: result.data.description,
         instructions: result.data.instructions,
         recipeIngredients: {
           create: recipeIngredientsData,
         },
-        ...(result.data.featured_image_url ? {
+        ...(result.data.featuredImageUrl ? {
           images: {
             create: {
-              imageUrl: result.data.featured_image_url,
+              imageUrl: result.data.featuredImageUrl,
             }
           }
         } : {}),

@@ -7,7 +7,7 @@ export const ingredientSchema = z.object({
 
 // Validates ingredient ID reference used in RecipeIngredient join table
 export const ingredientIdSchema = z.object({
-  ingredient_id: z.number().int().positive("Ingredient ID must be a positive integer"),
+  ingredientId: z.number().int().positive("Ingredient ID must be a positive integer"),
 });
 
 export type IngredientInput = z.infer<typeof ingredientSchema>;

@@ -20,7 +20,7 @@
 | W1-1 | Make All Pages Responsive | การัญภาส กันทะเนตร | 2026-07-14 | 1.0 | ToDO |
 | W1-2 | Review UI Consistency | พีรพัฒน์ แสวงรัมย์ | 2026-07-15 | 1.0 | ToDO |
 | W1-3 | Review UI Text | พีรพัฒน์ แสวงรัมย์ | 2026-07-15 | 1.0 | ToDO |
-| W1-4 | Update Database Schema | อรชพร กลิ่นชื่น | 2026-07-14 | 5.0 | ToDO |
+| W1-4 | Update Database Schema | อรชพร กลิ่นชื่น | 2026-07-14 | 5.0 | Done |
 | W1-5 | Login Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-16 | 6.0 | ToDO |
 | W1-6 | Register Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-18 | 6.0 | ToDO |
 | W1-7 | Global Authentication State | พีรพัฒน์ แสวงรัมย์ | 2026-07-20 | 6.0 | ToDO |
