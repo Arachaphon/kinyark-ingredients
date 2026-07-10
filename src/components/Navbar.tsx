@@ -12,6 +12,13 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
+export interface UserProfile {
+  id?: string;
+  username?: string | null;
+  email?: string;
+  avatarUrl?: string | null;
+}
+
 // ข้อมูลจำลองสำหรับระบบค้นหา
 const searchData = [
   "สลัดผักสวนครัว",
@@ -26,6 +33,7 @@ export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -46,6 +54,20 @@ export default function Navbar() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
+    
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUserProfile(data.user);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+      }
+    };
+    fetchUser();
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -181,19 +203,24 @@ export default function Navbar() {
 
         <div
           onClick={() => setIsSettingOpen(true)}
-          className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all"
+          className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
         >
-          <img
-            src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80"
-            alt="User Profile"
-            className="w-full h-full object-cover"
-          />
+          {userProfile?.avatarUrl ? (
+            <img
+              src={userProfile.avatarUrl}
+              alt="User Profile"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+             <span className="text-xl font-bold text-gray-500">{userProfile?.username?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase() || "U"}</span>
+          )}
         </div>
       </div>
 
       <SettingModal
         isOpen={isSettingOpen}
         onClose={() => setIsSettingOpen(false)}
+        userProfile={userProfile}
       />
     </header>
   );

@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation'
 interface SettingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userProfile?: { id?: string; username?: string | null; email?: string; avatarUrl?: string | null } | null;
 }
 
 type TabType = "profile" | "preferences" | "ai";
 
-export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
+export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -139,13 +140,21 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 <h3 className="text-2xl font-bold text-gray-900 mb-6">โปรไฟล์</h3>
                 
                 <div className="flex items-center gap-4 mb-6">
-                  <img 
-                    src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80" 
-                    alt="Alice" className="w-20 h-20 rounded-full object-cover border-2 border-gray-100" 
-                  />
+                  {userProfile?.avatarUrl ? (
+                    <img 
+                      src={userProfile.avatarUrl} 
+                      alt={userProfile?.username || "User"} className="w-20 h-20 rounded-full object-cover border-2 border-gray-100" 
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-gray-100 flex items-center justify-center">
+                      <span className="text-3xl font-bold text-gray-400">
+                        {userProfile?.username?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase() || "U"}
+                      </span>
+                    </div>
+                  )}
                   <div>
-                    <h4 className="text-xl font-bold text-gray-800">อลิส</h4>
-                    <p className="text-gray-400 text-sm">Alice@gmail.com</p>
+                    <h4 className="text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
+                    <p className="text-gray-400 text-sm">{userProfile?.email || ""}</p>
                   </div>
                   <button className="ml-auto py-2 px-4 border border-gray-300 rounded-md text-sm font-bold hover:bg-gray-50 flex items-center gap-2 transition shadow-sm text-gray-700">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -156,7 +165,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">ชื่อผู้ใช้งาน</label>
-                    <input type="text" defaultValue="Alice" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <input type="text" defaultValue={userProfile?.username || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">รหัสผ่าน</label>
@@ -164,7 +173,7 @@ export default function SettingModal({ isOpen, onClose }: SettingModalProps) {
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">ที่อยู่อีเมล</label>
-                    <input type="email" defaultValue="Alice@gmail.com" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <input type="email" defaultValue={userProfile?.email || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">ยืนยันรหัสผ่าน</label>
