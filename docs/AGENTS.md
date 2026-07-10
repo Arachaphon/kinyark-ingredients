@@ -34,6 +34,9 @@ Examples of project milestones:
 
 Human approval is NOT required for normal implementation tasks inside the current milestone.
 
+**Sound Notification:** When asking for human approval or permission, the agent must run the following PowerShell command to play a question/alert sound to notify the developer:
+`powershell -c "[System.Media.SystemSounds]::Question.Play()"`
+
 ---
 
 ### Strict Scope
@@ -96,6 +99,13 @@ Before marking a task complete:
 * Verify build passes when applicable
 * Verify validation rules exist
 * Verify affected files follow project conventions
+
+---
+
+### Play Sound on Completion
+
+At the end of every response/turn, the agent should play a system sound (like an Asterisk chime) using PowerShell to notify the developer that the task/turn has finished running:
+`powershell -c "[System.Media.SystemSounds]::Asterisk.Play()"`
 
 ---
 

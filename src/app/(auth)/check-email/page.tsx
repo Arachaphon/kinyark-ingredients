@@ -2,15 +2,14 @@
 
 import { Anuphan } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-
+import { useState, Suspense } from "react";
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   display: "swap",
 });
 
-export default function CheckEmailPage() {
+function CheckEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -40,9 +39,6 @@ export default function CheckEmailPage() {
   };
 
   return (
-    <div
-      className={`flex min-h-screen w-full bg-white items-center justify-center p-6 ${anuphan.className}`}
-    >
       <div className="w-full max-w-[440px] flex flex-col items-center text-center">
         <div className="w-72 h-72 xl:w-80 xl:h-80 mb-6 flex items-center justify-center">
           <img
@@ -111,7 +107,18 @@ export default function CheckEmailPage() {
         >
           กลับไปหน้าเข้าสู่ระบบ
         </button>
-      </div>
+    </div>
+  );
+}
+
+export default function CheckEmailPage() {
+  return (
+    <div
+      className={`flex min-h-screen w-full bg-white items-center justify-center p-6 ${anuphan.className}`}
+    >
+      <Suspense fallback={<div />}>
+        <CheckEmailContent />
+      </Suspense>
     </div>
   );
 }

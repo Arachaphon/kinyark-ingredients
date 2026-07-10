@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push && next build",
+    "build": "prisma db push && next build && powershell -c \"[System.Media.SystemSounds]::Asterisk.Play()\" || powershell -c \"[System.Media.SystemSounds]::Hand.Play()\"",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint && powershell -c \"[System.Media.SystemSounds]::Asterisk.Play()\" || powershell -c \"[System.Media.SystemSounds]::Hand.Play()\"",
+    "test": "jest && powershell -c \"[System.Media.SystemSounds]::Asterisk.Play()\" || powershell -c \"[System.Media.SystemSounds]::Hand.Play()\""
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

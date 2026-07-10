@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       _avg: { rating: true },
     })
     await prisma.recipe.update({
-      where: { id: parsed.data.recipe_id },
+      where: { id: parsed.data.recipeId },
       data: { rating: agg._avg.rating ?? 0 },
     })
 
