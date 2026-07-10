@@ -44,3 +44,14 @@ Result:ลงทะเบียนไม่ได้ แต่ไม่ขึ้
 
 [x] TC11 - รหัสผ่านผิด
     -> Expected: error "อีเมล/ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
+
+[x] TC12 - Login fail: empty fields
+
+[x] TC13 - Already-logged-in user visiting /login redirects to /home
+
+[x] TC14 - Unauthenticated access to protected routes redirects to /login
+
+=== Logout Test
+[x] TC15 - Logout clears session
+
+[x] TC16 - Logout redirects to /login
