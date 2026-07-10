@@ -24,7 +24,7 @@
 | W1-5 | Login Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-16 | 6.0 | ToDO |
 | W1-6 | Register Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-18 | 6.0 | ToDO |
 | W1-7 | Global Authentication State | พีรพัฒน์ แสวงรัมย์ | 2026-07-20 | 6.0 | ToDO |
-| W1-8 | Register User | อรชพร กลิ่นชื่น | 2026-07-15 | 6.0 | ToDO |
+| W1-8 | Register User | อรชพร กลิ่นชื่น | 2026-07-15 | 6.0 | Done |
 | W1-9 | Login User | อรชพร กลิ่นชื่น | 2026-07-16 | 5.0 | ToDO |
 | W1-10 | Logout User | การัญภาส กันทะเนตร | 2026-07-17 | 5.0 | ToDO |
 | W1-11 | Get Profile | อรชพร กลิ่นชื่น | 2026-07-18 | 4.0 | ToDO |
