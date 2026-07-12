@@ -86,10 +86,10 @@ export default function Navbar() {
 
   return (
     <header
-      className={`w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6 relative z-50 ${anuphan.className}`}
+      className={`w-[95%] max-w-[1440px] mx-auto px-4 pt-4 sm:pt-6 md:pt-8 mb-6 md:mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-4 sm:gap-6 relative z-50 ${anuphan.className}`}
     >
       {/* 1. โลโก้ */}
-      <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
+      <div className="flex-shrink-0 flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-48 lg:h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
         <img
           src="/photo/logo.png"
           alt="Kin Yark"
@@ -99,7 +99,7 @@ export default function Navbar() {
 
       {/* 2. เมนูลิงก์ และ ช่องค้นหา */}
       <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
-        <div className="flex gap-16 mb-5 text-lg font-bold">
+        <div className="flex gap-4 sm:gap-6 md:gap-10 lg:gap-16 mb-5 text-sm sm:text-base md:text-lg font-bold flex-wrap justify-center">
           <Link href="/home" className={pathname === "/" || pathname === "/home" ? "text-black border-b-[3px] border-black pb-1 cursor-pointer" : "text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition pb-1 border-b-[3px] border-transparent"}>
             หน้าหลัก
           </Link>
@@ -132,12 +132,12 @@ export default function Navbar() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSearchSubmit(searchTerm);
             }}
-            className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm focus:outline-none focus:border-[#71B254] text-lg relative z-20"
+            className="w-full py-3 px-5 sm:py-4 sm:px-8 rounded-full bg-white border border-gray-200 text-gray-700 shadow-sm focus:outline-none focus:border-[#71B254] text-base sm:text-lg relative z-20"
           />
 
 
           {/* ไอคอนแว่นขยายฝั่งขวา */}
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 z-20 pointer-events-none">
+          <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-gray-400 z-20 pointer-events-none">
             <svg
               width="24"
               height="24"
@@ -196,14 +196,14 @@ export default function Navbar() {
       <div className="flex-shrink-0 flex items-center gap-4">
         <Link
           href="/create-recipe"
-          className="px-6 py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-lg"
+          className="px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-sm sm:text-base md:text-lg"
         >
           + เผยแพร่สูตรอาหาร
         </Link>
 
         <div
           onClick={() => setIsSettingOpen(true)}
-          className="w-14 h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
+          className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
         >
           {userProfile?.avatarUrl ? (
             <img
