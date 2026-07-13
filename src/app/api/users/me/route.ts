@@ -29,8 +29,17 @@ export async function PATCH(request: Request) {
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await request.json()
-  const allowed = ["username", "avatarUrl"]
 
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email!,
+    password: body.currentPassword,
+  })
+
+  if (signInError) {
+    return Response.json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" }, { status: 400 })
+  }
+
+  const allowed = ["username", "avatarUrl"]
   const updateData: Record<string, string> = {}
   for (const key of allowed) {
     if (body[key] !== undefined) {
@@ -38,14 +47,29 @@ export async function PATCH(request: Request) {
     }
   }
 
-  if (Object.keys(updateData).length === 0) {
-    return Response.json({ error: "No valid fields to update" }, { status: 400 })
-  }
-
   try {
-    const updated = await prisma.user.update({
+    if (Object.keys(updateData).length > 0) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: updateData,
+      })
+    }
+
+    if (body.newPassword) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: body.newPassword,
+      })
+      if (updateError) {
+        return Response.json({ error: "อัปเดตรหัสผ่านไม่สำเร็จ" }, { status: 400 })
+      }
+    }
+
+    if (Object.keys(updateData).length === 0 && !body.newPassword) {
+      return Response.json({ error: "No valid fields to update" }, { status: 400 })
+    }
+
+    const updated = await prisma.user.findUnique({
       where: { id: user.id },
-      data: updateData,
       select: {
         id: true,
         username: true,

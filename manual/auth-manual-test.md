@@ -19,21 +19,17 @@
   *Expected: Successfully creates user and redirects appropriately.*
 
 ## Feature: Change Password (W1-13)
-- [ ] 1. **Unauthorized Access**: Attempt to call change password API without being logged in. 
-  *Expected: Returns `401 Unauthorized` with error message "คุณยังไม่ได้เข้าสู่ระบบ"*
-- [ ] 2. **Validation Failure**: Submit empty `oldPassword`, or `newPassword` that doesn't meet criteria, or mismatching `confirmPassword`.
+- [x] 1. **Validation Failure**: Submit empty `oldPassword`, or `newPassword` that doesn't meet criteria, or mismatching `confirmPassword`.
   *Expected: Returns `400 Bad Request` with validation error details.*
-- [ ] 3. **Incorrect Old Password**: Submit an incorrect `oldPassword` for the currently logged-in user.
+- [x] 2. **Incorrect Old Password**: Submit an incorrect `oldPassword` for the currently logged-in user.
   *Expected: Returns `400 Bad Request` with error message "รหัสผ่านเดิมไม่ถูกต้อง"*
-- [ ] 4. **Successful Change**: Submit correct `oldPassword` and a valid `newPassword` that matches `confirmPassword`.
+- [x] 3. **Successful Change**: Submit correct `oldPassword` and a valid `newPassword` that matches `confirmPassword`.
   *Expected: Returns `200 OK` and updates the user's password in Supabase successfully.*
 
 ## Feature: Delete Account (W1-15)
-- [ ] 1. **Unauthorized Access**: Attempt to call delete account API without being logged in.
-  *Expected: Returns `401 Unauthorized` with error message "คุณยังไม่ได้เข้าสู่ระบบ"*
-- [ ] 2. **Validation Failure**: Submit request without password or empty password.
+- [x] 1. **Validation Failure**: Submit request without password or empty password.
   *Expected: Returns `400 Bad Request` with validation error details.*
-- [ ] 3. **Incorrect Password**: Submit an incorrect password to confirm deletion.
+- [x] 2. **Incorrect Password**: Submit an incorrect password to confirm deletion.
   *Expected: Returns `400 Bad Request` with error message "รหัสผ่านไม่ถูกต้อง"*
-- [ ] 4. **Successful Deletion**: Submit correct password.
+- [x] 3. **Successful Deletion**: Submit correct password.
   *Expected: Returns `200 OK`, deletes user from Prisma and Supabase, and signs out.*

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation'
 
 interface SettingModalProps {
@@ -30,6 +30,47 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [diet, setDiet] = useState("มังสวิรัติ");
   const [allergy, setAllergy] = useState("ถั่วลิสง");
 
+  // State สำหรับฟอร์มโปรไฟล์
+  const [formUsername, setFormUsername] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formConfirmPassword, setFormConfirmPassword] = useState("");
+  const [formCurrentPassword, setFormCurrentPassword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (userProfile) {
+      setFormUsername(userProfile.username || "");
+      setFormEmail(userProfile.email || "");
+    }
+  }, [userProfile]);
+
+  const passwordError =
+    formPassword.length > 0
+      ? formPassword.length < 8
+        ? "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"
+        : !/[A-Z]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักษรตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว"
+        : !/[a-z]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักษรตัวพิมพ์เล็กอย่างน้อย 1 ตัว"
+        : !/\d/.test(formPassword)
+        ? "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว"
+        : !/[^a-zA-Z0-9]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว"
+        : ""
+      : "";
+
+  const isFormValid = formCurrentPassword.length > 0;
+  const hasChanges =
+    formUsername !== (userProfile?.username || "") ||
+    formPassword !== "" ||
+    formEmail !== (userProfile?.email || "");
+
   if (!isOpen) return null;
 
   return (
@@ -37,7 +78,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-fade-in font-anuphan">
       
       {/* กล่อง Modal หลัก */}
-      <div className="bg-white w-full max-w-[900px] h-[550px] rounded-[24px] shadow-2xl overflow-hidden flex border border-gray-100 animate-scale-up">
+      <div className="bg-white w-full max-w-[900px] h-[550px] rounded-[24px] shadow-2xl flex border border-gray-100 animate-scale-up relative overflow-hidden">
         
         {/* =========================================
             แถบเมนูด้านซ้าย (Sidebar สีเหลืองทอง)
@@ -96,7 +137,10 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           {/* ปุ่มด้านล่างสุด (Delete & Logout) */}
           <div className="flex flex-col gap-1 border-t border-black/10 pt-4">
             {/* 🌟 เปลี่ยนเป็น hover:bg-red-500/10 */}
-            <button className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors">
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors"
+            >
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -165,28 +209,82 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">ชื่อผู้ใช้งาน</label>
-                    <input type="text" defaultValue={userProfile?.username || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <input type="text" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">รหัสผ่าน</label>
-                    <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">รหัสผ่านใหม่</label>
+                    <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400" />
+                    {passwordError && (
+                      <p className="text-red-500 text-xs mt-1">{passwordError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-sm">ที่อยู่อีเมล</label>
-                    <input type="email" defaultValue={userProfile?.email || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-sm">ยืนยันรหัสผ่าน</label>
-                    <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800" />
+                    <label className="block text-gray-700 font-bold mb-1 text-sm">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" value={formConfirmPassword} onChange={(e) => setFormConfirmPassword(e.target.value)} placeholder="ยืนยันรหัสผ่านใหม่" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400" />
                   </div>
                 </div>
 
-                <input type="password" placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-sm" />
+                <input type="password" value={formCurrentPassword} onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-sm" />
+
+                {currentPasswordError && (
+                  <p className="text-red-500 text-xs mt-1">{currentPasswordError}</p>
+                )}
+
+                {formPassword.length > 0 && formPassword !== formConfirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน</p>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
                 <button onClick={onClose} className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-sm">ยกเลิก</button>
-                <button className="px-6 py-2 bg-[#CCCCCC] text-white font-bold rounded-md cursor-not-allowed text-sm">ยืนยัน</button>
+                <button
+                  disabled={!isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError}
+                  onClick={async () => {
+                    if (formPassword !== formConfirmPassword) return;
+                    setCurrentPasswordError("");
+                    setIsSaving(true);
+                    try {
+                      const body: Record<string, string> = {};
+                      body.currentPassword = formCurrentPassword;
+                      if (formUsername !== (userProfile?.username || "")) body.username = formUsername;
+                      if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
+                      if (formPassword.length > 0) body.newPassword = formPassword;
+
+                      const res = await fetch("/api/users/me", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
+                      });
+
+                      if (!res.ok) {
+                        const err = await res.json();
+                        setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                        return;
+                      }
+
+                      setFormPassword("");
+                      setFormConfirmPassword("");
+                      setFormCurrentPassword("");
+                      setCurrentPasswordError("");
+                      onClose();
+                    } catch {
+                      setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  className={`px-6 py-2 font-bold rounded-md transition-colors text-sm ${
+                    !isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError
+                      ? "bg-[#CCCCCC] text-white cursor-not-allowed"
+                      : "bg-[#FFC700] text-black hover:bg-[#e6b300] cursor-pointer"
+                  }`}
+                >
+                  {isSaving ? "กำลังบันทึก..." : "ยืนยัน"}
+                </button>
               </div>
             </div>
           )}
@@ -275,6 +373,64 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           )}
 
         </div>
+
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-[24px]">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">ลบบัญชีผู้ใช้</h3>
+              <p className="text-gray-500 text-sm mb-4">การกระทำนี้ไม่สามารถย้อนกลับได้ กรุณากรอกรหัสผ่านเพื่อยืนยันการลบบัญชี</p>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                placeholder="กรอกรหัสผ่าน"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-red-500 text-gray-700 placeholder-gray-400 text-sm mb-3"
+              />
+              {deleteError && (
+                <p className="text-red-500 text-xs mb-3">{deleteError}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError(""); }}
+                  className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-sm"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  disabled={isDeleting || deletePassword.length === 0}
+                  onClick={async () => {
+                    setDeleteError("");
+                    setIsDeleting(true);
+                    try {
+                      const res = await fetch("/api/auth/delete-account", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password: deletePassword }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json();
+                        setDeleteError(err.message || "เกิดข้อผิดพลาด");
+                        return;
+                      }
+                      router.push("/login");
+                    } catch {
+                      setDeleteError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }}
+                  className={`px-4 py-2 font-bold rounded-md transition-colors text-sm ${
+                    isDeleting || deletePassword.length === 0
+                      ? "bg-red-300 text-white cursor-not-allowed"
+                      : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  }`}
+                >
+                  {isDeleting ? "กำลังลบ..." : "ยืนยันการลบ"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
