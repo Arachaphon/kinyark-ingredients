@@ -3,7 +3,6 @@
 
 *เวอร์ชัน:* 1.0
 *หน่วยงาน:* มหาวิทยาลัยพะเยา
-*อ้างอิงจาก:* ข้อเสนอโครงการ (Proposal_KINYARK.pdf) และแบบจำลองฐานข้อมูล (schema.prisma)
 
 '''
 
@@ -50,14 +49,18 @@ API การรักษาความปลอดภัย และแนว
 | CI/CD
 | Continuous Integration / Continuous Deployment
 
-| E2E
-| End-to-End (การทดสอบแบบครบวงจร)
-
 | ERD
 | Entity-Relationship Diagram
 
 | SDGs
 | Sustainable Development Goals
+
+| Unit Test
+| การทดสอบหน่วยย่อยของโปรแกรม
+
+| Integration Test
+| การทดสอบการทำงานร่วมกันของหลายโมดูล
+
 |===
 
 === 1.4 ผู้มีส่วนได้เสีย (Stakeholders)
@@ -96,7 +99,7 @@ API การรักษาความปลอดภัย และแนว
 * *Backend / Database Layer:* Supabase (PostgreSQL) เข้าถึงผ่าน Prisma ORM
 * *AI Layer:* Google Gemini API และ DeepSeek API สำหรับสร้างและแนะนำสูตรอาหาร
 * *Validation Layer:* Zod สำหรับตรวจสอบความถูกต้องของข้อมูลก่อนบันทึกลงฐานข้อมูล
-* *Testing Layer:* Playwright สำหรับ E2E testing
+* * Testing Layer:* Jest สำหรับ Unit Test และ Integration Test ของ Business Logic, API และ Utility Functions
 
 === 2.2 รูปแบบการออกแบบ (Design Pattern)
 ระบบใช้แนวคิด *Recommender System แบบผสมผสาน (Hybrid)* ร่วมกับ *Generative AI*
@@ -111,9 +114,7 @@ API การรักษาความปลอดภัย และแนว
 | Next.js 14 (App Router)
 | Create React App, Vue, Svelte
 | SSR/SEO, file-based routing, API routes ใน project เดียวกัน, React ecosystem
-
-| Database
-| Supabase PostgreSQL
+ase PostgreSQL
 | MongoDB, MySQL, Firebase
 | relational data, Row Level Security, real-time capability, integrated auth
 
@@ -133,6 +134,8 @@ API การรักษาความปลอดภัย และแนว
 | ใช้งาน Supabase ร่วมกันได้ทันที, Row Level Security support, cookie secure
 |===
 
+| Database
+| Supab
 === 2.4 แผนภาพสถาปัตยกรรม (Architecture Diagram)
 ....
                +-------------------+
@@ -511,9 +514,8 @@ API การรักษาความปลอดภัย และแนว
 * Steps:
   . Lint (ESLint)
   . Type check (TypeScript)
-  . Test (Vitest / Playwright)
+  . Run Jest Test Suite
   . Deploy to Vercel (auto)
-* ข้าม migration ใน production: Prisma migrate deploy (manual หรือ CI step)
 
 === 8.3 ตัวแปรสภาพแวดล้อม (Environment Variables)
 |===
@@ -619,34 +621,40 @@ App Layout
 | ระดับ | เครื่องมือ | ขอบเขต | สิ่งที่ทดสอบ
 
 | Unit Test
-| Vitest
-| Functions, utilities, Zod schemas
-| validation logic, prompt builders, data transformation
+| Jest
+| Validation Schemas, Utility Functions, Business Logic
+| ตรวจสอบ Validation, Role Mapping, Duplicate Detection และฟังก์ชันที่ทำงานแยกส่วน
 
 | Integration Test
-| Vitest + Supertest
-| API endpoints (route handlers)
-| request/response, auth guard, DB operations, error cases
+| Jest
+| Server Actions, API Routes, Service Layer
+| ตรวจสอบการทำงานร่วมกันระหว่าง Validation, Authentication, Prisma และ Business Logic โดยใช้ Mock Dependencies
 
-| End-to-End (E2E)
-| Playwright
-| User flows เต็มรูปแบบ
-| register → login → search → create recipe → review → logout
+| Component Test
+| Jest + React Testing Library
+| React Components
+| Rendering, User Interaction
 |===
 
 === 11.2 แนวทางปฏิบัติ (Practices)
-* Mock external dependencies: AI API calls, Supabase auth (ในการทดสอบ unit/integration)
-* Database: ใช้ test database หรือ mock Prisma client
-* CI: รัน test ทุกครั้งก่อน deploy (GitHub Actions)
-* Coverage target: > 70% สำหรับ business logic, > 50% โดยรวม
+* ใช้ Jest เป็น Framework หลักสำหรับการทดสอบ
+* แยก Unit Test และ Integration Test ออกจากกัน
+* Mock External Dependencies เช่น Supabase Auth, Prisma Client และ AI APIs ด้วย Jest
+* ทดสอบ Validation ผ่าน Zod Schema
+* ทดสอบ Business Logic แบบแยกส่วนโดยไม่พึ่งฐานข้อมูล
+* ทดสอบ Server Actions และ API Routes ด้วย Mock Dependencies
+* รัน Jest Test Suite ผ่าน GitHub Actions ก่อน Deploy
+* ตั้งเป้าหมาย Code Coverage มากกว่า 70%
 
 === 11.3 Test Scenarios หลัก
-* User registration → login flow
-* Create recipe with validation
-* Review + rating calculation
-* AI prompt building (test prompt structure ไม่ใช่ test AI output)
-* Favorite toggle (unique constraint)
-* Error handling: 401, 403, 404, 400
+• ตรวจสอบ Validation ของข้อมูลสมัครสมาชิก
+• ตรวจสอบการกำหนด Role ของผู้ใช้
+• ตรวจสอบการตรวจจับ Email และ Username ซ้ำ
+• ตรวจสอบการสมัครสมาชิกสำเร็จ
+• ตรวจสอบการจัดการเมื่อ Supabase ส่งข้อผิดพลาด
+• ตรวจสอบการจัดการเมื่อ Prisma บันทึกข้อมูลล้มเหลว
+• ตรวจสอบการตอบสนองเมื่อข้อมูลไม่ถูกต้อง
+• ตรวจสอบการทำงานของ Server Action สำหรับการสมัครสมาชิก
 
 '''
 
