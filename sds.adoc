@@ -99,7 +99,7 @@ API การรักษาความปลอดภัย และแนว
 * *Backend / Database Layer:* Supabase (PostgreSQL) เข้าถึงผ่าน Prisma ORM
 * *AI Layer:* Google Gemini API และ DeepSeek API สำหรับสร้างและแนะนำสูตรอาหาร
 * *Validation Layer:* Zod สำหรับตรวจสอบความถูกต้องของข้อมูลก่อนบันทึกลงฐานข้อมูล
-* * Testing Layer:* Jest สำหรับ Unit Test และ Integration Test ของ Business Logic, API และ Utility Functions
+* *Testing Layer:* Jest สำหรับ Unit Test และ Integration Test ของ Business Logic, API และ Utility Functions, และ Playwright สำหรับ End-to-End Test ผ่าน Browser จริง
 
 === 2.2 รูปแบบการออกแบบ (Design Pattern)
 ระบบใช้แนวคิด *Recommender System แบบผสมผสาน (Hybrid)* ร่วมกับ *Generative AI*
@@ -515,6 +515,7 @@ ase PostgreSQL
   . Lint (ESLint)
   . Type check (TypeScript)
   . Run Jest Test Suite
+  . Run Playwright E2E Test Suite (แยก Workflow)
   . Deploy to Vercel (auto)
 
 === 8.3 ตัวแปรสภาพแวดล้อม (Environment Variables)
@@ -634,6 +635,11 @@ App Layout
 | Jest + React Testing Library
 | React Components
 | Rendering, User Interaction
+
+| End-to-End (E2E)
+| Playwright
+| User Flows ผ่าน Chromium browser จริง
+| Auth flow, Navigation, Form Submission, Error Display
 |===
 
 === 11.2 แนวทางปฏิบัติ (Practices)
@@ -645,6 +651,13 @@ App Layout
 * ทดสอบ Server Actions และ API Routes ด้วย Mock Dependencies
 * รัน Jest Test Suite ผ่าน GitHub Actions ก่อน Deploy
 * ตั้งเป้าหมาย Code Coverage มากกว่า 70%
+* ใช้ Playwright สำหรับ End-to-End Testing ผ่าน Chromium browser จริง
+* ใช้ `playwright.config.ts` — กำหนด `testDir ./tests`, `baseURL http://localhost:3000`, `reporter html`
+* ใช้ `webServer` config (`reuseExistingServer: !process.env.CI`) — CI จะ start dev server อัตโนมัติ
+* ใช้ `npm run test:e2e` สำหรับรัน Playwright Test
+* CI: แยก workflow `playwright.yml` trigger push/PR main+dev, ใช้ Supabase secrets จาก GitHub Secrets
+* Linux CI: ใช้ `npx playwright install --with-deps chromium`
+* Playwright tests (`*.spec.ts`) อยู่โฟลเดอร์เดียวกับ Jest tests (`*.test.tsx`) — ไม่ conflict กัน
 
 === 11.3 Test Scenarios หลัก
 • ตรวจสอบ Validation ของข้อมูลสมัครสมาชิก
@@ -655,6 +668,10 @@ App Layout
 • ตรวจสอบการจัดการเมื่อ Prisma บันทึกข้อมูลล้มเหลว
 • ตรวจสอบการตอบสนองเมื่อข้อมูลไม่ถูกต้อง
 • ตรวจสอบการทำงานของ Server Action สำหรับการสมัครสมาชิก
+• ตรวจสอบหน้า Login แสดงผลถูกต้อง (E2E)
+• ตรวจสอบหน้า Register แสดงผลถูกต้อง (E2E)
+• ตรวจสอบการใส่ข้อมูลผิดแล้วแสดง Error (E2E)
+• ตรวจสอบ Navigation จาก Login ไปยัง Register (E2E)
 
 '''
 
