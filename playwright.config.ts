@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   baseURL: 'http://localhost:3000',
+  reporter: 'html',
   webServer: {
     command: 'npm run dev',
     port: 3000,
