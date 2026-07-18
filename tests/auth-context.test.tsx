@@ -31,7 +31,7 @@ beforeEach(() => {
     error: null,
   })
 
-  mockOnAuthStateChange.mockImplementation((callback: typeof onAuthCallback) => {
+  mockOnAuthStateChange.mockImplementation((callback: (event: string, session: unknown) => void) => {
     onAuthCallback = callback
     callback("INITIAL_SESSION", null)
     return { data: { subscription: { unsubscribe: unsubscribeCallback } } }
@@ -56,7 +56,7 @@ describe("AuthContext — 3 scenarios after fix", () => {
       access_token: "token",
     }
 
-    mockOnAuthStateChange.mockImplementation((callback: typeof onAuthCallback) => {
+    mockOnAuthStateChange.mockImplementation((callback: (event: string, session: unknown) => void) => {
       onAuthCallback = callback
       callback("INITIAL_SESSION", mockSession)
       return { data: { subscription: { unsubscribe: unsubscribeCallback } } }
@@ -79,7 +79,7 @@ describe("AuthContext — 3 scenarios after fix", () => {
       access_token: "token",
     }
 
-    mockOnAuthStateChange.mockImplementation((callback: typeof onAuthCallback) => {
+    mockOnAuthStateChange.mockImplementation((callback: (event: string, session: unknown) => void) => {
       onAuthCallback = callback
       callback("INITIAL_SESSION", mockSession)
       return { data: { subscription: { unsubscribe: unsubscribeCallback } } }
@@ -117,7 +117,7 @@ describe("AuthContext — 3 scenarios after fix", () => {
       return <span data-testid="status">{status}</span>
     }
 
-    mockOnAuthStateChange.mockImplementation((callback: typeof onAuthCallback) => {
+    mockOnAuthStateChange.mockImplementation((callback: (event: string, session: unknown) => void) => {
       onAuthCallback = callback
       callback("INITIAL_SESSION", mockSession)
       return { data: { subscription: { unsubscribe: unsubscribeCallback } } }
