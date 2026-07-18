@@ -5,6 +5,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { createClient } from "@/lib/supabase/client";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -23,6 +24,7 @@ export default function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState("");
   
   const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
+  const supabase = createClient();
 
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
   const handleSubmit = (e: React.SyntheticEvent) => {
@@ -162,7 +164,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="button" 
-            onClick={() => router.push("/login")}
+            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
             className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
           >
             กลับสู่หน้าเข้าสู่ระบบ

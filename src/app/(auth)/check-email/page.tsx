@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Anuphan } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import { createClient } from "@/lib/supabase/client";
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
@@ -14,6 +15,7 @@ function CheckEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+  const supabase = createClient();
 
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
@@ -104,7 +106,7 @@ function CheckEmailContent() {
 
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
           className="mt-6 text-sm text-amber-700 font-bold underline"
         >
           กลับไปหน้าเข้าสู่ระบบ

@@ -4,6 +4,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { createClient } from "@/lib/supabase/client";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -14,6 +15,7 @@ const anuphan = Anuphan({
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const router = useRouter(); // รูเตอร์สำหรับปุ่ม Back to Login
+  const supabase = createClient();
 
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -101,7 +103,7 @@ export default function ForgotPasswordPage() {
             {/* ปุ่ม Back to Login */}
             <button
               type="button"
-              onClick={() => router.push("/login")}
+              onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
               className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
             >
               กลับไปหน้า Login

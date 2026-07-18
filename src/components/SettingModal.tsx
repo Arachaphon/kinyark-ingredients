@@ -15,8 +15,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const router = useRouter()
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
+    window.location.href = '/login'
   }
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
