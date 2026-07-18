@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -29,10 +30,11 @@ export default function ForgotPasswordPage() {
       >
         {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดกล่อง Container ขึ้นเป็น w-72 h-72 / xl:w-80 xl:h-80 พร้อมใส่ scale-110 เพื่อความสวยงามเต็มตา */}
         <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
-          <img
+          <Image
             src="/photo/logo.png"
             alt="Kin Yark Logo"
-            className="w-full h-full object-contain animate-scale-up"
+            fill
+            className="object-contain animate-scale-up"
           />
         </div>
 
@@ -56,11 +58,12 @@ export default function ForgotPasswordPage() {
             className="w-full flex flex-col items-center"
           >
             {/* 🛠️ แก้ไขจุดนี้: ขยายขนาดโลโก้เวอร์ชันมือถือขึ้นเป็น w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all */}
-            <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
-              <img
+            <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all relative">
+              <Image
                 src="/photo/logo.png"
                 alt="Kin Yark Logo"
-                className="w-full h-full object-contain"
+                fill
+                className="object-contain"
               />
             </div>
 

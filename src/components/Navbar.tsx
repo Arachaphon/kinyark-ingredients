@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -89,11 +90,12 @@ export default function Navbar() {
       className={`w-[95%] max-w-[1440px] mx-auto px-4 pt-4 sm:pt-6 md:pt-8 mb-6 md:mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-4 sm:gap-6 relative z-50 ${anuphan.className}`}
     >
       {/* 1. โลโก้ */}
-      <div className="flex-shrink-0 flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-48 lg:h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
-        <img
+      <div className="flex-shrink-0 flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-48 lg:h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300 relative">
+        <Image
           src="/photo/logo.png"
           alt="Kin Yark"
-          className="w-full h-full object-contain"
+          fill
+          className="object-contain"
         />
       </div>
 
@@ -206,6 +208,7 @@ export default function Navbar() {
           className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
         >
           {userProfile?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
             <img
               src={userProfile.avatarUrl}
               alt="User Profile"

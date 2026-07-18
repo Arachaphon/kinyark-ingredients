@@ -1,4 +1,4 @@
-import { registerSchema, loginSchema, deleteAccountSchema } from "@/lib/validations/auth.schema";
+import { registerSchema, loginSchema } from "@/lib/validations/auth.schema";
 
 describe("auth.schema.ts", () => {
   describe("registerSchema", () => {

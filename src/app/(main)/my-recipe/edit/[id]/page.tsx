@@ -209,6 +209,7 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
                 />
                 {coverImage ? (
                   <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, next/image not supported */}
                     <img
                       src={coverImage}
                       alt="Cover Preview"

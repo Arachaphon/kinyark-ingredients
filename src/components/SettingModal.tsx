@@ -183,6 +183,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
                   {userProfile?.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
                     <img 
                       src={userProfile.avatarUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 

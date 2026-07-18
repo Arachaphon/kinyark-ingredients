@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Anuphan } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
@@ -40,11 +41,12 @@ function CheckEmailContent() {
 
   return (
       <div className="w-full max-w-[440px] flex flex-col items-center text-center">
-        <div className="w-72 h-72 xl:w-80 xl:h-80 mb-6 flex items-center justify-center">
-          <img
+        <div className="w-72 h-72 xl:w-80 xl:h-80 mb-6 flex items-center justify-center relative">
+          <Image
             src="/photo/logo.png"
             alt="Kin Yark Logo"
-            className="w-full h-full object-contain"
+            fill
+            className="object-contain"
           />
         </div>
 
