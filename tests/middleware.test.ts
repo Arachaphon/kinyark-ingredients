@@ -103,15 +103,14 @@ describe('Middleware Route Protection', () => {
     expect(NextResponse.redirect).not.toHaveBeenCalled();
   });
   
-  it('redirects root (/) to /login if unauthenticated', async () => {
+  it('allows unauthenticated user on root (/)', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const request = new NextRequest('http://localhost:3000/');
     await middleware(request);
 
-    expect(NextResponse.redirect).toHaveBeenCalled();
-    const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
-    expect(redirectUrl.pathname).toBe('/login');
+    expect(NextResponse.next).toHaveBeenCalled();
+    expect(NextResponse.redirect).not.toHaveBeenCalled();
   });
   
   it('redirects root (/) to /home if authenticated', async () => {
