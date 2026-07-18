@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Anuphan } from "next/font/google";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 const anuphan = Anuphan({
@@ -12,7 +12,6 @@ const anuphan = Anuphan({
 });
 
 function CheckEmailContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
   const supabase = createClient();

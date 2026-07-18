@@ -3,7 +3,6 @@
 // 🛠️ อิมพอร์ต React, useRouter และ Google Font (Anuphan)
 import Image from "next/image";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
 import { createClient } from "@/lib/supabase/client";
 
@@ -23,7 +22,6 @@ export default function ResetPasswordPage() {
   // เพิ่ม state สำหรับจัดการข้อความ Error เพื่อใช้แสดงผลบน UI สไตล์เดียวกับหน้า Login
   const [errorMessage, setErrorMessage] = useState("");
   
-  const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
   const supabase = createClient();
 
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
@@ -54,7 +52,7 @@ export default function ResetPasswordPage() {
     });
     
     // TODO: Supabase Reset Password
-    // พออัปเดตรหัสผ่านเสร็จจริง สามารถสั่ง router.push("/login") ตรงนี้ได้เลยครับ 🚀
+    // พออัปเดตรหัสผ่านเสร็จจริง สามารถใช้ window.location.href = "/login" ตรงนี้ได้เลยครับ
   };
 
   return (
