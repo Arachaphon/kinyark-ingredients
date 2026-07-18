@@ -75,7 +75,7 @@ export default function LoginPage() {
           </h1>
 
           {state?.message && (
-            <p className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-2 rounded-lg w-full border border-red-100 animate-fade-in">
+            <p data-testid="login-error-message" className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-2 rounded-lg w-full border border-red-100 animate-fade-in">
               {state.message}
             </p>
           )}
@@ -85,6 +85,7 @@ export default function LoginPage() {
               <input
                 name="email"
                 type="text"
+                data-testid="login-email-input"
                 placeholder="ชื่อผู้ใช้/อีเมล"
                 className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -100,6 +101,7 @@ export default function LoginPage() {
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
+                data-testid="login-password-input"
                 placeholder="รหัสผ่าน"
                 className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -132,6 +134,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
+            data-testid="login-submit-button"
             className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
           >
             เข้าสู่ระบบ

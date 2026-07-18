@@ -6,6 +6,9 @@ export default defineConfig({
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+    video: 'retain-on-failure',
   },
   webServer: {
     command: 'npm run dev',

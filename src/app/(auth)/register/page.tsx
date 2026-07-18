@@ -104,6 +104,7 @@ export default function RegisterPage() {
           <div className="w-full relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full border border-gray-200/80 bg-white group focus-within:ring-1 focus-within:ring-amber-200 transition-all mb-5">
             <select
               name="role"
+              data-testid="register-role-select"
               className="w-full py-3.5 px-6 rounded-full bg-white text-gray-700 text-base focus:outline-none transition-all cursor-pointer appearance-none"
               required
               defaultValue=""
@@ -117,13 +118,13 @@ export default function RegisterPage() {
             </div>
           </div>
           {clientError && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200 animate-fade-in">
+            <p data-testid="register-error-message" className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200 animate-fade-in">
               {clientError}
             </p>
           )}
 
           {state?.message && (
-            <p className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
+            <p data-testid="register-server-error" className="text-red-500 text-sm mb-4 bg-red-50 px-4 py-2 rounded-lg w-full text-center font-semibold border border-red-200">
               {state.message}
             </p>
           )}
@@ -133,6 +134,7 @@ export default function RegisterPage() {
               <input
                 name="username"
                 type="text"
+                data-testid="register-username-input"
                 placeholder="ชื่อผู้ใช้"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -159,6 +161,7 @@ export default function RegisterPage() {
               <input
                 name="email"
                 type="email"
+                data-testid="register-email-input"
                 placeholder="อีเมล"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -185,6 +188,7 @@ export default function RegisterPage() {
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
+                data-testid="register-password-input"
                 placeholder="รหัสผ่าน"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -233,6 +237,7 @@ export default function RegisterPage() {
               <input
                 name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
+                data-testid="register-confirm-password-input"
                 placeholder="ยืนยันรหัสผ่าน"
                 className="w-full py-3.5 pl-6 pr-12 rounded-full border border-gray-200/80 bg-white text-gray-800 placeholder-gray-300 text-base focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
                 required
@@ -280,6 +285,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
+            data-testid="register-submit-button"
             className="w-44 py-2.5 mt-8 md:mt-12 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
           >
             สมัครสมาชิก
