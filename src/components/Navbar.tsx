@@ -184,7 +184,7 @@ export default function Navbar() {
                 ))
               ) : (
                 <div className="px-8 py-3 text-gray-400 italic text-lg">
-                  ไม่พบสูตรอาหารสำหรับ "{searchTerm}"
+                  ไม่พบสูตรอาหารสำหรับ &quot;{searchTerm}&quot;
                 </div>
               )}
             </div>

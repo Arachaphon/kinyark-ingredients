@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // Mock Next Request
-const createMockRequest = (body: any) => {
+const createMockRequest = (body: Record<string, unknown>) => {
   return new Request('http://localhost/api/auth/delete-account', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
