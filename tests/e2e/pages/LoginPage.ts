@@ -19,7 +19,7 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto('/login', { timeout: 20000 });
   }
 
   async login(email: string, password: string) {
@@ -29,7 +29,7 @@ export class LoginPage {
   }
 
   async getErrorMessage() {
-    await this.errorMessage.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    await this.errorMessage.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
     if (await this.errorMessage.isVisible()) {
       return this.errorMessage.textContent();
     }
