@@ -12,6 +12,7 @@ const anuphan = Anuphan({
 
 // =========================================
 // 🍱 ข้อมูลจำลองสำหรับหน้า Feed รวมโพสต์ (Mock Data)
+// เพิ่มฟิลด์ videoUrl สำหรับแสดงวิดีโอสอนทำอาหารของแต่ละเมนู
 // =========================================
 const mockFeedPosts = [
   {
@@ -22,6 +23,7 @@ const mockFeedPosts = [
       "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80",
     image:
       "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600&q=80",
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4", // วิดีโอตัวอย่าง (MP4)
     rating: 3.0,
     likes: 124,
     commentsCount: 3,
@@ -86,6 +88,7 @@ const mockFeedPosts = [
       "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80",
     image:
       "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=600&q=80",
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4", // วิดีโอตัวอย่าง (MP4)
     rating: 4.8,
     likes: 89,
     commentsCount: 1,
@@ -252,6 +255,7 @@ export default function PostsFeedPage() {
               </div>
 
               <div className="mt-12 space-y-8">
+                {/* 🥕 ส่วนผสม */}
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
                     <span className="text-[#F39C12]">🥕</span> ส่วนผสม
@@ -268,6 +272,7 @@ export default function PostsFeedPage() {
                   </div>
                 </div>
 
+                {/* 🍲 วิธีทำ */}
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
                     <span className="text-[#E67E22]">🍲</span> วิธีทำ
@@ -280,9 +285,27 @@ export default function PostsFeedPage() {
                     </ol>
                   </div>
                 </div>
+
+                {/* 🎥 วิดีโอสอนทำอาหาร (แสดง Video Player ใต้ "วิธีทำ") */}
+                {post.videoUrl && (
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
+                      <span className="text-[#E74C3C]">🎥</span> วิดีโอสอนทำอาหาร 
+                    </h3>
+                    <div className="border border-[#71B254] rounded-md p-4 bg-white shadow-sm overflow-hidden">
+                      <video
+                        src={post.videoUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full max-h-[480px] rounded-md bg-black object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Comments Section */}
             {openComments[post.id] && (
               <div className="bg-white border border-[#71B254] rounded-sm p-8 shadow-sm transition-all duration-300 transform origin-top animate-fade-in">
                 <h2 className="text-2xl font-bold text-[#71B254] mb-8">

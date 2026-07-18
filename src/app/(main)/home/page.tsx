@@ -46,25 +46,28 @@ export default function HomePage() {
       {/* =========================================
           2. HERO SECTION
           ========================================= */}
-      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20 mt-8">
-        <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
+      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 mt-8">
+        <div className="md:col-span-5 flex flex-col items-center md:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           
-          <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
+          {/* 🛠️ แก้ไขตรงนี้: จอมือถือเล็กสุดเรียงแถวตรงลงมา (grid-cols-1) พอเริ่มกว้างขึ้น (sm:) จะสลับเป็น 2 คอลัมน์เหมือนเดิม ทำให้ตัวหนังสือไม่เบียดตกขอบ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-[450px]">
             <CategoryCard emoji="🥩" text="เนื้อสัตว์" category="Meat" />
             <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" category="Kitchen Tools" />
             <CategoryCard emoji="🥗" text="ผลไม้" category="Fruits" />
             <CategoryCard emoji="🦞" text="อาหารทะเล" category="Seafood" />
-            <div className="col-span-2 flex justify-center mt-2">
-              <div className="w-[210px]">
+            
+            {/* 🛠️ จัดตำแหน่งกล่อง "ผัก": จอมือถือเรียงเต็มแถวปกติ (col-span-1) พอจอใหญ่ขึ้นกลับไปกว้าง 210px ตรงกลางเหมือนเดิม */}
+            <div className="sm:col-span-2 flex justify-center mt-2 w-full">
+              <div className="w-full sm:w-[210px]">
                 <CategoryCard emoji="🥦" text="ผัก" category="Vegetables" />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="xl:col-span-7 flex items-center justify-end relative mt-12 xl:mt-0">
-          <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
+        <div className="md:col-span-7 flex items-center justify-end relative mt-12 md:mt-0">
+          <div className="bg-white rounded-[40px] w-full md:w-[88%] p-12 pr-36 md:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
@@ -84,8 +87,8 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 md:translate-x-16 w-40 h-40 md:w-80 md:h-80 drop-shadow-2xl z-20 pointer-events-none">
+              <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" />
           </div>
         </div>
       </main>
@@ -98,7 +101,7 @@ export default function HomePage() {
           สูตรอาหารแนะนำประจำสัปดาห์
         </h2>
         
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12">
           <MenuCarousel provider="โดย gemini" recipes={geminiRecipes} />
           <MenuCarousel provider="โดย Deepseek" recipes={deepseekRecipes} />
         </div>
@@ -136,7 +139,6 @@ function MenuCarousel({
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
   };
 
-  
   const handlePrev = () => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + recipes.length) % recipes.length);
   };
@@ -151,11 +153,11 @@ function MenuCarousel({
   const item2 = recipes[(currentIndex + 1) % recipes.length];
 
   return (
-    <div className="bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px]">
+    <div className="bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[340px] sm:max-w-[650px]">
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
       
-      <div className="flex justify-center gap-6 mt-12 px-4 relative">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-24 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
           <RecipeCard id={item1.id} title={item1.title} bgColor={item1.color} image={item1.image} />
         </div>
@@ -177,7 +179,7 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
     <button
       onClick={onClick}
       className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgb(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
-        isLeft ? "-left-7" : "-right-7"
+        isLeft ? "left-1 sm:-left-7" : "right-1 sm:-right-7"
       }`}
     >
       {isLeft ? (
@@ -199,7 +201,7 @@ function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string
   };
 
   return (
-    <div className={`${bgColor} w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
+    <div className={`${bgColor} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <img src={image} alt={title} className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-white" />

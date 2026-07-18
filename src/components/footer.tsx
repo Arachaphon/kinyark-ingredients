@@ -13,7 +13,7 @@ const anuphan = Anuphan({
 export default function Footer() {
   return (
     <footer
-      className={`w-full bg-[#EFE9CE] border-t border-[#E2DAB3] mt-20 py-12 text-gray-600 ${anuphan.className}`}
+      className={`w-full bg-[#EFE9CE] border-t border-[#E2DAB3] mt-12 md:mt-20 py-8 md:py-12 text-gray-600 ${anuphan.className}`}
     >
       <div className="w-[95%] max-w-[1440px] mx-auto px-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
 
