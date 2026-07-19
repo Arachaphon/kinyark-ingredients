@@ -13,6 +13,7 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
@@ -185,7 +186,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                   {userProfile?.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
                     <img 
-                      src={userProfile.avatarUrl} 
+                      src={previewUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
@@ -199,7 +200,20 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
                     <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
                   </div>
-                  <button className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700">
+                  
+                  {/* ซ่อน input file เอาไว้ภายใต้ปุ่มเดิม */}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                  <button 
+                    onClick={handleUploadClick}
+                    type="button"
+                    className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
+                  >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
