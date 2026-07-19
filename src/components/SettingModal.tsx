@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from 'next/navigation'
 
 interface SettingModalProps {
@@ -30,7 +30,129 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [diet, setDiet] = useState("มังสวิรัติ");
   const [allergy, setAllergy] = useState("ถั่วลิสง");
 
+  // ===== State สำหรับแท็บโปรไฟล์ (แก้ไขข้อมูลได้จริง) =====
+  const [username, setUsername] = useState(userProfile?.username || "");
+  const [email, setEmail] = useState(userProfile?.email || "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(userProfile?.avatarUrl || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+
   if (!isOpen) return null;
+
+  // มีการเปลี่ยนแปลงข้อมูลจริงหรือไม่ (เทียบกับค่าตั้งต้น)
+  const hasChanges =
+    username !== (userProfile?.username || "") ||
+    email !== (userProfile?.email || "") ||
+    newPassword.length > 0 ||
+    confirmPassword.length > 0 ||
+    avatarFile !== null;
+
+  // ต้องกรอกรหัสผ่านปัจจุบันเสมอเพื่อยืนยันการเปลี่ยนแปลง
+  const canSubmit = hasChanges && currentPassword.length > 0 && !isSubmitting;
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setProfileError("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError("ขนาดไฟล์ต้องไม่เกิน 5MB");
+      return;
+    }
+
+    setProfileError(null);
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const resetMessages = () => {
+    setProfileError(null);
+    setProfileSuccess(null);
+  };
+
+  const handleCancel = () => {
+    setUsername(userProfile?.username || "");
+    setEmail(userProfile?.email || "");
+    setNewPassword("");
+    setConfirmPassword("");
+    setCurrentPassword("");
+    setAvatarFile(null);
+    setAvatarPreview(userProfile?.avatarUrl || null);
+    resetMessages();
+    onClose();
+  };
+
+  const handleUpdateProfile = async () => {
+    resetMessages();
+
+    if (!currentPassword) {
+      setProfileError("กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล");
+      return;
+    }
+
+    if (newPassword || confirmPassword) {
+      if (newPassword.length < 8) {
+        setProfileError("รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setProfileError("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("username", username);
+      formData.append("email", email);
+      formData.append("currentPassword", currentPassword);
+      if (newPassword) {
+        formData.append("newPassword", newPassword);
+      }
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
+      }
+
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || "ไม่สามารถอัปเดตโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง");
+      }
+
+      setProfileSuccess("อัปเดตโปรไฟล์เรียบร้อยแล้ว");
+      setNewPassword("");
+      setConfirmPassword("");
+      setCurrentPassword("");
+      setAvatarFile(null);
+
+      // รีเฟรชข้อมูลหน้าเพื่อดึงโปรไฟล์ล่าสุด
+      router.refresh();
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     /* 🌟 แก้ไขตรงนี้: จาก bg-black bg-opacity-40 เป็น bg-black/40 เพื่อให้ฉากหลังโปร่งแสงใน Tailwind v4 */
@@ -135,25 +257,36 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             <div className="flex flex-col gap-4 md:gap-6 h-full justify-between">
               <div className="overflow-y-auto md:overflow-visible pr-1">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
-                
+
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
-                  {userProfile?.avatarUrl ? (
+                  {avatarPreview ? (
                     <img 
-                      src={userProfile.avatarUrl} 
-                      alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
+                      src={avatarPreview} 
+                      alt={username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
                     <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gray-100 border-2 border-gray-100 flex items-center justify-center shrink-0">
                       <span className="text-xl sm:text-3xl font-bold text-gray-400">
-                        {userProfile?.username?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase() || "U"}
+                        {username?.charAt(0).toUpperCase() || email?.charAt(0).toUpperCase() || "U"}
                       </span>
                     </div>
                   )}
                   <div className="text-center sm:text-left">
-                    <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
-                    <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
+                    <h4 className="text-base sm:text-xl font-bold text-gray-800">{username || "User"}</h4>
+                    <p className="text-gray-400 text-xs sm:text-sm">{email || ""}</p>
                   </div>
-                  <button className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
+                  >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
@@ -162,23 +295,56 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ชื่อผู้ใช้งาน</label>
-                    <input type="text" defaultValue={userProfile?.username || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => { setUsername(e.target.value); resetMessages(); }}
+                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
+                    />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่าน</label>
-                    <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => { setNewPassword(e.target.value); resetMessages(); }}
+                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
+                    />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
-                    <input type="email" defaultValue={userProfile?.email || ""} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); resetMessages(); }}
+                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
+                    />
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่าน</label>
-                    <input type="password" defaultValue="123456789012" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => { setConfirmPassword(e.target.value); resetMessages(); }}
+                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
+                    />
                   </div>
                 </div>
 
-                <input type="password" placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" />
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => { setCurrentPassword(e.target.value); resetMessages(); }}
+                  placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล"
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm"
+                />
+
+                {profileError && (
+                  <p className="text-red-600 text-xs sm:text-sm font-semibold mt-2">{profileError}</p>
+                )}
+                {profileSuccess && (
+                  <p className="text-green-600 text-xs sm:text-sm font-semibold mt-2">{profileSuccess}</p>
+                )}
               </div>
 
               {/* 🛠️ เพิ่มปุ่ม Logout และ ลบบัญชีผู้ใช้ ท้ายหน้าโปรไฟล์สำหรับจอมือถือ */}
@@ -195,8 +361,18 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
               </div>
 
               <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 mt-2">
-                <button onClick={onClose} className="px-5 py-2 sm:px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-xs sm:text-sm">ยกเลิก</button>
-                <button className="px-5 py-2 sm:px-6 bg-[#CCCCCC] text-white font-bold rounded-md cursor-not-allowed text-xs sm:text-sm">ยืนยัน</button>
+                <button onClick={handleCancel} className="px-5 py-2 sm:px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-xs sm:text-sm">ยกเลิก</button>
+                <button
+                  onClick={handleUpdateProfile}
+                  disabled={!canSubmit}
+                  className={`px-5 py-2 sm:px-6 font-bold rounded-md transition-colors text-xs sm:text-sm ${
+                    canSubmit
+                      ? "bg-[#FFC700] text-black hover:bg-[#e6b400] cursor-pointer"
+                      : "bg-[#CCCCCC] text-white cursor-not-allowed"
+                  }`}
+                >
+                  {isSubmitting ? "กำลังบันทึก..." : "ยืนยัน"}
+                </button>
               </div>
             </div>
           )}
