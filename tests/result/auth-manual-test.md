@@ -11,8 +11,6 @@
 [/] TC02 - ลงทะเบียนสำเร็จ (ร้านค้า)
     -> กรอก: username, email, password, confirm, role=ร้านค้า
     -> Expected: redirect ไป /check-email
-    ## ลงทะเบียนสำเร็จแล้วขึ้น Error An unexpected response was received from the server.
-    ## เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองอีกครั้ง
 [/] TC03 - อีเมลซ้ำ
     -> กรอก email ที่ใช้ไปแล้ว
     -> Expected: error "อีเมลนี้ถูกใช้งานแล้ว"
@@ -24,7 +22,7 @@ Result:ลงทะเบียนไม่ได้ แต่ไม่ขึ้
 Result:ลงทะเบียนไม่ได้ แต่ไม่ขึ้นคำว่า ชื่อผู้ใช้นี้ถูกใช้งานแล้ว ขึ้นแต่กล่องแดงเปล่า
 
 [/] TC05 - รหัสผ่านไม่ตรงเงื่อนไข
-    -> ลอง: aaaaaaa (7 chars), WEAKPASS1!, weakpass1!, StrongPass1, StrongP@ss
+    -> ลอง: aaaaaaa (8 chars), WEAKPASS1!, weakpass1!, StrongPass1, StrongP@ss
     -> Expected: error ตามเงื่อนไขที่ขาด
 
 [/] TC06 - รหัสผ่านกับ confirm ไม่ตรงกัน
