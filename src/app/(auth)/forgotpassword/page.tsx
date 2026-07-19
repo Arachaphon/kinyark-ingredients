@@ -17,8 +17,14 @@ export default function ForgotPasswordPage() {
   const router = useRouter(); // รูเตอร์สำหรับปุ่ม Back to Login
   const supabase = createClient();
 
-  const handleSubmit = (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/resetpassword`,
+    });
+    if (!error) {
+      router.push(`/check-email?email=${encodeURIComponent(email)}`);
+    }
   };
 
   return (

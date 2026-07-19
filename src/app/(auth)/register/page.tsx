@@ -61,7 +61,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (state?.success) {
-      router.push(`/check-email?email=${encodeURIComponent(submittedEmail)}`);
+      router.push("/login");
     }
   }, [state, submittedEmail, router]);
 
