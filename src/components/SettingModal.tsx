@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation'
+import { createClient } from "@/lib/supabase/client";
 
 interface SettingModalProps {
   isOpen: boolean;
@@ -52,16 +53,40 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const supabase = createClient();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPreviewUrl(URL.createObjectURL(file));
+      setAvatarFile(file);
     }
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `avatar-${Date.now()}.${fileExt}`;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id;
+    const filePath = userId ? `${userId}/${fileName}` : fileName;
+
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
   };
 
   const passwordError =
@@ -83,7 +108,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const hasChanges =
     formUsername !== (userProfile?.username || "") ||
     formPassword !== "" ||
-    formEmail !== (userProfile?.email || "");
+    formEmail !== (userProfile?.email || "") ||
+    avatarFile !== null;
 
   if (!isOpen) return null;
 
@@ -295,6 +321,10 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       if (formUsername !== (userProfile?.username || "")) body.username = formUsername;
                       if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
                       if (formPassword.length > 0) body.newPassword = formPassword;
+                      if (avatarFile) {
+                        const avatarUrl = await uploadAvatar(avatarFile);
+                        body.avatarUrl = avatarUrl;
+                      }
 
                       const res = await fetch("/api/users/me", {
                         method: "PATCH",
@@ -312,6 +342,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       setFormConfirmPassword("");
                       setFormCurrentPassword("");
                       setCurrentPasswordError("");
+                      setAvatarFile(null);
+                      setPreviewUrl(null);
                       onClose();
                     } catch {
                       setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
