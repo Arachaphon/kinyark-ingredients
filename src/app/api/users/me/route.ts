@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+
 import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
@@ -41,20 +42,18 @@ export async function PATCH(request: Request) {
 
   const allowed = ["username", "avatarUrl"]
   const updateData: Record<string, string> = {}
+
   for (const key of allowed) {
     if (body[key] !== undefined) {
       updateData[key] = body[key]
     }
   }
 
-  try {
-    if (Object.keys(updateData).length > 0) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: updateData,
-      })
-    }
+  if (Object.keys(updateData).length === 0 && !body.newPassword) {
+    return Response.json({ error: "No valid fields to update" }, { status: 400 })
+  }
 
+  try {
     if (body.newPassword) {
       const { error: updateError } = await supabase.auth.updateUser({
         password: body.newPassword,
@@ -64,21 +63,30 @@ export async function PATCH(request: Request) {
       }
     }
 
-    if (Object.keys(updateData).length === 0 && !body.newPassword) {
-      return Response.json({ error: "No valid fields to update" }, { status: 400 })
-    }
-
-    const updated = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        role: true,
-        createdAt: true,
-      },
-    })
+    const updated = Object.keys(updateData).length > 0
+      ? await prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+            role: true,
+            createdAt: true,
+          },
+        })
+      : await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            avatarUrl: true,
+            role: true,
+            createdAt: true,
+          },
+        })
 
     return Response.json({ data: updated })
   } catch (error) {

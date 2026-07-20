@@ -14,6 +14,7 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
@@ -22,16 +23,13 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   
-  // State สำหรับแท็บ AI Personalization (Toggles)
   const [aiRec, setAiRec] = useState(true);
   const [aiHistory, setAiHistory] = useState(true);
   const [dailySug, setDailySug] = useState(false);
 
-  // State สำหรับแท็บ Food Preferences
   const [diet, setDiet] = useState("มังสวิรัติ");
   const [allergy, setAllergy] = useState("ถั่วลิสง");
 
-  // State สำหรับฟอร์มโปรไฟล์
   const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formEmail, setFormEmail] = useState("");
@@ -44,18 +42,18 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    if (userProfile) {
-      setFormUsername(userProfile.username || "");
-      setFormEmail(userProfile.email || "");
-    }
-  }, [userProfile]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (userProfile) {
+      setFormUsername(userProfile.username || "");
+      setFormEmail(userProfile.email || "");
+      setPreviewUrl(userProfile.avatarUrl || null);
+    }
+  }, [userProfile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -114,22 +112,15 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   if (!isOpen) return null;
 
   return (
-    /* 🌟 แก้ไขตรงนี้: จาก bg-black bg-opacity-40 เป็น bg-black/40 เพื่อให้ฉากหลังโปร่งแสงใน Tailwind v4 */
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fade-in font-anuphan">
       
-      {/* กล่อง Modal หลัก - ปรับความสูงจอมือถือเป็น h-auto และให้ขยายสูงสุดได้ max-h-[92vh] เพื่อไม่ให้เลยขอบจอ และรองรับการเลื่อนภายใน */}
       <div className="bg-white w-full max-w-[900px] h-auto md:h-[550px] max-h-[92vh] md:max-h-none rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100 animate-scale-up relative">
         
-        {/* =========================================
-            แถบเมนูด้านซ้าย (Sidebar สีเหลืองทอง)
-            ========================================= */}
         <div className="w-full md:w-[260px] bg-[#FFC700] p-4 md:p-6 flex flex-row md:flex-col justify-between shrink-0 text-black items-center md:items-stretch gap-2 md:gap-4 border-b md:border-b-0 md:border-r border-black/5">
           <div className="w-full flex md:flex-col justify-between md:justify-start items-center md:items-stretch">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black md:mb-8 tracking-wide whitespace-nowrap">ตั้งค่า</h2>
             
-            {/* ปรับแถบเมนูนำทางในมือถือให้กระชับยิ่งขึ้น */}
             <nav className="flex flex-row md:flex-col gap-1 sm:gap-2 overflow-x-auto no-scrollbar ml-4 md:ml-0">
-              {/* ปุ่ม Profile */}
               <button 
                 onClick={() => setActiveTab("profile")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -143,7 +134,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 โปรไฟล์
               </button>
 
-              {/* ปุ่ม Food Preferences */}
               <button 
                 onClick={() => setActiveTab("preferences")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -156,7 +146,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 ข้อมูลโภชนาการที่ชอบ
               </button>
 
-              {/* ปุ่ม AI Personalization */}
               <button 
                 onClick={() => setActiveTab("ai")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -172,9 +161,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </nav>
           </div>
 
-          {/* ปุ่มด้านล่างสุด (Delete & Logout) แสดงเฉพาะบนเดสก์ท็อปตามเดิม */}
           <div className="hidden md:flex flex-col gap-1 border-t border-black/10 pt-4">
-            {/* 🌟 เปลี่ยนเป็น hover:bg-red-500/10 */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors"
@@ -199,9 +186,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           </div>
         </div>
 
-        {/* =========================================
-            เนื้อหาฝั่งขวา (เปลี่ยนไปตามเเท็บที่เลือก)
-            ========================================= */}
         <div className="flex-grow p-5 sm:p-6 md:p-8 relative flex flex-col overflow-y-auto bg-white min-h-0">
           
           <button 
@@ -215,30 +199,16 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </svg>
           </button>
 
-          {/* เเท็บโปรไฟล์ */}
           {activeTab === "profile" && (
             <div className="flex flex-col gap-4 md:gap-6 h-full justify-between">
               <div className="overflow-y-auto md:overflow-visible pr-1">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
                   {previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img 
                       src={previewUrl} 
-                      alt="Preview" className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
-                    />
-                  ) : userProfile?.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
-                    <img 
-                      src={userProfile.avatarUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
@@ -252,7 +222,19 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
                     <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
                   </div>
-                  <button onClick={handleUploadClick} className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700">
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                  <button 
+                    onClick={handleUploadClick}
+                    type="button"
+                    className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
+                  >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
@@ -291,7 +273,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 )}
               </div>
 
-              {/* 🛠️ เพิ่มปุ่ม Logout และ ลบบัญชีผู้ใช้ ท้ายหน้าโปรไฟล์สำหรับจอมือถือ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-4">
                 <button 
                   onClick={handleLogout}
@@ -343,7 +324,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       setFormCurrentPassword("");
                       setCurrentPasswordError("");
                       setAvatarFile(null);
-                      setPreviewUrl(null);
                       onClose();
                     } catch {
                       setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -363,7 +343,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </div>
           )}
 
-          {/* เเท็บข้อมูลโภชนาการ */}
           {activeTab === "preferences" && (
             <div className="flex flex-col h-full justify-between">
               <div>
@@ -403,7 +382,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 </div>
               </div>
 
-              {/* ชุดปุ่ม Logout สำหรับจอมือถือในหน้าอื่นๆ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-8">
                 <button 
                   onClick={handleLogout}
@@ -418,7 +396,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </div>
           )}
 
-          {/* เเท็บ AI */}
           {activeTab === "ai" && (
             <div className="h-full flex flex-col justify-between">
               <div>
@@ -461,7 +438,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 </div>
               </div>
 
-              {/* ปุ่มลบ/ออกจากระบบเพิ่มเติมสำหรับ Mobile ในหน้าอื่นๆ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-8">
                 <button 
                   onClick={handleLogout}
