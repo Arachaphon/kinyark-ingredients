@@ -49,3 +49,9 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+opencode.json
+
+# Agent settings and sounds
+.agents/
+.claude/
+sounds/

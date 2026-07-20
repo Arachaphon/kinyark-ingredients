@@ -12,14 +12,15 @@ model User {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username   String?  @unique
   email      String   @unique
-  avatar_url String?
-  created_at DateTime @default(now()) @db.Timestamptz
+  avatarUrl String?
+  role       String   @default("USER")
+  createdAt DateTime @default(now()) @db.Timestamptz
 
-  posts            Post[]
+  recipes          Recipe[]
   reviews          Review[]
   favorites        Favorite[]
-  search_histories SearchHistory[]
-  review_likes     ReviewLike[]
+  searchHistories SearchHistory[]
+  reviewLikes     ReviewLike[]
 
   @@map("users")
 }
@@ -28,115 +29,155 @@ model Category {
   id   Int    @id @default(autoincrement())
   name String
 
-  sub_categories SubCategory[]
+  subCategories SubCategory[]
 
   @@map("categories")
 }
 
 model SubCategory {
   id          Int    @id @default(autoincrement())
-  category_id Int
+  categoryId Int
   name        String
 
-  category    Category     @relation(fields: [category_id], references: [id])
+  category    Category     @relation(fields: [categoryId], references: [id])
   ingredients Ingredient[]
 
   @@map("sub_categories")
 }
 
 model Ingredient {
-  id              Int    @id @default(autoincrement())
-  sub_category_id Int
-  name            String @unique
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  subCategoryId  Int?
+  
 
-  sub_category     SubCategory      @relation(fields: [sub_category_id], references: [id])
-  post_ingredients PostIngredient[]
+  subCategory       SubCategory?       @relation(fields: [subCategoryId], references: [id])
+  recipeIngredients RecipeIngredient[]
 
   @@map("ingredients")
 }
 
-model Post {
-  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id            String   @db.Uuid
-  menu_name          String
-  featured_image_url String?
-  instructions       String?
-  video_url          String?
-  rating             Float    @default(0)
-  review_count       Int      @default(0)
-  favorite_count     Int      @default(0)
-  created_at         DateTime @default(now()) @db.Timestamptz
+model Recipe {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @db.Uuid
 
-  user             User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  post_ingredients PostIngredient[]
-  reviews          Review[]
-  favorites        Favorite[]
+  recipeName     String
+  description    String?
 
-  @@map("posts")
+  instructions   String?
+
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0)
+  favoriteCount  Int      @default(0)
+
+  bgColor        String?
+  aiProvider     String?
+  visibility     String   @default("public")
+
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipeIngredients  RecipeIngredient[]
+  equipmentItems     RecipeEquipment[]
+  reviews            Review[]
+  favorites          Favorite[]
+
+  images             RecipeImage[]
+  videos             RecipeVideo[]
+
+  @@map("recipes")
 }
 
-model PostIngredient {
-  id            String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  post_id       String @db.Uuid
-  ingredient_id Int
+model RecipeIngredient {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId     String  @db.Uuid
+  ingredientId Int
   quantity      Float
   unit          String
 
-  post       Post       @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredient_id], references: [id])
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
 
-  @@map("post_ingredients")
+  @@unique([recipeId, ingredientId])
+  @@map("recipe_ingredients")
+}
+
+model RecipeImage {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String @db.Uuid
+  imageUrl    String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@map("recipe_images")
+}
+
+model RecipeVideo {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String @db.Uuid
+  videoUrl    String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@map("recipe_videos")
+}
+
+model RecipeEquipment {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@map("recipe_equipment")
 }
 
 model Favorite {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id    String   @db.Uuid
-  post_id    String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz
+  userId    String   @db.Uuid
+  recipeId  String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
-  @@unique([user_id, post_id])
+  @@unique([userId, recipeId])
   @@map("favorites")
 }
 
 model SearchHistory {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id      String   @db.Uuid
-  search_query String
-  created_at   DateTime @default(now()) @db.Timestamptz
+  userId      String   @db.Uuid
+  searchQuery String
+  createdAt   DateTime @default(now()) @db.Timestamptz
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("search_histories")
 }
 
 model Review {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  post_id      String   @db.Uuid
-  user_id      String   @db.Uuid
+  recipeId    String   @db.Uuid
+  userId      String   @db.Uuid
   rating       Int
   comment      String?
-  is_anonymous Boolean  @default(false)
-  created_at   DateTime @default(now()) @db.Timestamptz
+  isAnonymous Boolean  @default(false)
+  createdAt   DateTime @default(now()) @db.Timestamptz
 
-  post         Post         @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  review_likes ReviewLike[]
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewLikes ReviewLike[]
 
   @@map("reviews")
 }
 
 model ReviewLike {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  review_id  String   @db.Uuid
-  user_id    String   @db.Uuid
-  created_at DateTime @default(now()) @db.Timestamptz
+  reviewId  String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz
 
-  review Review @relation(fields: [review_id], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+ review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([review_id, user_id])
+@@unique([reviewId, userId])
   @@map("review_likes")
 }

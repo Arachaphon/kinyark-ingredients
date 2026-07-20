@@ -1,55 +1,150 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import CookieConsent from "@/components/CookieConsent"; // 🌟 1. นำเข้าคอมโพเนนต์แบนเนอร์คุกกี้ตรงนี้ครับ
+import CookieConsent from "@/components/CookieConsent";
+import Link from "next/link";
+import { Anuphan } from "next/font/google";
 
-// =========================================
-// 🍱 ข้อมูลจำลอง (Mock Data) อัปเดตชื่อเมนูไทยและรูป
-// ========================================
-const geminiRecipes = [
-  { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" },
-  { id: 2, title: "ไข่เจียวหมูสับ", color: "bg-[#FF8585]", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" },
-  { id: 3, title: "ต้มจืดเต้าหู้", color: "bg-[#3AC9B5]", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" },
-  { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" },
+// 🌟 เรียกใช้งานฟอนต์ Anuphan จาก Google Fonts
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
+
+// 🌟 เมนูจำลอง (Mock Data) จัดเต็มค่ายละ 4 เมนู สีสันสดใสชวนหิว
+interface RecommendedRecipe {
+  id: string;
+  menu_name: string;
+  bg_color?: string;
+  featured_image_url?: string;
+  rating?: number;
+}
+const fallbackGemini: RecommendedRecipe[] = [
+  {
+    id: "mock-g1",
+    menu_name: "ข้าวผัดต้มยำกุ้งแห้ง",
+    bg_color: "bg-[#6F62E4]",
+    featured_image_url: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+    rating: 4.9
+  },
+  {
+    id: "mock-g2",
+    menu_name: "สเต็กไก่พริกไทยดำ",
+    bg_color: "bg-[#E67E22]",
+    featured_image_url: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d",
+    rating: 4.8
+  },
+  {
+    id: "mock-g3",
+    menu_name: "แกงเขียวหวานไก่โรตี",
+    bg_color: "bg-[#27AE60]",
+    featured_image_url: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd",
+    rating: 4.7
+  },
+  {
+    id: "mock-g4",
+    menu_name: "ผัดไทยกุ้งสดห่อไข่",
+    bg_color: "bg-[#D35400]",
+    featured_image_url: "https://images.unsplash.com/photo-1626804475315-9644b37a2fe4",
+    rating: 5.0
+  }
 ];
 
-const deepseekRecipes = [
-  { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
-  { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
-  { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
-  { id: 4, title: "กะเพราไก่ไข่ดาว", color: "bg-[#4285F4]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
+const fallbackDeepseek: RecommendedRecipe[] = [
+  {
+    id: "mock-d1",
+    menu_name: "สปาเก็ตตี้คาโบนาร่า",
+    bg_color: "bg-[#3AC9B5]",
+    featured_image_url: "https://images.unsplash.com/photo-1612874742237-6526221588e3",
+    rating: 5.0
+  },
+  {
+    id: "mock-d2",
+    menu_name: "แซลมอนย่างซีอิ๊ว",
+    bg_color: "bg-[#E74C3C]",
+    featured_image_url: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2",
+    rating: 4.7
+  },
+  {
+    id: "mock-d3",
+    menu_name: "ซูชิแซลมอนเซ็ตโปร",
+    bg_color: "bg-[#2C3E50]",
+    featured_image_url: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c",
+    rating: 4.9
+  },
+  {
+    id: "mock-d4",
+    menu_name: "พิซซ่าเตาถ่านฮาวายเอี้ยน",
+    bg_color: "bg-[#F39C12]",
+    featured_image_url: "https://images.unsplash.com/photo-1513104890138-7c749659a591",
+    rating: 4.6
+  }
 ];
 
 export default function HomePage() {
+  const [geminiRecipes, setGeminiRecipes] = useState<RecommendedRecipe[]>([]);
+  const [deepseekRecipes, setDeepseekRecipes] = useState<RecommendedRecipe[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecommendedMenu = async () => {
+      try {
+        const res = await fetch("/api/recipes/recommended");
+        if (res.ok) {
+          const data = await res.json();
+          setGeminiRecipes(data.gemini || []);
+          setDeepseekRecipes(data.deepseek || []);
+        }
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการโหลดข้อมูลเมนูแนะนำ:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendedMenu();
+  }, []);
+
+  const geminiToDisplay = geminiRecipes.length > 0 ? geminiRecipes : fallbackGemini;
+  const deepseekToDisplay = deepseekRecipes.length > 0 ? deepseekRecipes : fallbackDeepseek;
+
   return (
-    <div className="min-h-screen bg-[#F5EFD7] font-sans pb-20 overflow-x-hidden">
+    <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       {/* =========================================
           1. HEADER & NAVBAR SECTION
           ========================================= */}
-      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-start justify-between gap-6">
-        <div className="flex-shrink-0 flex items-center justify-center w-32 h-32 xl:w-40 xl:h-40">
-          <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
+      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
+        
+        {/* โลโก้ขนาดใหญ่ */}
+        <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300 relative">
+          <Image src="/photo/logo.png" alt="Kin Yark" fill className="object-contain" />
         </div>
+
+        {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
           <div className="flex gap-16 mb-5 text-lg font-bold">
-            <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">Home</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">My Recipe</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Favorites</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">Posts</span>
+            <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
+            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">โพสต์ทั้งหมด</span>
           </div>
           <div className="w-full relative">
-            <input type="text" placeholder="Search ..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg" />
+            <input type="text" placeholder="ค้นหา..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg " />
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400">
               <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
             </div>
           </div>
         </div>
-        <div className="flex-shrink-0 flex items-start gap-4 pt-4">
-          <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-[#71B254] font-bold bg-white hover:bg-green-50 transition text-lg">+ Create</button>
-          <button className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
+
+        {/* ปุ่มฝั่งขวา */}
+        <div className="flex-shrink-0 flex items-center gap-4">
+          <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-lg">+ เผยแพร่สูตรอาหาร</button>
+          <Link href="/login" className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            Sign in
-          </button>
+            เข้าสู่ระบบ
+          </Link>
         </div>
       </header>
 
@@ -58,15 +153,15 @@ export default function HomePage() {
           ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20">
         <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
-          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">Ingredient Categories</h2>
+          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
-            <CategoryCard emoji="🥩" text="Meat & Poultry" />
-            <CategoryCard emoji="🍳" text="Kitchen Tools" />
-            <CategoryCard emoji="🥗" text="Fruits" />
-            <CategoryCard emoji="🦞" text="Seafood" />
+            <CategoryCard emoji="🥩" text="เนื้อสัตว์" />
+            <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" />
+            <CategoryCard emoji="🥗" text="ผลไม้" />
+            <CategoryCard emoji="🦞" text="อาหารทะเล" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="Vegetables" />
+                <CategoryCard emoji="🥦" text="ผัก" />
               </div>
             </div>
           </div>
@@ -75,21 +170,21 @@ export default function HomePage() {
           <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
-                <span className="font-bold text-gray-900 text-xl">Recommended menu</span>
+                <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
+                <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">Salad</h1>
+              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">สลัด</h1>
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">5.0</span>
               </div>
               <button className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base">
-                <span>▶</span> View more
+                <span>▶</span> ดูเพิ่มเติม
               </button>
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-             <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+            <Image src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
           </div>
         </div>
       </main>
@@ -99,39 +194,43 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          Daily Recommended Menu
+          เมนูแนะนำประจำสัปดาห์
         </h2>
-        
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          {/* กล่องหมุนได้ของ Gemini */}
-          <MenuCarousel provider="By gemini" recipes={geminiRecipes} />
 
-          {/* กล่องหมุนได้ของ Deep Seek*/}
-          <MenuCarousel provider="By Deep Seek" recipes={deepseekRecipes} />
-        </div>
+        {loading ? (
+          <div className="w-full text-center py-12 flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-600 font-bold text-lg">กำลังจัดเตรียมเมนูแนะนำสุดละมุนตานะคร้าบ... 🍳</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
+            <MenuCarousel provider="" recipes={geminiToDisplay} />
+            <MenuCarousel provider="" recipes={deepseekToDisplay} />
+          </div>
+        )}
       </section>
 
-      {/* =========================================
-          🌟 2. วาง CookieConsent ทับไว้ท้ายสุดในหน้าหลัก Home
-          ========================================= */}
       <CookieConsent />
     </div>
   );
 }
 
 /* =========================================
-   COMPONENTS ย่อย
+    COMPONENTS ย่อย
    ========================================= */
 
-function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] }) {
+function MenuCarousel({ provider, recipes }: { provider: string, recipes: RecommendedRecipe[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    if (recipes.length <= 1) return;
+
     const timer = setInterval(() => {
-      handleNext();
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
     }, 3500);
+
     return () => clearInterval(timer);
-  }, [currentIndex]);
+  }, [recipes.length]);
 
   const handleNext = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
@@ -142,23 +241,32 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
   };
 
   const item1 = recipes[currentIndex];
-  const item2 = recipes[(currentIndex + 1) % recipes.length];
-
+  const item2 = recipes[(currentIndex + 1) % recipes.length] || item1;
   return (
-    <div className="bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px]">
+    <div className={`bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
-      
+
       <div className="flex justify-center gap-6 mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
-          <RecipeCard title={item1.title} bgColor={item1.color} image={item1.image} />
+          <RecipeCard
+            title={item1.menu_name}
+            bgColor={item1.bg_color || "bg-[#6F62E4]"}
+            image={item1.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
+            rating={item1.rating}
+          />
         </div>
         <div key={`card2-${item2.id}`} className="animate-fade-in relative">
-          <RecipeCard title={item2.title} bgColor={item2.color} image={item2.image} />
+          <RecipeCard
+            title={item2.menu_name}
+            bgColor={item2.bg_color || "bg-[#3AC9B5]"}
+            image={item2.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
+            rating={item2.rating}
+          />
         </div>
       </div>
       
-      <div className="text-right text-[#A5A5A5] text-base font-medium mt-6 mr-2">
+      <div className="text-right text-[#A5A5A5] text-base font-bold mt-6 mr-2">
         {provider}
       </div>
     </div>
@@ -167,22 +275,20 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: any[] 
 
 function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   return (
-    <div className="bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition">
+    <div className={`bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
       <div className="text-3xl">{emoji}</div>
       <span className="font-bold text-base text-gray-800">{text}</span>
     </div>
   );
 }
 
-// 🌟 เพิ่มเติมเอฟเฟกต์แอนิเมชันปุ่มสไลด์หมุนเมนู
 function ArrowButton({ direction, onClick }: { direction: "left" | "right", onClick: () => void }) {
   const isLeft = direction === "left";
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
-        isLeft ? "-left-7" : "-right-7"
-      }`}
+      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${isLeft ? "-left-7" : "-right-7"
+        }`}
     >
       {isLeft ? (
         <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -193,34 +299,39 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-function RecipeCard({ bgColor, title, image }: { bgColor: string, title: string, image: string }) {
+function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title: string, image: string, rating?: number }) {
   return (
-    <div className={`${bgColor} w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
+    <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <img
-          src={image} 
+        <Image
+          src={image}
           alt={title}
-          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]" 
+          fill
+          className="object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
+          sizes="160px"
         />
       </div>
 
-      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full">
-        <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
+      <div className="relative w-full mb-5 mt-2 px-10 flex items-center justify-center min-h-[64px]">
+        <span className="font-bold text-xl sm:text-2xl text-white text-center leading-snug block w-full">
           {title}
         </span>
-        <div className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
+
+        <div className="absolute right-4 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
           <span className="text-[#FF4747] text-sm">❤</span>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
-        <span className="font-semibold text-white text-lg">5.0</span>
+        <span className="font-bold text-white text-lg">
+          {rating !== undefined && rating !== null ? rating.toFixed(1) : "5.0"}
+        </span>
       </div>
 
       <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5">
-        <span>▶</span> View more
+        <span>▶</span> ดูเพิ่มเติม
       </button>
     </div>
   );

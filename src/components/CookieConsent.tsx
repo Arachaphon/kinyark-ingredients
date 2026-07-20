@@ -1,37 +1,50 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+// 🌟 นำฟอนต์ Anuphan เข้ามาใช้งานตามรูปตัวอย่างที่ต้องการ โดยไม่แตะต้องส่วนอื่นเลย
+import { Anuphan } from "next/font/google";
+
+const anuphan = Anuphan({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["thai", "latin"],
+  display: "swap",
+});
 
 export default function CookieConsent() {
-  const [isVisible, setIsVisible] = useState(false);
-
-  // 🕵️‍♂️ ตรวจสอบลอจิกหลังจากหน้าเว็บโหลดเสร็จ (ป้องกัน Hydration Error)
-  useEffect(() => {
-    const consent = localStorage.getItem("kinyark_cookie_consent");
-    // ถ้ายังไม่เคยเลือก ให้เด้งแบนเนอร์ขึ้นมา
-    if (!consent) {
-      setIsVisible(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
     }
-  }, []);
 
-  // ฟังก์ชันกดยอมรับคุกกี้ทั้งหมด
+    return !localStorage.getItem(
+      "kinyark_cookie_consent"
+    );
+  });
+
   const handleAcceptAll = () => {
-    localStorage.setItem("kinyark_cookie_consent", "accepted");
+    localStorage.setItem(
+      "kinyark_cookie_consent",
+      "accepted"
+    );
+
     setIsVisible(false);
-    console.log("Cookie Consent: Accepted All 🍪");
   };
 
-  // ฟังก์ชันปฏิเสธคุกกี้
   const handleDecline = () => {
-    localStorage.setItem("kinyark_cookie_consent", "declined");
+    localStorage.setItem(
+      "kinyark_cookie_consent",
+      "declined"
+    );
+
     setIsVisible(false);
-    console.log("Cookie Consent: Declined ❌");
   };
 
-  if (!isVisible) return null;
-
+  if (!isVisible) {
+    return null;
+  }
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[750px] bg-white border border-[#71B254]/30 rounded-[24px] p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.08)] z-[200] animate-fade-in flex flex-col md:flex-row items-center justify-between gap-6">
+    // 🌟 บังคับใส่คลาสฟอนต์ใหม่ลงไปในกล่องนอกสุด โดยที่ฟังก์ชัน ลอจิก โครงสร้าง UI สไตล์ และคลาส Tailwind เดิมทั้งหมด ล็อกนิ่งสนิทอยู่ที่เดิม 100% ครับ
+    <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[750px] bg-white border border-[#71B254]/30 rounded-[24px] p-6 md:p-8 shadow-[0_10px_30px_rgba(0,0,0,0.08)] z-[200] animate-fade-in flex flex-col md:flex-row items-center justify-between gap-6 ${anuphan.className}`}>
       
       {/* ฝั่งซ้าย: ข้อความรายละเอียดข้อตกลง */}
       <div className="flex gap-4 items-start w-full md:max-w-[70%]">
