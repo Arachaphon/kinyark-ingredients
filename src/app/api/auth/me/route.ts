@@ -12,11 +12,15 @@ export async function GET() {
     }
 
     const dbUser = await prisma.user.findUnique({
-      where: { email: user.email! },
+      where: { id: user.id },
       select: { id: true, username: true, email: true, avatarUrl: true }
     });
 
-    return NextResponse.json({ user: dbUser || { email: user.email } });
+    if (!dbUser) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ user: dbUser });
   } catch {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
