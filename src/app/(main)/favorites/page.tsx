@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
@@ -78,11 +79,13 @@ export default function FavoritesPage() {
                   key={recipe.id}
                   className="flex flex-col md:flex-row gap-6 p-4 border border-[#71B254] rounded-xl bg-white hover:shadow-md transition-shadow relative"
                 >
-                  <div className="w-full md:w-[180px] h-[160px] flex-shrink-0">
-                    <img
+                  <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
+                    <Image
                       src={recipe.image}
                       alt={recipe.title}
-                      className="w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="180px"
                     />
                   </div>
 
@@ -106,10 +109,12 @@ export default function FavoritesPage() {
 
                     <div className="flex items-center gap-3 mt-4 md:mt-0">
                       <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100">
-                        <img
+                        <Image
                           src={recipe.authorAvatar}
                           alt={recipe.author}
-                          className="w-full h-full object-cover"
+                          width={32}
+                          height={32}
+                          className="object-cover"
                         />
                       </div>
                       <span className="font-bold text-gray-800 text-sm">

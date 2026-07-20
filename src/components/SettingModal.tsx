@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation'
+import { createClient } from "@/lib/supabase/client";
 
 interface SettingModalProps {
   isOpen: boolean;
@@ -13,7 +14,6 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
@@ -44,32 +44,49 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // State เพิ่มเติมสำหรับจัดการไฟล์รูปภาพและการพรีวิว
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
   useEffect(() => {
     if (userProfile) {
       setFormUsername(userProfile.username || "");
       setFormEmail(userProfile.email || "");
-      setPreviewUrl(userProfile.avatarUrl || null);
-      setSelectedFile(null); // รีเซ็ตไฟล์เมื่อโปรไฟล์เปลี่ยนหรือรีโหลด
     }
   }, [userProfile]);
 
-  // ฟังก์ชันจัดการเมื่อเลือกไฟล์รูปภาพ
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const supabase = createClient();
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setPreviewUrl(URL.createObjectURL(file));
+      setAvatarFile(file);
     }
   };
 
-  // ฟังก์ชันคลิกปุ่มอัปโหลด (ไปเรียกคลิก input ที่ซ่อนไว้)
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const uploadAvatar = async (file: File): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `avatar-${Date.now()}.${fileExt}`;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user?.id;
+    const filePath = userId ? `${userId}/${fileName}` : fileName;
+
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
   };
 
   const passwordError =
@@ -88,13 +105,11 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
       : "";
 
   const isFormValid = formCurrentPassword.length > 0;
-  
-  // ปรับให้เช็คพ่วงกรณีมีการเปลี่ยนรูปโปรไฟล์ด้วย
   const hasChanges =
     formUsername !== (userProfile?.username || "") ||
     formPassword !== "" ||
     formEmail !== (userProfile?.email || "") ||
-    selectedFile !== null;
+    avatarFile !== null;
 
   if (!isOpen) return null;
 
@@ -207,10 +222,23 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                   {previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img 
                       src={previewUrl} 
+                      alt="Preview" className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
+                    />
+                  ) : userProfile?.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
+                    <img 
+                      src={userProfile.avatarUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
@@ -224,20 +252,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
                     <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
                   </div>
-                  
-                  {/* ซ่อน input file เอาไว้ภายใต้ปุ่มเดิม */}
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    accept="image/*" 
-                    className="hidden" 
-                  />
-                  <button 
-                    onClick={handleUploadClick}
-                    type="button"
-                    className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
-                  >
+                  <button onClick={handleUploadClick} className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
@@ -301,21 +316,20 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     setCurrentPasswordError("");
                     setIsSaving(true);
                     try {
-                      // ตรวจสอบว่า API รองรับ Multipart Form Data หรือไม่ 
-                      // ด้านล่างนี้เป็นตัวอย่างโครงสร้างส่งแบบ FormData เพื่อรองรับไฟล์รูปภาพ
-                      const formData = new FormData();
-                      formData.append("currentPassword", formCurrentPassword);
-                      
-                      if (formUsername !== (userProfile?.username || "")) formData.append("username", formUsername);
-                      if (formEmail !== (userProfile?.email || "")) formData.append("email", formEmail);
-                      if (formPassword.length > 0) formData.append("newPassword", formPassword);
-                      if (selectedFile) formData.append("avatar", selectedFile); // แนบไฟล์รูปภาพส่งไปด้วย
+                      const body: Record<string, string> = {};
+                      body.currentPassword = formCurrentPassword;
+                      if (formUsername !== (userProfile?.username || "")) body.username = formUsername;
+                      if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
+                      if (formPassword.length > 0) body.newPassword = formPassword;
+                      if (avatarFile) {
+                        const avatarUrl = await uploadAvatar(avatarFile);
+                        body.avatarUrl = avatarUrl;
+                      }
 
                       const res = await fetch("/api/users/me", {
                         method: "PATCH",
-                        // หมายเหตุ: ห้ามใส่ 'Content-Type': 'application/json' หรือ 'multipart/form-data' ใน headers 
-                        // ปล่อยให้เบราว์เซอร์จัดการ Boundary อัตโนมัติเมื่อใช้ FormData
-                        body: formData,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(body),
                       });
 
                       if (!res.ok) {
@@ -328,7 +342,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       setFormConfirmPassword("");
                       setFormCurrentPassword("");
                       setCurrentPasswordError("");
-                      setSelectedFile(null);
+                      setAvatarFile(null);
+                      setPreviewUrl(null);
                       onClose();
                     } catch {
                       setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");

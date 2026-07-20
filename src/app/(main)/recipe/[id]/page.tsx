@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
 
 const anuphan = Anuphan({
@@ -78,9 +79,6 @@ const mockComments = [
 ];
 
 export default function ViewRecipePage() {
-  const params = useParams();
-  const recipeId = params.id;
-
   const router = useRouter();
   const [isCommentOpen, setIsCommentOpen] = useState(false);
 
@@ -156,11 +154,13 @@ export default function ViewRecipePage() {
           </button>
 
           <div className="flex flex-col md:flex-row gap-10 mt-14 md:mt-6">
-            <div className="w-full md:w-[350px] h-[350px] flex-shrink-0">
-              <img
+            <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
+              <Image
                 src={mockRecipeData.image}
                 alt={mockRecipeData.title}
-                className="w-full h-full object-cover rounded-3xl shadow-md"
+                fill
+                className="object-cover rounded-3xl shadow-md"
+                sizes="350px"
               />
             </div>
 
@@ -170,10 +170,12 @@ export default function ViewRecipePage() {
               </h1>
 
               <div className="flex items-center gap-3">
-                <img
+                <Image
                   src={mockRecipeData.authorAvatar}
                   alt="ผู้เขียน"
-                  className="w-8 h-8 rounded-full object-cover"
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
                 />
                 <span className="font-bold text-gray-800 text-lg">
                   {mockRecipeData.author}
@@ -266,10 +268,12 @@ export default function ViewRecipePage() {
                   key={comment.id}
                   className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}
                 >
-                  <img
+                  <Image
                     src={comment.avatar}
                     alt={comment.name}
-                    className="w-10 h-10 rounded-full object-cover shrink-0"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover shrink-0"
                   />
                   <div className="flex flex-col w-full">
                     <div className="flex items-center gap-4">
@@ -288,10 +292,12 @@ export default function ViewRecipePage() {
             </div>
 
             <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80"
                 alt="โปรไฟล์ของฉัน"
-                className="w-10 h-10 rounded-full object-cover shrink-0 mt-1"
+                width={40}
+                height={40}
+                className="rounded-full object-cover shrink-0 mt-1"
               />
 
               <div className="flex flex-col w-full gap-3">

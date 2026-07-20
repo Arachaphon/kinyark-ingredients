@@ -1,9 +1,10 @@
 "use client";
 
 // 🛠️ อิมพอร์ต React, useRouter และ Google Font (Anuphan)
+import Image from "next/image";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { createClient } from "@/lib/supabase/client";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -21,7 +22,7 @@ export default function ResetPasswordPage() {
   // เพิ่ม state สำหรับจัดการข้อความ Error เพื่อใช้แสดงผลบน UI สไตล์เดียวกับหน้า Login
   const [errorMessage, setErrorMessage] = useState("");
   
-  const router = useRouter(); // 🌟 รูเตอร์สำหรับเปลี่ยนหน้า
+  const supabase = createClient();
 
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
   const handleSubmit = (e: React.SyntheticEvent) => {
@@ -51,7 +52,7 @@ export default function ResetPasswordPage() {
     });
     
     // TODO: Supabase Reset Password
-    // พออัปเดตรหัสผ่านเสร็จจริง สามารถสั่ง router.push("/login") ตรงนี้ได้เลยครับ 🚀
+    // พออัปเดตรหัสผ่านเสร็จจริง สามารถใช้ window.location.href = "/login" ตรงนี้ได้เลยครับ
   };
 
   return (
@@ -65,10 +66,11 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col items-center text-center max-w-sm">
           {/* ขยายขนาดกล่อง Container ขึ้นพร้อมใส่ scale-110 (ถอดบล็อกจากหน้า Login) */}
           <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
-            <img 
+            <Image 
               src="/photo/logo.png" 
               alt="Kin Yark Logo" 
-              className="w-full h-full object-contain animate-scale-up" 
+              fill 
+              className="object-contain animate-scale-up" 
             />
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">สวัสดี ยินดีต้อนรับ</h2>
@@ -85,8 +87,8 @@ export default function ResetPasswordPage() {
           className="w-full max-w-[380px] flex flex-col items-center"
         >
           {/* ขนาดโลโก้เวอร์ชันมือถือ (ถอดจากหน้า Login) */}
-          <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all">
-            <img src="/photo/logo.png" alt="Kin Yark Logo" className="w-full h-full object-contain" />
+          <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all relative">
+            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill className="object-contain" />
           </div>
 
           <h1 className="text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">
@@ -160,7 +162,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="button" 
-            onClick={() => router.push("/login")}
+            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
             className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
           >
             กลับสู่หน้าเข้าสู่ระบบ

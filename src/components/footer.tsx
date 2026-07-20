@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React from "react";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -20,10 +21,12 @@ export default function Footer() {
         {/* ฝั่งซ้าย: โลโก้ และ รายละเอียดกลุ่ม */}
         <div className="flex flex-col gap-2 max-w-md">
           <div className="flex items-center gap-3">
-            <img
+            <Image
               src="/photo/logo.png"
               alt="Kin Yark Logo"
-              className="w-10 h-10 object-contain grayscale opacity-80"
+              width={40}
+              height={40}
+              className="object-contain grayscale opacity-80"
             />
             <span className="text-xl font-black text-gray-800 tracking-wider uppercase">
               KinYark
