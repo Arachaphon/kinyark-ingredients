@@ -1,27 +1,20 @@
+import { getProfile, FULL_PROFILE_SELECT } from "@/lib/profile"
 import { prisma } from "@/lib/prisma"
-
 import { createClient } from "@/lib/supabase/server"
 
 export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  try {
+    const { user, error, status } = await getProfile(FULL_PROFILE_SELECT)
 
-  const profile = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      avatarUrl: true,
-      role: true,
-      createdAt: true,
-    },
-  })
+    if (error) {
+      return Response.json({ error }, { status })
+    }
 
-  if (!profile) return Response.json({ error: "Not found" }, { status: 404 })
-
-  return Response.json({ data: profile })
+    return Response.json({ user })
+  } catch (e) {
+    console.error("GET /api/users/me error:", e)
+    return Response.json({ error: "Internal Server Error" }, { status: 500 })
+  }
 }
 
 export async function PATCH(request: Request) {
@@ -63,35 +56,22 @@ export async function PATCH(request: Request) {
       }
     }
 
+    const select = FULL_PROFILE_SELECT
     const updated = Object.keys(updateData).length > 0
       ? await prisma.user.update({
           where: { id: user.id },
           data: updateData,
-          select: {
-            id: true,
-            username: true,
-            email: true,
-            avatarUrl: true,
-            role: true,
-            createdAt: true,
-          },
+          select,
         })
       : await prisma.user.findUnique({
           where: { id: user.id },
-          select: {
-            id: true,
-            username: true,
-            email: true,
-            avatarUrl: true,
-            role: true,
-            createdAt: true,
-          },
+          select,
         })
 
     return Response.json({ data: updated })
   } catch (error) {
     console.error("Error updating profile:", error)
-    return Response.json({ error: "Internal server error" }, { status: 500 })
+    return Response.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
 
@@ -143,6 +123,6 @@ export async function DELETE() {
     return Response.json({ data: { id: user.id } })
   } catch (error) {
     console.error("Error deleting account:", error)
-    return Response.json({ error: "Internal server error" }, { status: 500 })
+    return Response.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
