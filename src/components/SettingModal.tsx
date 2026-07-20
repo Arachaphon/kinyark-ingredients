@@ -14,7 +14,6 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
@@ -239,7 +238,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                   ) : userProfile?.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
                     <img 
-                      src={previewUrl} 
+                      src={userProfile.avatarUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
