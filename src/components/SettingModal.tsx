@@ -14,7 +14,6 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
@@ -47,6 +46,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const supabase = createClient();
 
+
   useEffect(() => {
     if (userProfile) {
       setFormUsername(userProfile.username || "");
@@ -54,6 +54,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
       setPreviewUrl(userProfile.avatarUrl || null);
     }
   }, [userProfile]);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -205,10 +206,23 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                   {previewUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img 
                       src={previewUrl} 
+                      alt="Preview" className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
+                    />
+                  ) : userProfile?.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
+                    <img 
+                      src={userProfile.avatarUrl} 
                       alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
@@ -324,6 +338,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       setFormCurrentPassword("");
                       setCurrentPasswordError("");
                       setAvatarFile(null);
+                      setPreviewUrl(null);
                       onClose();
                     } catch {
                       setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
