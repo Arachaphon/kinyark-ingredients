@@ -12,7 +12,7 @@
 
 === GET /api/auth/me
 
-[] TC01 - ดึง Profile สำเร็จ (Authenticated)
+[/] TC01 - ดึง Profile สำเร็จ (Authenticated)
     -> Steps:
        1. Login ที่ /login ด้วย user จริง
        2. เปิด DevTools → Console
@@ -20,7 +20,7 @@
     -> Expected: status 200, response มี { user: { id, username, email, avatarUrl } }
     -> Result:
 
-[] TC02 - ไม่มี Session (Unauthenticated)
+[/] TC02 - ไม่มี Session (Unauthenticated)
     -> Steps:
        1. เปิด Tab ใหม่ หรือ logout (clear cookies)
        2. DevTools → Console
@@ -28,7 +28,7 @@
     -> Expected: status 401, response = { error: "Unauthorized" }
     -> Result:
 
-[] TC03 - JWT หมดอายุ / ไม่ถูกต้อง
+[/] TC03 - JWT หมดอายุ / ไม่ถูกต้อง
     -> Steps:
        1. เปิด Console → ลบ Cookie ที่มีคำว่า sb- / supabase
        2. เรียก: await fetch('/api/auth/me').then(r => r.json())
@@ -37,7 +37,7 @@
 
 === GET /api/users/me
 
-[] TC04 - ดึง Full Profile สำเร็จ (Authenticated)
+[/] TC04 - ดึง Full Profile สำเร็จ (Authenticated)
     -> Steps:
        1. Login
        2. Console: await fetch('/api/users/me').then(r => r.json())
@@ -45,14 +45,14 @@
     -> แตกต่างจาก /api/auth/me: ต้องมี role และ createdAt
     -> Result:
 
-[] TC05 - ไม่มี Session (Unauthenticated)
+[/] TC05 - ไม่มี Session (Unauthenticated)
     -> Steps: เหมือน TC02 แต่เรียก /api/users/me
     -> Expected: status 401, { error: "Unauthorized" }
     -> Result:
 
 === Navbar → SettingModal (UI Test)
 
-[] TC06 - Profile แสดงใน SettingModal หลังล็อกอิน
+[/] TC06 - Profile แสดงใน SettingModal หลังล็อกอิน
     -> Steps:
        1. Login → ไป /home
        2. คลิก Avatar (วงกลมที่มีตัวอักษรหรือรูป มุมบนขวา)
@@ -64,7 +64,7 @@
 
 === Response Schema Verification
 
-[] TC07 - 200 Response ไม่มี sensitive fields รั่วไหล
+[/] TC07 - 200 Response ไม่มี sensitive fields รั่วไหล
     -> Steps:
        1. Login
        2. Console: const res = await (await fetch('/api/auth/me')).json()
@@ -73,12 +73,12 @@
     -> Expected: keys มีแค่ id, username, email, avatarUrl (หรือ role, createdAt สำหรับ users/me)
     -> Result:
 
-[] TC08 - 401 Response Shape
+[/] TC08 - 401 Response Shape
     -> Steps: ส่ง request โดยไม่มี cookie → เช็ค response
     -> Expected: { error: "Unauthorized" } — ไม่มี field พิเศษอื่น
     -> Result:
 
-[] TC09 - 404 Response Shape (กรณี user มีใน Auth แต่ไม่มีใน DB)
+[/] TC09 - 404 Response Shape (กรณี user มีใน Auth แต่ไม่มีใน DB)
     -> Steps: (ต้องลบ Prisma record โดยตรง) หรือใช้ mock
     -> Expected: { error: "Not found" }
     -> หมายเหตุ: กรณีนี้เกิดยากใน production ถ้า register ถูกต้อง
