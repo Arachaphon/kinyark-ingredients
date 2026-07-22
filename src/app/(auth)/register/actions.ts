@@ -67,6 +67,7 @@ export async function signup(
     return { message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองอีกครั้ง", success: false };
   }
 
+  await supabase.auth.signOut();
   revalidatePath("/", "layout");
   return { success: true };
 }
