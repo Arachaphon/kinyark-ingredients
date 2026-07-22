@@ -34,6 +34,7 @@ export const updateProfileSchema = z
     avatarUrl: z.string().url('รูปแบบ URL ไม่ถูกต้อง').nullable().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
+    confirmPassword: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     const hasUpdateField =
@@ -63,6 +64,22 @@ export const updateProfileSchema = z
         code: z.ZodIssueCode.custom,
         message: 'กรุณากรอกรหัสผ่านปัจจุบัน',
         path: ['currentPassword'],
+      })
+    }
+
+    if (data.confirmPassword && data.newPassword && data.confirmPassword !== data.newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน',
+        path: ['confirmPassword'],
+      })
+    }
+
+    if (data.newPassword && data.currentPassword && data.newPassword === data.currentPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน',
+        path: ['newPassword'],
       })
     }
   })

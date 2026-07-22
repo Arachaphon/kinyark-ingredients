@@ -554,6 +554,110 @@ describe('PATCH /api/users/me', () => {
     expect(allText).not.toContain('OldPass1!')
   })
 
+  test('confirmPassword omitted — backward compatible (200)', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: mockSupabaseUser },
+      error: null,
+    })
+    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+
+    const res = await PATCH(
+      createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
+    )
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data.passwordUpdated).toBe(true)
+  })
+
+  test('confirmPassword matches newPassword (200)', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: mockSupabaseUser },
+      error: null,
+    })
+    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+
+    const res = await PATCH(
+      createPatchRequest({
+        newPassword: 'NewPass1!',
+        currentPassword: 'OldPass1!',
+        confirmPassword: 'NewPass1!',
+      })
+    )
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data.passwordUpdated).toBe(true)
+  })
+
+  test('confirmPassword does not match newPassword (400)', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: mockSupabaseUser },
+      error: null,
+    })
+
+    const res = await PATCH(
+      createPatchRequest({
+        newPassword: 'NewPass1!',
+        currentPassword: 'OldPass1!',
+        confirmPassword: 'Different1!',
+      })
+    )
+    const body = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(body.error).toContain('ไม่ตรงกัน')
+  })
+
+  test('newPassword equals currentPassword (400)', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: mockSupabaseUser },
+      error: null,
+    })
+
+    const res = await PATCH(
+      createPatchRequest({ newPassword: 'OldPass1!', currentPassword: 'OldPass1!' })
+    )
+    const body = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(body.error).toContain('ไม่เหมือน')
+  })
+
+  test('Supabase updateUser fails for password (400)', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: mockSupabaseUser },
+      error: null,
+    })
+    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockSupabaseAuth.updateUser.mockResolvedValue({
+      data: { user: null },
+      error: new Error('Password update failed'),
+    })
+
+    const res = await PATCH(
+      createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
+    )
+    const body = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(body.error).toBe('Failed to update password')
+  })
+
+  test('unexpected error returns 500', async () => {
+    mockSupabaseAuth.getUser.mockRejectedValue(new Error('Unexpected crash'))
+
+    const res = await PATCH(createPatchRequest({ username: 'test' }))
+    const body = await res.json()
+
+    expect(res.status).toBe(500)
+    expect(body.error).toBe('Internal Server Error')
+  })
+
   test('existing GET tests continue to pass alongside PATCH', async () => {
     mockSupabaseAuth.getUser.mockResolvedValue({
       data: { user: mockSupabaseUser },

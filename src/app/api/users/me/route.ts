@@ -19,84 +19,93 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
-
-  let body: Record<string, unknown>
   try {
-    body = await request.json()
-  } catch {
-    return Response.json({ error: "Bad Request" }, { status: 400 })
-  }
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  const parsed = updateProfileSchema.safeParse(body)
-  if (!parsed.success) {
-    const firstError = parsed.error.issues[0]
-    return Response.json({ error: firstError.message }, { status: 400 })
-  }
+    let body: Record<string, unknown>
+    try {
+      body = await request.json()
+    } catch {
+      return Response.json({ error: "Bad Request" }, { status: 400 })
+    }
 
-  const { username, email, avatarUrl, currentPassword, newPassword } = parsed.data
+    const parsed = updateProfileSchema.safeParse(body)
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]
+      return Response.json({ error: firstError.message }, { status: 400 })
+    }
 
-  let passwordUpdated = false
-  let emailChangePending = false
+    const { username, email, avatarUrl, currentPassword, newPassword, confirmPassword } = parsed.data
 
-  if (currentPassword) {
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
-      password: currentPassword,
+    let passwordUpdated = false
+    let emailChangePending = false
+
+    if (currentPassword) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: currentPassword,
+      })
+      if (signInError) {
+        return Response.json({ error: "Incorrect current password" }, { status: 400 })
+      }
+
+      if (newPassword && newPassword === currentPassword) {
+        return Response.json({ error: "รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน" }, { status: 400 })
+      }
+    }
+
+    if (newPassword) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+      if (updateError) {
+        return Response.json({ error: "Failed to update password" }, { status: 400 })
+      }
+      passwordUpdated = true
+    }
+
+    if (email) {
+      console.log("PATCH /api/users/me email value:", JSON.stringify(email))
+      const { error: emailError } = await supabase.auth.updateUser({ email })
+      if (emailError) {
+        console.error("PATCH /api/users/me email update error:", emailError)
+        return Response.json({ error: "Failed to update email" }, { status: 400 })
+      }
+      emailChangePending = true
+    }
+
+    let updatedUser = null
+    const profileData: Record<string, string | null> = {}
+    if (username !== undefined) profileData.username = username
+    if (avatarUrl !== undefined) profileData.avatarUrl = avatarUrl
+
+    if (Object.keys(profileData).length > 0) {
+      const result = await updateProfile(user.id, profileData, FULL_PROFILE_SELECT)
+      if (result.error) {
+        return Response.json({ error: result.error }, { status: result.status })
+      }
+      updatedUser = result.user
+    } else {
+      const { user: currentUser, error, status } = await getProfile(FULL_PROFILE_SELECT)
+      if (error) {
+        return Response.json({ error }, { status })
+      }
+      updatedUser = currentUser
+    }
+
+    return Response.json({
+      data: {
+        user: updatedUser,
+        passwordUpdated,
+        emailChangePending,
+      },
     })
-    if (signInError) {
-      return Response.json({ error: "Incorrect current password" }, { status: 400 })
-    }
+  } catch (e) {
+    console.error("PATCH /api/users/me error:", e)
+    return Response.json({ error: "Internal Server Error" }, { status: 500 })
   }
-
-  if (newPassword) {
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
-    if (updateError) {
-      return Response.json({ error: "Failed to update password" }, { status: 400 })
-    }
-    passwordUpdated = true
-  }
-
-  if (email) {
-    console.log("PATCH /api/users/me email value:", JSON.stringify(email))
-    const { error: emailError } = await supabase.auth.updateUser({ email })
-    if (emailError) {
-      console.error("PATCH /api/users/me email update error:", emailError)
-      return Response.json({ error: "Failed to update email" }, { status: 400 })
-    }
-    emailChangePending = true
-  }
-
-  let updatedUser = null
-  const profileData: Record<string, string | null> = {}
-  if (username !== undefined) profileData.username = username
-  if (avatarUrl !== undefined) profileData.avatarUrl = avatarUrl
-
-  if (Object.keys(profileData).length > 0) {
-    const result = await updateProfile(user.id, profileData, FULL_PROFILE_SELECT)
-    if (result.error) {
-      return Response.json({ error: result.error }, { status: result.status })
-    }
-    updatedUser = result.user
-  } else {
-    const { user: currentUser, error, status } = await getProfile(FULL_PROFILE_SELECT)
-    if (error) {
-      return Response.json({ error }, { status })
-    }
-    updatedUser = currentUser
-  }
-
-  return Response.json({
-    data: {
-      user: updatedUser,
-      passwordUpdated,
-      emailChangePending,
-    },
-  })
 }
 
 export async function DELETE() {
