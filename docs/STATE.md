@@ -1,6 +1,6 @@
 # STATE.md - Live Architecture Records & Decisions
 
-_Last Scan: 2026-07-22 · Branch: feature/get-profile · Sync: Team22 KINYARK timeline loaded_
+_Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 KINYARK timeline loaded_
 
 ## 1. Architectural Decisions
 - **Core Strategy**: Deploying Next.js App Router linked to Prisma ORM and backed by a Supabase cloud cluster.
@@ -17,11 +17,11 @@ _Last Scan: 2026-07-22 · Branch: feature/get-profile · Sync: Team22 KINYARK ti
 |---|---|---|---|
 | Iteration 0 | Week 1–2 (Jul 14–24) | W1-1 → W1-8, W2-1 → W2-10 | 13 Complete/Done, 1 InProgress, 5 ToDO |
 | Iteration 01 | Week 2 (Jul 20–24) | W1-1 → W1-10 (Iteration 01 columns) | All ToDO (not yet started) |
-| Iteration 02 | Week 3 (Jul 27–31) | W3-1 → W3-10 | 1 Done (W3-5 Delete Account), 9 ToDO |
+| Iteration 02 | Week 3 (Jul 27–31) | W3-1 → W3-10 | 2 Done (W3-2 Upload Profile Image, W3-5 Delete Account), 8 ToDO |
 | Iteration 03 | Week 4 (—) | W4-1 → W4-10 | All ToDO (unassigned, no features defined) |
 
 **Completed in Iteration 0:** UI Review, User Registration, Login/Logout, Profile (GET), Password Change, Integration stubs
-**Current Focus:** W2-5 Update Profile (InProgress), W3-1 to W3-10 (Recipe CRUD — not yet started)
+**Current Focus:** W2-5 Update Profile (Done), W3-2 Upload Profile Image (Done), W3-1/W3-3/W3-4/W3-6 (ToDO)
 
 ## 4. Phase Status Summary
 
@@ -29,7 +29,7 @@ _Last Scan: 2026-07-22 · Branch: feature/get-profile · Sync: Team22 KINYARK ti
 |---|---|
 | Phase 1: DB & Security | DONE (RLS unverifiable from code) |
 | Phase 2: Auth & Proxy | IN_PROGRESS (W2-1 Logout User ✅ Done, W2-3 Get Profile ✅ Done; W2-5 Update Profile 🔶 InProgress; W2-8 Change Password ✅ Done; register bug) |
-| Phase 3: Recipe CRUD & Storage | IN_PROGRESS (W3-5 Delete Account ✅ Done; W3-1–W3-4, W3-6 ❌ ToDO) |
+| Phase 3: Recipe CRUD & Storage | IN_PROGRESS (W3-2 Upload Profile Image ✅ Done, W3-5 Delete Account ✅ Done; W3-1, W3-3, W3-4, W3-6 ❌ ToDO) |
 | Phase 4: AI Matching Engine | NOT_STARTED (W2-2, W2-6, W2-7, W2-9 ❌ ToDO) |
 | Phase 5: Testing & Deployment | IN_PROGRESS (W3-5 ✅ Done; W4 cross-iteration tasks partial) |
 
