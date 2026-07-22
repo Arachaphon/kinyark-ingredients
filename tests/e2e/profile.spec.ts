@@ -20,18 +20,23 @@ test.describe('Profile E2E', () => {
       role: 'user',
     });
     await signupPage.submit();
-    await expect(page).toHaveURL(/.*\/home/, { timeout: 10000 });
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // 2. Click avatar/profile circle to open SettingModal
+    // 2. Login
+    const loginPage = new LoginPage(page);
+    await loginPage.login(testEmail, testPassword);
+    await expect(page).toHaveURL(/.*\/home/);
+
+    // 3. Click avatar/profile circle to open SettingModal
     // avatar circle มี class border-[#3AC9B5], h1 heading มี text-[#3AC9B5]
     // ใช้ div[class*="3AC9B5"] เพื่อเลือกเฉพาะ div เท่านั้น
     await page.locator('div[class*="3AC9B5"]').click();
 
-    // 3. Wait for SettingModal to appear and verify profile info
+    // 4. Wait for SettingModal to appear and verify profile info
     await expect(page.getByText(testUsername)).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(testEmail)).toBeVisible();
 
-    // 4. Logout via modal button
+    // 5. Logout via modal button
     const logoutButton = page.getByRole('button', { name: /ออกจากระบบ|Logout/i });
     if (await logoutButton.isVisible()) {
       await logoutButton.click();
@@ -64,9 +69,14 @@ test.describe('Profile E2E', () => {
       role: 'user',
     });
     await signupPage.submit();
-    await expect(page).toHaveURL(/.*\/home/, { timeout: 10000 });
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // 2. Call profile API with the session cookies
+    // 2. Login to get session cookies
+    const loginPage = new LoginPage(page);
+    await loginPage.login(testEmail, testPassword);
+    await expect(page).toHaveURL(/.*\/home/);
+
+    // 3. Call profile API with the session cookies
     const res = await page.request.get('/api/auth/me');
     expect(res.status()).toBe(200);
 
