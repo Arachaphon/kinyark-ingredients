@@ -2,109 +2,97 @@
 **Project:** KINYARK INGREDIENTS (กินยาก อินกรีเดียนส์)  
 **University:** University of Phayao · Academic Year 2025  
 **Advisor:** Ajarn Methaya Ratchakhon  
-**Team:** 67022535 · 67022748 · 67023031  
-
----
-✅ DONE — Fully implemented, integrated, functional                                                    
-🔶 IN_PROGRESS — Partial, placeholder, or stale                                                         
-❌  TODO — Missing implementation                                                
-⚠️  DONE but has a bug or mismatch
+**Team22:** 67022535 การัญภาส กันทะเนตร · 67022748 พีรพัฒน์ แสวงรัมย์ · 67023031 อรชพร กลิ่นชื่น
 
 ---
 
-## Team01 Sprint Backlog (from Kinyark_timeline.xlsx — Sheet Team01)
+✅ Complete/Done — Fully implemented
+🔶 InProgress — Work underway
+❌ ToDO — Not started
+⚠️ Blocked/Bug
 
-### Iteration 0 — Week 1
-| ID | Feature | Assigned | DueDate | Est. | STATUS |
+---
+
+## Team22 Sprint Backlog (from timeline.xlsx — Sheet Team22 KINYARK)
+
+### Team Members — Role Rotation
+
+| StudentID | Name | Iteration 0 | Iteration 01 | Iteration 02 | Iteration 03 |
 |---|---|---|---|---|---|
-| W1-1 | Make All Pages Responsive | การัญภาส กันทะเนตร | 2026-07-14 | 1.0 | ToDO |
-| W1-2 | Review UI Consistency | พีรพัฒน์ แสวงรัมย์ | 2026-07-15 | 1.0 | ToDO |
-| W1-3 | Review UI Text | พีรพัฒน์ แสวงรัมย์ | 2026-07-15 | 1.0 | ToDO |
-| W1-4 | Update Database Schema | อรชพร กลิ่นชื่น | 2026-07-14 | 5.0 | Done |
-| W1-5 | Login Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-16 | 6.0 | ToDO |
-| W1-6 | Register Integration | พีรพัฒน์ แสวงรัมย์ | 2026-07-18 | 6.0 | ToDO |
-| W1-7 | Global Authentication State | พีรพัฒน์ แสวงรัมย์ | 2026-07-20 | 6.0 | ToDO |
-| W1-8 | Register User | อรชพร กลิ่นชื่น | 2026-07-15 | 6.0 | Done |
-| W1-9 | Login User | อรชพร กลิ่นชื่น | 2026-07-16 | 5.0 | Done |
-| W1-10 | Logout User | อรชพร กลิ่นชื่น | 2026-07-17 | 5.0 | Done |
-| W1-11 | Get Profile | การัญภาส กันทะเนตร | 2026-07-18 | 4.0 | ToDO |
-| W1-12 | Update Profile | การัญภาส กันทะเนตร | 2026-07-18 | 3.0 | ToDO |
-| W1-13 | Change Password | อรชพร กลิ่นชื่น | 2026-07-19 | 4.0 | ToDO |
-| W1-14 | Upload Profile Image | การัญภาส กันทะเนตร | 2026-07-19 | 5.0 | ToDO |
-| W1-15 | Delete Account | อรชพร กลิ่นชื่น | 2026-07-20 | 5.0 | ToDO |
-| W1-16 | Integration Test | การัญภาส กันทะเนตร | 2026-07-20 | 4.0 | ToDO |
+| 67022748 | พีรพัฒน์ แสวงรัมย์ | PM/Scrummaster | PM/Scrummaster | FrontEnd | QA/Tester |
+| 67022535 | การัญภาส กันทะเนตร | FrontEnd | FrontEnd | PM/Scrummaster | QA/Tester |
+| 67023031 | อรชพร กลิ่นชื่น | BackEnd | BackEnd | BackEnd | QA/Tester, PM, Devops |
 
-### Iteration 0 — Week 2
-| ID | Feature | Assigned | DueDate | Est. | STATUS |
-|---|---|---|---|---|---|
-| W2-1 | Bind Search input state & Implement Debounce | พีรพัฒน์ แสวงรัมย์ | 2026-07-22 | 4.0 |   |
-| W2-2 | Connect AI Search & Filter API | พีรพัฒน์ แสวงรัมย์ | 2026-07-23 | 4.0 |   |
-| W2-3 | Handle Empty Search & Loading states | การัญภาส กันทะเนตร | 2026-07-25 | 4.0 |   |
-| W2-4 | Design AI Service | อรชพร กลิ่นชื่น | 2026-07-22 | 5.0 |   |
-| W2-5 | Build Prompt Generator | อรชพร กลิ่นชื่น | 2026-07-23 | 5.0 |   |
-| W2-6 | Integrate API | อรชพร กลิ่นชื่น | 2026-07-24 | 5.0 |   |
-| W2-7 | Implement AI Recipe Service | อรชพร กลิ่นชื่น | 2026-07-25 | 7.0 |   |
-| W2-8 | Validate AI Response | การัญภาส กันทะเนตร | 2026-07-26 | 6.0 |   |
-| W2-9 | Retrieve User Context | การัญภาส, อรชพร | 2026-07-27 | 7.0 |   |
-| W2-10 | Build Recommendation Prompt | อรชพร กลิ่นชื่น | 2026-07-29 | 5.0 |   |
-| W2-11 | Implement Recommendation Service | อรชพร กลิ่นชื่น | 2026-07-30 | 5.0 |   |
-| W2-12 | Optimize Context Payload | อรชพร กลิ่นชื่น | 2026-07-31 | 4.0 |   |
-| W2-13 | Generate Weekly Recommendation | การัญภาส, อรชพร | 2026-08-01 | 7.0 |   |
-| W2-14 | Cache Weekly Result | อรชพร กลิ่นชื่น | 2026-08-02 | 6.0 |   |
-| W2-15 | Integration Test (AI Backend) | การัญภาส, อรชพร | 2026-08-03 | 7.0 |   |
+### Phase 2 — Authentication & Profile (Sprint: Iteration 0 / Week 1–2)
 
-### Iteration 01 — Week 3
-| ID | Feature | Assigned | DueDate | Est. | STATUS |
-|---|---|---|---|---|---|
-| W3-1 | Build Multi-step form state management | ⚠️ missing owner | 2025-07-21 ⚠️ (year?) | 20.0 |   |
-| W3-2 | Implement Image Upload & Preview | ⚠️ missing owner |   | 20.0 |   |
-| W3-3 | Connect Create Recipe API | ⚠️ missing owner |   | 20.0 |   |
-| W3-4 | Fetch and render user's recipes | ⚠️ missing owner |   | 20.0 |   |
-| W3-5 | Connect Delete/Edit action triggers | ⚠️ missing owner |   | 20.0 |   |
-| W3-6 | Create Recipe | อรชพร กลิ่นชื่น | 2026-08-05 | 5.0 |   |
-| W3-7 | Get Recipe | อรชพร กลิ่นชื่น | 2026-08-06 | 5.0 |   |
-| W3-8 | Update Recipe | การัญภาส กันทะเนตร | 2026-08-07 | 5.0 |   |
-| W3-9 | Delete Recipe | อรชพร กลิ่นชื่น | 2026-08-08 | 4.0 |   |
-| W3-10 | Manage Recipe Ingredients | การัญภาส, อรชพร | 2026-08-08 | 5.0 |   |
-| W3-11 | Validate Recipe Data | อรชพร กลิ่นชื่น | 2026-08-09 | 4.0 |   |
-| W3-12 | Upload Recipe Image | อรชพร, การัญภาส | 2026-08-09 | 5.0 |   |
-| W3-13 | Manage Recipe Video | อรชพร กลิ่นชื่น | 2026-08-10 | 4.0 |   |
-| W3-14 | Integration Testing Recipe Management | อรชพร กลิ่นชื่น | 2026-08-10 | 5.0 |   |
-| W3-15 | Fetch dynamic recipe feed & Pagination | ⚠️ missing owner |   |   |   |
-| W3-16 | Fetch dynamic recipe data | ⚠️ missing owner |   |   |   |
-| W3-17 | Connect Favorite toggle API | ⚠️ missing owner |   |   |   |
-| W3-18 | Fetch and render Favorites page | ⚠️ missing owner |   |   |   |
-| W3-19 | Connect Fetch comments API | ⚠️ missing owner |   |   |   |
-| W3-20 | Bind Post input fields & Submit API | ⚠️ missing owner |   |   |   |
-| W3-21 | Add & Remove Favorite | อรชพร กลิ่นชื่น | 2026-08-12 | 5.0 |   |
-| W3-22 | Get Favorite Recipes | อรชพร กลิ่นชื่น | 2026-08-13 | 5.0 |   |
-| W3-23 | Create Review & Rating | อรชพร กลิ่นชื่น | 2026-08-14 | 5.0 |   |
-| W3-24 | Update & Delete Review | การัญภาส กันทะเนตร | 2026-08-15 | 4.0 |   |
-| W3-25 | Calculate Recipe Rating | อรชพร กลิ่นชื่น | 2026-08-15 | 5.0 |   |
-| W3-26 | Save Search History | การัญภาส กันทะเนตร | 2026-08-16 | 4.0 |   |
-| W3-27 | Get & Delete Search History | การัญภาส กันทะเนตร | 2026-08-16 | 5.0 |   |
-| W3-28 | Integration Testing Recipe Engagement | การัญภาส กันทะเนตร | 2026-08-17 | 7.0 |   |
+| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+|---|---|---|---|---|---|---|
+| W1-1 | Review UI Consistency | พีรพัฒน์ | Jul 14 | 20 | 20 | Complete |
+| W1-2 | Global Authentication State | การัญภาส | Jul 14 | 20 | 20 | Complete |
+| W1-3 | Review UI Text | พีรพัฒน์ | Jul 15 | 20 | 20 | Complete |
+| W1-4 | Register User | อรชพร | Jul 16 | 20 | 20 | Complete |
+| W1-5 | Integration Test | การัญภาส | Jul 16 | 20 | 20 | Complete |
+| W1-6 | Login Integration | อรชพร | Jul 17 | 20 | 20 | Complete |
+| W1-7 | Register Integration | พีรพัฒน์ | Jul 17 | 20 | 20 | Complete |
+| W1-8 | Login User | อรชพร | Jul 17 | 20 | 20 | Complete |
+| W2-1 | **Logout User** | **อรชพร** | **Jul 20** | **20** | **18** | **Done** |
+| W2-2 | Design AI Service | การัญภาส | Jul 20 | 20 | 0 | ToDO |
+| W2-3 | **Get Profile** | **อรชพร** | **Jul 21** | **20** | **18** | **Done** |
+| W2-4 | Register Integration (frontend) | พีรพัฒน์ | Jul 21 | 20 | 16 | Done |
+| W2-5 | Update Profile | อรชพร | Jul 22 | 20 | 2 | InProgress |
+| W2-6 | Build Prompt Generator | การัญภาส | Jul 22 | 20 | 0 | ToDO |
+| W2-7 | Bind Search input state & Debounce | พีรพัฒน์ | Jul 23 | 20 | 0 | ToDO |
+| W2-8 | Change Password | อรชพร | Jul 24 | 20 | 16 | Done |
+| W2-9 | Integrate API | การัญภาส | Jul 24 | 20 | 0 | ToDO |
+| W2-10 | (unassigned) | — | — | 20 | 0 | ToDO |
 
-### Iteration 01 — Week 4
-| ID | Feature | Assigned | DueDate | Est. | STATUS |
-|---|---|---|---|---|---|
-| W4-1 | Perform End-to-End (E2E) Functional Testing | ⚠️ missing owner | 2025-07-28 ⚠️ (year?) | 20.0 |   |
-| W4-2 | Cross-Browser & Responsive UI Testing | ⚠️ missing owner |   | 20.0 |   |
-| W4-3 | Performance & Error Handling Validation | ⚠️ missing owner |   | 20.0 |   |
-| W3-3 (duplicate ID in sheet) | Final Bug Fixing & Code Refactoring | ⚠️ missing owner |   | 20.0 |   |
-| W4-5 | Production Deployment & CI/CD Setup | ⚠️ missing owner |   | 20.0 |   |
-| W4-6 | Post-Deployment Smoke Testing | ⚠️ missing owner |   | 20.0 |   |
-| W4-7 | (blank) |   |   | 20.0 |   |
-| W4-8 | (blank) |   |   | 20.0 |   |
-| W4-9 | (blank) |   |   | 20.0 |   |
-| W4-10 | (blank) |   |   | 20.0 |   |
+### Phase 3 — Recipe CRUD & Engagement (Sprint: Iteration 02 / Week 3)
 
-**⚠️ Flags:**
-- W3-1 to W3-5, W3-15 to W3-20, W4-1 to W4-6: missing owner assignment
-- W3-1 (2025-07-21) and W4-1 (2025-07-28): year likely should be 2026
-- W4-4: skipped in sheet (jumps W3-3 → W4-5)
-- W4 has duplicate ID "W3-3" for "Final Bug Fixing & Code Refactoring"
-- STATUS column for Week 2–4 is blank in source spreadsheet
+| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+|---|---|---|---|---|---|---|
+| W3-1 | Connect AI Search & Filter API | พีรพัฒน์ | Jul 27 | 20 | 0 | ToDO |
+| W3-2 | Upload Profile Image | อรชพร | Jul 28 | 20 | 0 | ToDO |
+| W3-3 | Handle Empty Search & Loading states | พีรพัฒน์ | Jul 28 | 20 | 0 | ToDO |
+| W3-4 | Implement AI Recipe Service | การัญภาส | Jul 29 | 20 | 0 | ToDO |
+| W3-5 | Delete Account | อรชพร | Jul 30 | 20 | 0 | ToDO |
+| W3-6 | Validate AI Response | การัญภาส | Jul 31 | 20 | 0 | ToDO |
+| W3-7 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W3-8 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W3-9 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W3-10 | (unassigned) | — | — | 20 | 0 | ToDO |
+
+### Phase 4 — AI + Social Features (Sprint: Iteration 02–03 / Week 3–4)
+
+| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+|---|---|---|---|---|---|---|
+| W2-11 | Bind Post input fields & Submit API | พีรพัฒน์ | Aug 31 | 20 | 0 | ToDO |
+| W2-12 | Integration Testing Recipe Engagement | การัญภาส | Aug 31 | 20 | 0 | ToDO |
+| W4-1 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-2 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-3 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-4 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-5 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-6 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-7 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-8 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-9 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W4-10 | (unassigned) | — | — | 20 | 0 | ToDO |
+
+### General Tasks (Cross-Iteration)
+
+| Task | Story Pts | Iteration 0 | Iteration 01 | Iteration 02 | Iteration 03 | Current Status |
+|---|---|---|---|---|---|---|
+| Perform E2E Functional Testing | 20 | — | — | — | — | ToDO |
+| Cross-Browser & Responsive UI Testing | 15 | — | — | — | — | InProgress |
+| Performance & Error Handling Validation | 15 | — | — | — | — | Testing |
+| Final Bug Fixing & Code Refactoring | 20 | — | — | — | — | Done |
+| Production Deployment & CI/CD Setup | 20 | — | — | — | — | Complete |
+| Post-Deployment Smoke Testing | 5 | — | — | — | — | Reject |
+
+**Notes:**
+- W4-1 to W4-10 have no feature names or assignments in source xlsx
+- Some tasks appear across multiple iteration columns — only the primary iteration logged
+- "Burn" column = total hours burned across 5 days
 
 ---
 
