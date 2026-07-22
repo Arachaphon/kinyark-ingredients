@@ -113,7 +113,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[] TC10 - อัปโหลดไฟล์ที่มีขนาดใหญ่เกิน 5 MB
+[/] TC10 - อัปโหลดไฟล์ที่มีขนาดใหญ่เกิน 5 MB
     -> Steps:
        1. Login → DevTools → Console
        2. รันคำสั่ง:
@@ -129,7 +129,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[] TC11 - อัปโหลดโดยไม่ส่งไฟล์
+[/] TC11 - อัปโหลดโดยไม่ส่งไฟล์
     -> Steps:
        1. Login → DevTools → Console
        2. รันคำสั่ง:
@@ -141,7 +141,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[] TC12 - อัปโหลดโดยไม่มีการ Authentication
+[/] TC12 - อัปโหลดโดยไม่มีการ Authentication
     -> Steps:
        1. เปิด tab ใหม่ (Incognito/Private)
        2. เปิด DevTools → Console
@@ -154,36 +154,10 @@
     -> Expected: status 401, error มีข้อความ "Unauthorized"
     -> Actual Result:
     -> Status: Pass / Fail
-    -> Evidence:
-
-[] TC13 - ตรวจสอบว่า user อื่นไม่สามารถเข้าถึงหรือลบรูปของเราได้
-    -> Steps:
-       1. Login ด้วย user A → อัปโหลดรูป → คัดลอก avatarUrl จาก API response
-       2. Logout → Login ด้วย user B
-       3. DevTools → Console:
-          const res = await fetch('/api/users/me')
-          const data = await res.json()
-          console.log('User B avatar:', data.user.avatarUrl)
-    -> Expected: User B ไม่เห็น avatarUrl ของ User A
-    -> Actual Result:
-    -> Status: Pass / Fail
-    -> Evidence:
-
-[] TC14 - อัปโหลดซ้ำหลายครั้งติดต่อกัน
-    -> Steps:
-       1. Login
-       2. อัปโหลดรูปครั้งที่ 1 → บันทึก avatarUrl
-       3. อัปโหลดรูปครั้งที่ 2 → บันทึก avatarUrl
-       4. อัปโหลดรูปครั้งที่ 3 → บันทึก avatarUrl
-       5. GET /api/users/me → ตรวจสอบ avatarUrl ล่าสุด
-    -> Expected: avatarUrl ล่าสุดตรงกับครั้งที่ 3, ไม่มี error
-    -> Actual Result:
-    -> Status: Pass / Fail
-    -> Evidence:
+    -> Evidence
 
 === หมายเหตุ
 
 - TC01-TC07 ทดสอบผ่าน UI จริง (หน้าเว็บ)
-- TC08-TC14 ทดสอบผ่าน Browser DevTools Console เพื่อจำลอง edge cases
+- TC08-TC11 ทดสอบผ่าน Browser DevTools Console เพื่อจำลอง edge cases
 - การทดสอบผ่าน DevTools ใช้ session cookies ของ browser ที่ login อยู่แล้วโดยอัตโนมัติ
-- หากพบข้อผิดพลาด ให้บันทึก response และ screenshot ไว้เป็นหลักฐาน

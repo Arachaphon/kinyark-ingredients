@@ -135,7 +135,7 @@
     -> Steps:
        1. Login → DevTools
        2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newPassword: 'NewPass1!', currentPassword: 'wrongpassword' }) })
-    -> Expected: status 400, error = "Incorrect current password"
+    -> Expected: status 400, error = "รหัสผ่านปัจจุบันไม่ถูกต้อง"
 
 [/] TC16 - ปฏิเสธ request body ว่าง
     -> Steps:

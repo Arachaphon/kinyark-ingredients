@@ -49,7 +49,7 @@ export async function PATCH(request: Request) {
         password: currentPassword,
       })
       if (signInError) {
-        return Response.json({ error: "Incorrect current password" }, { status: 400 })
+        return Response.json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" }, { status: 400 })
       }
 
       if (newPassword && newPassword === currentPassword) {
