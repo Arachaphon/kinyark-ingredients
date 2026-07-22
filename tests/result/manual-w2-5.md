@@ -137,79 +137,16 @@
        2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newPassword: 'NewPass1!', currentPassword: 'wrongpassword' }) })
     -> Expected: status 400, error = "Incorrect current password"
 
-
-[] TC16 - ปฏิเสธ newPassword ที่ไม่มี currentPassword
-    -> Steps:
-       1. Login → DevTools
-       2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newPassword: 'NewPass1!' }) })
-    -> Expected: status 400, error มีข้อความ "กรุณากรอกรหัสผ่านปัจจุบัน"
-    -> Result:
-
-[] TC17 - ปฏิเสธ request body ว่าง
+[/] TC16 - ปฏิเสธ request body ว่าง
     -> Steps:
        1. Login → DevTools
        2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
     -> Expected: status 400, error มีข้อความ "ไม่มีข้อมูลที่จะอัปเดต"
     -> Result:
 
-[] TC18 - ปฏิเสธ request ที่มีเพียง currentPassword
+[/] TC17 - ปฏิเสธ request ที่มีเพียง currentPassword
     -> Steps:
        1. Login → DevTools
        2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ currentPassword: 'somepass' }) })
     -> Expected: status 400, error มีข้อความ "ไม่มีข้อมูลที่จะอัปเดต"
     -> Result:
-
-[] TC19 - ปฏิเสธ request ที่ไม่มี session ด้วย 401
-    -> Steps:
-       1. เปิด Tab ใหม่แบบไม่ login (หรือ clear cookies)
-       2. DevTools → Console
-       3. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'newname' }) })
-    -> Expected: status 401, error = "Unauthorized"
-    -> Result:
-
-[] TC20 - ตรวจสอบว่า response ไม่มี currentPassword
-    -> Steps:
-       1. Login → DevTools
-       2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'test' }) })
-       3. console.log(await res.json())
-    -> Expected: response ไม่มีฟิลด์ currentPassword
-    -> Result:
-
-[] TC21 - ตรวจสอบว่า response ไม่มี newPassword
-    -> Steps:
-       1. Login → DevTools
-       2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' }) })
-       3. console.log(await res.json())
-    -> Expected: response ไม่มีฟิลด์ newPassword
-    -> Result:
-
-[] TC22 - ตรวจสอบว่า response ไม่มี token หรือ session
-    -> Steps:
-       1. Login → DevTools
-       2. เรียก: await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'test' }) })
-       3. console.log(await res.json())
-    -> Expected: response ไม่มี accessToken, refreshToken, session หรือ sensitive data
-    -> Result:
-
-[] TC23 - ตรวจสอบสถานะ bucket avatars
-    -> Steps:
-       1. เปิด Supabase Dashboard
-       2. ไปที่ Storage → Buckets
-       3. ตรวจสอบว่ามี bucket ชื่อ "avatars"
-    -> Expected: avatars bucket exists (หรือบันทึกสถานะตามที่ตรวจสอบได้)
-    -> Result:
-
-[] TC24 - ตรวจสอบว่าไม่มีการแก้ไข frontend เพื่อทดสอบฟีเจอร์นี้
-    -> Steps:
-       1. git diff --name-only
-       2. ตรวจสอบว่าไม่มีไฟล์ใน src/components/ หรือ src/app/**/page.tsx
-    -> Expected: ไม่มีการแก้ไข frontend source files
-    -> Result:
-
-=== Note
-
-- API PATCH /api/users/me ใช้ Zod validation ผ่าน updateProfileSchema
-- Password change ต้องใช้ currentPassword เพื่อยืนยันตัวตน
-- Email change ผ่าน Supabase Auth ต้องยืนยันทางอีเมลก่อน
-- อีเมลที่ยังไม่ยืนยันจะไม่ถูกอัปเดตใน Prisma database
-- การอัปเดต Prisma รับเฉพาะฟิลด์ username และ avatarUrl เท่านั้น
