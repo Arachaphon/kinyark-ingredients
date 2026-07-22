@@ -87,7 +87,7 @@
     -> Steps:
        1. Login
        2. เปิด DevTools → Console
-       3. รันคำสั่ง:
+       3. รันคำสั่ง:(คัดลอกวางconsoleได้เลย)
           const file = new File(['not an image'], 'test.txt', { type: 'text/plain' })
           const form = new FormData()
           form.append('avatar', file)
@@ -113,7 +113,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[/] TC10 - อัปโหลดไฟล์ที่มีขนาดใหญ่เกิน 5 MB
+[] TC10 - อัปโหลดไฟล์ที่มีขนาดใหญ่เกิน 5 MB
     -> Steps:
        1. Login → DevTools → Console
        2. รันคำสั่ง:
@@ -129,7 +129,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[/] TC11 - อัปโหลดโดยไม่ส่งไฟล์
+[] TC11 - อัปโหลดโดยไม่ส่งไฟล์
     -> Steps:
        1. Login → DevTools → Console
        2. รันคำสั่ง:
@@ -141,7 +141,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[/] TC12 - อัปโหลดโดยไม่มีการ Authentication
+[] TC12 - อัปโหลดโดยไม่มีการ Authentication
     -> Steps:
        1. เปิด tab ใหม่ (Incognito/Private)
        2. เปิด DevTools → Console
@@ -156,7 +156,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[/] TC13 - ตรวจสอบว่า user อื่นไม่สามารถเข้าถึงหรือลบรูปของเราได้
+[] TC13 - ตรวจสอบว่า user อื่นไม่สามารถเข้าถึงหรือลบรูปของเราได้
     -> Steps:
        1. Login ด้วย user A → อัปโหลดรูป → คัดลอก avatarUrl จาก API response
        2. Logout → Login ด้วย user B
@@ -169,7 +169,7 @@
     -> Status: Pass / Fail
     -> Evidence:
 
-[/] TC14 - อัปโหลดซ้ำหลายครั้งติดต่อกัน
+[] TC14 - อัปโหลดซ้ำหลายครั้งติดต่อกัน
     -> Steps:
        1. Login
        2. อัปโหลดรูปครั้งที่ 1 → บันทึก avatarUrl
