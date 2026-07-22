@@ -30,7 +30,7 @@ export const deleteAccountSchema = z.object({
 export const updateProfileSchema = z
   .object({
     username: z.string().min(2, 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษร').max(30, 'ชื่อผู้ใช้ยาวเกินไป').optional(),
-    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง').optional(),
+    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง').trim().toLowerCase().optional(),
     avatarUrl: z.string().url('รูปแบบ URL ไม่ถูกต้อง').nullable().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),

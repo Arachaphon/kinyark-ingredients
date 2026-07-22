@@ -41,15 +41,17 @@ export async function PATCH(request: Request) {
   let passwordUpdated = false
   let emailChangePending = false
 
-  if (newPassword) {
+  if (currentPassword) {
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: user.email!,
-      password: currentPassword!,
+      password: currentPassword,
     })
     if (signInError) {
       return Response.json({ error: "Incorrect current password" }, { status: 400 })
     }
+  }
 
+  if (newPassword) {
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword,
     })
@@ -60,8 +62,10 @@ export async function PATCH(request: Request) {
   }
 
   if (email) {
+    console.log("PATCH /api/users/me email value:", JSON.stringify(email))
     const { error: emailError } = await supabase.auth.updateUser({ email })
     if (emailError) {
+      console.error("PATCH /api/users/me email update error:", emailError)
       return Response.json({ error: "Failed to update email" }, { status: 400 })
     }
     emailChangePending = true
