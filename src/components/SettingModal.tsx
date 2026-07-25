@@ -34,6 +34,12 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [formEmail, setFormEmail] = useState("");
   const [formConfirmPassword, setFormConfirmPassword] = useState("");
   const [formCurrentPassword, setFormCurrentPassword] = useState("");
+  
+  // States สำหรับควบคุมการซ่อน/แสดงรหัสผ่าน
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [showFormConfirmPassword, setShowFormConfirmPassword] = useState(false);
+  const [showFormCurrentPassword, setShowFormCurrentPassword] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -82,24 +88,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
-  };
-
-  const uploadAvatar = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("avatar", file);
-
-    const res = await fetch("/api/users/me/avatar", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "อัปโหลดรูปไม่สำเร็จ");
-    }
-
-    const data = await res.json();
-    return data.data.user.avatarUrl as string;
   };
 
   const passwordError =
@@ -276,24 +264,102 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ชื่อผู้ใช้งาน</label>
                     <input type="text" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
+                  
+                  {/* ช่องรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่านใหม่</label>
-                    <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
+                    <div className="relative">
+                      <input 
+                        type={showFormPassword ? "text" : "password"} 
+                        value={formPassword} 
+                        onChange={(e) => setFormPassword(e.target.value)} 
+                        placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" 
+                        className="w-full p-2.5 pr-10 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFormPassword(!showFormPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showFormPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     {passwordError && (
                       <p className="text-red-500 text-xs mt-1">{passwordError}</p>
                     )}
                   </div>
+
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
                     <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
+
+                  {/* ช่องยืนยันรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่านใหม่</label>
-                    <input type="password" value={formConfirmPassword} onChange={(e) => setFormConfirmPassword(e.target.value)} placeholder="ยืนยันรหัสผ่านใหม่" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
+                    <div className="relative">
+                      <input 
+                        type={showFormConfirmPassword ? "text" : "password"} 
+                        value={formConfirmPassword} 
+                        onChange={(e) => setFormConfirmPassword(e.target.value)} 
+                        placeholder="ยืนยันรหัสผ่านใหม่" 
+                        className="w-full p-2.5 pr-10 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFormConfirmPassword(!showFormConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showFormConfirmPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <input type="password" value={formCurrentPassword} onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" />
+                {/* ช่องรหัสผ่านปัจจุบัน พร้อมไอคอนลูกตา */}
+                <div className="relative">
+                  <input 
+                    type={showFormCurrentPassword ? "text" : "password"} 
+                    value={formCurrentPassword} 
+                    onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} 
+                    placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" 
+                    className="w-full p-2.5 pr-10 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowFormCurrentPassword(!showFormCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showFormCurrentPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
 
                 {currentPasswordError && (
                   <p className="text-red-500 text-xs mt-1">{currentPasswordError}</p>
@@ -334,8 +400,19 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
                       if (formPassword.length > 0) body.newPassword = formPassword;
                       if (avatarFile) {
-                        const avatarUrl = await uploadAvatar(avatarFile);
-                        body.avatarUrl = avatarUrl;
+                        const formData = new FormData();
+                        formData.append("avatar", avatarFile);
+                        const uploadRes = await fetch("/api/users/me/avatar", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        if (!uploadRes.ok) {
+                          const err = await uploadRes.json();
+                          setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการอัปโหลดรูปโปรไฟล์");
+                          return;
+                        }
+                        const uploadData = await uploadRes.json();
+                        body.avatarUrl = uploadData.data.user.avatarUrl;
                       }
 
                       const res = await fetch("/api/users/me", {
