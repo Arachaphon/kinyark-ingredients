@@ -2,6 +2,7 @@ import { getProfile, FULL_PROFILE_SELECT, updateProfile } from "@/lib/profile"
 import { updateProfileSchema } from "@/lib/validations/auth.schema"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { deleteAvatar } from "@/lib/storage"
 
 export async function GET() {
   try {
@@ -48,7 +49,7 @@ export async function PATCH(request: Request) {
         password: currentPassword,
       })
       if (signInError) {
-        return Response.json({ error: "Incorrect current password" }, { status: 400 })
+        return Response.json({ error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" }, { status: 400 })
       }
 
       if (newPassword && newPassword === currentPassword) {
@@ -76,11 +77,28 @@ export async function PATCH(request: Request) {
       emailChangePending = true
     }
 
-    let updatedUser = null
     const profileData: Record<string, string | null> = {}
     if (username !== undefined) profileData.username = username
-    if (avatarUrl !== undefined) profileData.avatarUrl = avatarUrl
 
+    if (avatarUrl !== undefined) {
+      profileData.avatarUrl = avatarUrl
+
+      if (avatarUrl === null) {
+        const current = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { avatarUrl: true },
+        })
+        const oldUrl = current?.avatarUrl
+        if (oldUrl) {
+          const delResult = await deleteAvatar(supabase, oldUrl, user.id)
+          if (!delResult.success) {
+            console.warn('PATCH /api/users/me — old avatar deletion skipped:', delResult.error)
+          }
+        }
+      }
+    }
+
+    let updatedUser = null
     if (Object.keys(profileData).length > 0) {
       const result = await updateProfile(user.id, profileData, FULL_PROFILE_SELECT)
       if (result.error) {

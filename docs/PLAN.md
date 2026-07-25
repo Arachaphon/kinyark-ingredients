@@ -51,7 +51,7 @@
 | ID | Feature | Assigned | Due | Est. | Burn | STATUS |
 |---|---|---|---|---|---|---|
 | W3-1 | Connect AI Search & Filter API | พีรพัฒน์ | Jul 27 | 20 | 0 | ToDO |
-| W3-2 | Upload Profile Image | อรชพร | Jul 28 | 20 | 0 | ToDO |
+| W3-2 | Upload Profile Image | อรชพร | Jul 28 | 20 | 18 | Done |
 | W3-3 | Handle Empty Search & Loading states | พีรพัฒน์ | Jul 28 | 20 | 0 | ToDO |
 | W3-4 | Implement AI Recipe Service | การัญภาส | Jul 29 | 20 | 0 | ToDO |
 | W3-5 | Delete Account | อรชพร | Jul 30 | 20 | 0 | ToDO |
@@ -293,7 +293,7 @@ Phase 3.2 Score: 0/20 ❌
   - `deleteSearchHistory(userId, historyId)`
 
 ### 3.3 API Routes (`src/app/api/`)
- Phase 3.3 Score: 1/14 ❌
+ Phase 3.3 Score: 2/15 🔶
 - [ ] `GET /api/recipes` — paginated feed (sort by rating/date)
 - [✅] `POST /api/recipes` — create recipe (auth required)
 - [ ] `GET /api/recipes/[id]` — single recipe + ingredients + reviews
@@ -304,19 +304,20 @@ Phase 3.2 Score: 0/20 ❌
 - [ ] `POST /api/reviews` — add review + rating (auth required)
 - [ ] `POST /api/favorites` — toggle favorite (auth required)
 - [ ] `GET /api/users/me` — get own profile
-- [ ] `PATCH /api/users/me` — update profile / upload avatar
+- [x] `PATCH /api/users/me` — update profile
+- [x] `POST /api/users/me/avatar` — upload profile image (W3-2)
 - [ ] `DELETE /api/users/me` — delete account + all data
 - [ ] `GET /api/search-history` — get history list
 - [ ] `DELETE /api/search-history/[id]` — delete one entry
 
 ### 3.4 Supabase Storage
-Phase 3.4 Score: 0/6 ❌ 
+Phase 3.4 Score: 5/6 ✅
 - [ ] Create bucket `recipe-images` (authenticated upload, public read)
-- [ ] Create bucket `avatars` (authenticated upload, public read)
-- [ ] File path pattern: `avatars/{user_id}/profile.jpg`
+- [x] Create bucket `avatars` (authenticated upload, public read) — SQL provided in `supabase/migrations/20260722_create_avatars_bucket.sql`
+- [x] File path pattern: `avatars/{user_id}/{uuid}.{ext}` — implemented in `src/lib/storage.ts`
 - [ ] File path pattern: `recipe-images/{user_id}/{uuid}.jpg`
-- [ ] Enforce max file size: 5MB per image
-- [ ] Validate MIME type: `image/jpeg`, `image/png` only
+- [x] Enforce max file size: 5MB per image — implemented in `src/lib/storage.ts`
+- [x] Validate MIME type: `image/jpeg`, `image/png`, `image/webp` only — implemented in `src/lib/storage.ts`
 
 ### 3.5 Database Indexes
 Phase 3.5 Score: 0/3 ❌ 

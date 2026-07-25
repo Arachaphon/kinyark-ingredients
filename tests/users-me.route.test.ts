@@ -280,7 +280,7 @@ describe('PATCH /api/users/me', () => {
     const body = await res.json()
 
     expect(res.status).toBe(400)
-    expect(body.error).toBe('Incorrect current password')
+    expect(body.error).toBe('รหัสผ่านปัจจุบันไม่ถูกต้อง')
   })
 
   test('returns 200 when updating username only', async () => {
