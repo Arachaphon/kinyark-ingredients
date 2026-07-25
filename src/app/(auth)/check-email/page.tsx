@@ -2,7 +2,7 @@
 
 import { Anuphan } from "next/font/google";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -10,7 +10,8 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
-export default function CheckEmailPage() {
+// 1. ยกโค้ดเดิมของคุณทั้งหมดมาใส่ในนี้ โดยไม่แก้ UI เลยแม้แต่บรรทัดเดียว
+function CheckEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -113,5 +114,14 @@ export default function CheckEmailPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+// 2. Component หลักใช้ Suspense ครอบ โดยไม่สร้าง UI ใดๆ เพิ่มเติม (fallback={null})
+export default function CheckEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckEmailContent />
+    </Suspense>
   );
 }
