@@ -87,4 +87,153 @@ test.describe('Profile E2E', () => {
     expect(body.user.email).toBe(testEmail);
     expect(body.user.avatarUrl).toBeDefined();
   });
+
+  test('PATCH /api/users/me - updates username', async ({ page }) => {
+    const timestamp = Date.now();
+    const testEmail = `e2e_patch_username_${timestamp}@test.com`;
+    const testPassword = 'StrongPassword1!';
+    const testUsername = `patchuser${timestamp}`;
+    const newUsername = `updated${timestamp}`;
+
+    // Signup
+    const signupPage = new SignupPage(page);
+    await signupPage.goto();
+    await signupPage.fillForm({
+      username: testUsername,
+      email: testEmail,
+      password: testPassword,
+      confirmPassword: testPassword,
+      role: 'user',
+    });
+    await signupPage.submit();
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
+
+    // Login
+    const loginPage = new LoginPage(page);
+    await loginPage.login(testEmail, testPassword);
+    await expect(page).toHaveURL(/.*\/home/);
+
+    // PATCH username
+    const patchRes = await page.request.patch('/api/users/me', {
+      data: { username: newUsername },
+    });
+    expect(patchRes.status()).toBe(200);
+    const patchBody = await patchRes.json();
+    expect(patchBody.data.user.username).toBe(newUsername);
+
+    // GET verify
+    const getRes = await page.request.get('/api/users/me');
+    const getBody = await getRes.json();
+    expect(getBody.user.username).toBe(newUsername);
+  });
+
+  test('PATCH /api/users/me - requests email update', async ({ page }) => {
+    const timestamp = Date.now();
+    const testEmail = `e2e_patch_email_${timestamp}@test.com`;
+    const testPassword = 'StrongPassword1!';
+    const testUsername = `emailuser${timestamp}`;
+    const newEmail = `e2e_patch_email_new_${timestamp}@test.com`;
+
+    // Signup
+    const signupPage = new SignupPage(page);
+    await signupPage.goto();
+    await signupPage.fillForm({
+      username: testUsername,
+      email: testEmail,
+      password: testPassword,
+      confirmPassword: testPassword,
+      role: 'user',
+    });
+    await signupPage.submit();
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
+
+    // Login
+    const loginPage = new LoginPage(page);
+    await loginPage.login(testEmail, testPassword);
+    await expect(page).toHaveURL(/.*\/home/);
+
+    // PATCH email
+    const patchRes = await page.request.patch('/api/users/me', {
+      data: { email: newEmail },
+    });
+    expect(patchRes.status()).toBe(200);
+    const patchBody = await patchRes.json();
+    expect(patchBody.data.emailChangePending).toBe(true);
+
+    // GET still shows old confirmed email
+    const getRes = await page.request.get('/api/users/me');
+    const getBody = await getRes.json();
+    expect(getBody.user.email).toBe(testEmail);
+  });
+
+  test('PATCH /api/users/me - updates password', async ({ page }) => {
+    const timestamp = Date.now();
+    const testEmail = `e2e_patch_pass_${timestamp}@test.com`;
+    const testPassword = 'StrongPassword1!';
+    const newPassword = 'NewStrongPass1!';
+    const testUsername = `passuser${timestamp}`;
+
+    // Signup
+    const signupPage = new SignupPage(page);
+    await signupPage.goto();
+    await signupPage.fillForm({
+      username: testUsername,
+      email: testEmail,
+      password: testPassword,
+      confirmPassword: testPassword,
+      role: 'user',
+    });
+    await signupPage.submit();
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
+
+    // Login
+    const loginPage = new LoginPage(page);
+    await loginPage.login(testEmail, testPassword);
+    await expect(page).toHaveURL(/.*\/home/);
+
+    // PATCH password
+    const patchRes = await page.request.patch('/api/users/me', {
+      data: {
+        newPassword,
+        currentPassword: testPassword,
+      },
+    });
+    expect(patchRes.status()).toBe(200);
+    const patchBody = await patchRes.json();
+    expect(patchBody.data.passwordUpdated).toBe(true);
+
+    // Logout
+    await page.request.post('/api/auth/logout');
+    await page.goto('/login', { timeout: 10000 });
+    await expect(page).toHaveURL(/.*\/login/);
+
+    // Old password should fail
+    await loginPage.login(testEmail, testPassword);
+    const oldError = await loginPage.getErrorMessage();
+    expect(oldError).toBeTruthy();
+
+    // Login with new password
+    await page.goto('/login', { timeout: 10000 });
+    await loginPage.login(testEmail, newPassword);
+    await expect(page).toHaveURL(/.*\/home/, { timeout: 15000 });
+
+    // Restore original password
+    const restoreRes = await page.request.patch('/api/users/me', {
+      data: {
+        newPassword: testPassword,
+        currentPassword: newPassword,
+      },
+    });
+    expect(restoreRes.status()).toBe(200);
+  });
+
+  test('PATCH /api/users/me - returns 401 without session', async ({ request }) => {
+    const res = await request.patch('/api/users/me', {
+      data: { username: 'newname' },
+    });
+    expect(res.status()).toBe(401);
+
+    const body = await res.json();
+    expect(body.error).toBe('Unauthorized');
+  });
 });

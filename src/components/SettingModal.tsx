@@ -44,6 +44,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -57,9 +58,23 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   }, [userProfile]);
 
 
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarError(null);
     const file = e.target.files?.[0];
     if (file) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setAvatarError("รองรับเฉพาะไฟล์ JPEG, PNG, WebP เท่านั้น");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setAvatarError("ไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+        e.target.value = "";
+        return;
+      }
       setPreviewUrl(URL.createObjectURL(file));
       setAvatarFile(file);
     }
@@ -70,23 +85,21 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   };
 
   const uploadAvatar = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `avatar-${Date.now()}.${fileExt}`;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id;
-    const filePath = userId ? `${userId}/${fileName}` : fileName;
+    const formData = new FormData();
+    formData.append("avatar", file);
 
-    const { data, error } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true });
+    const res = await fetch("/api/users/me/avatar", {
+      method: "POST",
+      body: formData,
+    });
 
-    if (error) throw error;
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "อัปโหลดรูปไม่สำเร็จ");
+    }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(data.path);
-
-    return publicUrl;
+    const data = await res.json();
+    return data.data.user.avatarUrl as string;
   };
 
   const passwordError =
@@ -253,6 +266,9 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
+                  {avatarError && (
+                    <p className="text-red-500 text-xs mt-1 w-full text-center sm:text-left">{avatarError}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
