@@ -114,7 +114,12 @@ export default function CreateRecipePage() {
   const handleSearchLocation = async () => {
     if (!shopLocation.trim()) return;
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(shopLocation)}`);
+      let searchQuery = shopLocation.trim();
+      if (!searchQuery.includes("พะเยา") && !searchQuery.includes("Thailand")) {
+        searchQuery = `${searchQuery}, พะเยา`;
+      }
+
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
       const data = await response.json();
 
       if (data && data.length > 0) {
@@ -128,7 +133,7 @@ export default function CreateRecipePage() {
           updateMapMarker(latitude, longitude, mapInstanceRef.current, (window as any).L);
         }
       } else {
-        alert("ไม่พบสถานที่ที่คุณค้นหา ลองระบุชื่อให้ละเอียดขึ้น");
+        alert("ไม่พบชื่อร้านนี้ในระบบแผนที่สาธารณะ แนะนำให้พิมพ์ชื่อถนน/ตำบล หรือคลิกปักหมุดบนแผนที่ได้เลยครับ");
       }
     } catch (error) {
       console.error("Error searching location:", error);
@@ -533,7 +538,7 @@ export default function CreateRecipePage() {
                         <input
                           id="shop-location-input"
                           type="text"
-                          placeholder="พิมพ์ชื่อสถานที่ แล้วกดค้นหา..."
+                          placeholder="พิมพ์ชื่อสถานที่ หรือ ถนน (เช่น ถนนพหลโยธิน)"
                           value={shopLocation}
                           onChange={(e) => setShopLocation(e.target.value)}
                           onKeyDown={(e) => {
