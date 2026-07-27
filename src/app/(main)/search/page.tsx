@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -14,6 +14,18 @@ const anuphan = Anuphan({
   subsets: ["thai", "latin"],
   display: "swap",
 });
+
+// =========================================
+// ⏱️ Custom Hook สำหรับ Debounce (หน่วงเวลา 300ms)
+// =========================================
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 // =========================================
 // 🍱 ข้อมูลจำลองวัตถุดิบแบบครอบคลุมทั่วโลก (Mock Data)
@@ -83,9 +95,12 @@ function IngredientFilterPanel({
   onCheckboxChange: (ingredient: string) => void;
 }) {
   const [ingSearchTerm, setIngSearchTerm] = useState("");
+  
+  // ใช้ Debounce กับช่องค้นหาวัตถุดิบ
+  const debouncedSearchTerm = useDebounce(ingSearchTerm, 300);
 
   const filteredIngredients = currentCategoryData.ingredients.filter((ing) =>
-    ing.toLowerCase().includes(ingSearchTerm.toLowerCase())
+    ing.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   return (
@@ -175,9 +190,7 @@ function SearchContent() {
   return (
     <div className="w-[95%] max-w-[1200px] mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-start">
 
-      {/* =========================================
-          ฝั่งซ้าย: รายการหมวดหมู่ (เลือกวัตถุดิบ)
-          ========================================= */}
+      {/* ฝั่งซ้าย: รายการหมวดหมู่ */}
       <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-4">
         <span className="text-gray-800 font-bold text-sm pl-4 mb-1 block">
           เลือกวัตถุดิบ
@@ -188,13 +201,11 @@ function SearchContent() {
             const isActive = cat.id === activeCategory;
             return (
               <div key={cat.id} className="flex items-center gap-3 relative group">
-
                 {isActive && (
                   <div className="absolute -left-5 text-[#71B254] font-black text-2xl hidden lg:block animate-pulse">
                     ➔
                   </div>
                 )}
-
                 <button
                   onClick={() => {
                     router.push(`/search?category=${cat.id}`);
@@ -214,11 +225,8 @@ function SearchContent() {
         </div>
       </div>
 
-      {/* =========================================
-          ฝั่งขวา: การ์ดใหญ่เลือกวัตถุดิบ (Main Content Card)
-          ========================================= */}
+      {/* ฝั่งขวา: Main Content Card */}
       <div className="flex-grow w-full bg-white border border-transparent rounded-[24px] p-8 md:p-12 shadow-sm min-h-[580px] flex flex-col justify-between">
-
         <div>
           <h1 className="text-3xl md:text-4xl font-extrabold text-black mb-2 tracking-tight">
             คุณมีวัตถุดิบอะไรบ้าง?
@@ -254,24 +262,20 @@ function SearchContent() {
             )}
           </div>
 
-          {/* ปุ่มส่งไปยังหน้าสรุปผลลัพธ์การค้นหาสูตรอาหาร */}
           <Link
-            href="/search/results?query=สลัด"
+            href={`/search/results?ingredients=${selectedIngredients.join(",")}`}
             className="w-full sm:w-auto px-6 py-3.5 bg-[#71B254] text-white font-extrabold text-base rounded-2xl hover:bg-[#5b9642] transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 shrink-0 text-center block"
           >
             ค้นหาสูตรอาหาร <span>➔</span>
           </Link>
         </div>
-
       </div>
-
     </div>
   );
 }
 
 export default function SearchIngredientsPage() {
   return (
-    // ✅ ใส่ anuphan.className ตรงนี้จุดเดียว ครอบคลุมทั้งหน้า
     <div className={`${anuphan.className} min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden`}>
       <Navbar />
       <Suspense
