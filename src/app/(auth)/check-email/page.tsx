@@ -1,20 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import { Anuphan } from "next/font/google";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
-
+import { createClient } from "@/lib/supabase/client";
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   display: "swap",
 });
 
-// 1. ยกโค้ดเดิมของคุณทั้งหมดมาใส่ในนี้ โดยไม่แก้ UI เลยแม้แต่บรรทัดเดียว
 function CheckEmailContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+  const supabase = createClient();
 
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
@@ -41,15 +41,13 @@ function CheckEmailContent() {
   };
 
   return (
-    <div
-      className={`flex min-h-screen w-full bg-white items-center justify-center p-6 ${anuphan.className}`}
-    >
       <div className="w-full max-w-[440px] flex flex-col items-center text-center">
-        <div className="w-72 h-72 xl:w-80 xl:h-80 mb-6 flex items-center justify-center">
-          <img
+        <div className="w-72 h-72 xl:w-80 xl:h-80 mb-6 flex items-center justify-center relative">
+          <Image
             src="/photo/logo.png"
             alt="Kin Yark Logo"
-            className="w-full h-full object-contain"
+            fill
+            className="object-contain"
           />
         </div>
 
@@ -107,21 +105,23 @@ function CheckEmailContent() {
 
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
           className="mt-6 text-sm text-amber-700 font-bold underline"
         >
           กลับไปหน้าเข้าสู่ระบบ
         </button>
-      </div>
     </div>
   );
 }
 
-// 2. Component หลักใช้ Suspense ครอบ โดยไม่สร้าง UI ใดๆ เพิ่มเติม (fallback={null})
 export default function CheckEmailPage() {
   return (
-    <Suspense fallback={null}>
-      <CheckEmailContent />
-    </Suspense>
+    <div
+      className={`flex min-h-screen w-full bg-white items-center justify-center p-6 ${anuphan.className}`}
+    >
+      <Suspense fallback={<div />}>
+        <CheckEmailContent />
+      </Suspense>
+    </div>
   );
 }

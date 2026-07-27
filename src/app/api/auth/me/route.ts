@@ -17,7 +17,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ user: dbUser || { email: user.email } });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

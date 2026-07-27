@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
 // 🌟 เปลี่ยนมาอิมพอร์ตฟอนต์ Anuphan ที่ตัวผอมโปร่ง มีหัวกลมสวยตรงตามรูปเป๊ะๆ ครับ
@@ -88,7 +89,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 md:translate-x-16 w-40 h-40 md:w-80 md:h-80 drop-shadow-2xl z-20 pointer-events-none">
-              <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" />
+              <Image src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" fill className="object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" sizes="(max-width: 768px) 160px, 320px" />
           </div>
         </div>
       </main>
@@ -135,19 +136,20 @@ function MenuCarousel({
 } ) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
-  };
+  }, [recipes.length]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex - 1 + recipes.length) % recipes.length);
-  };
+  }, [recipes.length]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
     }, 3500);
     return () => clearInterval(timer);
-  }, [currentIndex]);
+  }, [currentIndex, handleNext]);
 
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length];
@@ -204,7 +206,7 @@ function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string
     <div className={`${bgColor} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <img src={image} alt={title} className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-white" />
+        <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
       </div>
 
       <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">
