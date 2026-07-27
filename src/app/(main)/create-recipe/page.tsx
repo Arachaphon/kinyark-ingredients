@@ -101,7 +101,6 @@ export default function CreateRecipePage() {
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [pickedRecipe, setPickedRecipe] = useState<SystemRecipe | null>(null);
 
-  // 🌟 ฟังก์ชันอัปเดตตำแหน่งหมุดบนแผนที่
   const updateMapMarker = (lat: number, lng: number, map: any, L: any) => {
     setPinCoord({ lat, lng });
     if (markerRef.current) {
@@ -112,7 +111,6 @@ export default function CreateRecipePage() {
     map.setView([lat, lng], 15);
   };
 
-  // 🌟 ค้นหาพิกัดจากชื่อสถานที่
   const handleSearchLocation = async () => {
     if (!shopLocation.trim()) return;
     try {
@@ -140,7 +138,6 @@ export default function CreateRecipePage() {
   useEffect(() => {
     if (postAs === "shop" && isMounted && mapRef.current && !mapInstanceRef.current) {
       import("leaflet").then((L) => {
-        // เก็บ L ไว้ใน window ชั่วคราวเพื่อให้เรียกใช้ง่ายขึ้น
         (window as any).L = L;
 
         delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -150,24 +147,25 @@ export default function CreateRecipePage() {
           shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
         });
 
-        const map = L.map(mapRef.current).setView([19.1645, 99.9094], 13); // ตั้งต้นที่พะเยา/โซนใกล้เคียง
-        
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; OpenStreetMap contributors',
-        }).addTo(map);
+        if (mapRef.current) {
+          const map = L.map(mapRef.current).setView([19.1645, 99.9094], 13);
+          
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; OpenStreetMap contributors',
+          }).addTo(map);
 
-        map.on("click", (e: any) => {
-          const { lat, lng } = e.latlng;
-          updateMapMarker(lat, lng, map, L);
-          setShopLocation(`พิกัดร้าน (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
-        });
+          map.on("click", (e: any) => {
+            const { lat, lng } = e.latlng;
+            updateMapMarker(lat, lng, map, L);
+            setShopLocation(`พิกัดร้าน (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
+          });
 
-        mapInstanceRef.current = map;
+          mapInstanceRef.current = map;
 
-        // บังคับรีเฟรชขนาดแผนที่แก้ปัญหาจอเทา/หมุดหายตอนโหลดครั้งแรก
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 200);
+          setTimeout(() => {
+            map.invalidateSize();
+          }, 200);
+        }
       });
     }
 
@@ -556,7 +554,6 @@ export default function CreateRecipePage() {
                       </div>
                     </div>
 
-                    {/* 🌟 แผนที่จริงพร้อมแสดงผล */}
                     <div className="flex flex-col">
                       <label className="block text-gray-600 text-xs font-semibold mb-1">คลิกปักหมุด หรือค้นหาชื่อสถานที่:</label>
                       <div 
