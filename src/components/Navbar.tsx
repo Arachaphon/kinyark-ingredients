@@ -123,6 +123,7 @@ export default function Navbar() {
         {/* ช่องค้นหา */}
         <div className="w-full relative" ref={dropdownRef}>
           <input
+            id="search-recipe" // 👈 เพิ่ม ID ตรงนี้
             type="text"
             placeholder="ค้นหา..."
             value={searchTerm}
