@@ -110,6 +110,9 @@ export async function POST(request: Request) {
           }),
         },
       });
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
     });
 
     return Response.json(
@@ -125,7 +128,8 @@ export async function POST(request: Request) {
 
     return Response.json(
       {
-        error: "Internal server error",
+        error: error instanceof Error ? error.message : String(error),
+        details: error,
       },
       {
         status: 500,

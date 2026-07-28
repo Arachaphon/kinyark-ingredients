@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
 import type { Map, Marker, LeafletMouseEvent } from "leaflet";
@@ -60,6 +61,7 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
 ];
 
 export default function CreateRecipePage() {
+  const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [postAs, setPostAs] = useState<"user" | "store">("user");
   const [userRole, setUserRole] = useState<string>("USER");
@@ -136,6 +138,63 @@ export default function CreateRecipePage() {
   const handleSearchLocation = async () => {
     if (!shopLocation.trim()) return;
     try {
+      // 📍 ข้อมูลจำลองสำหรับ Mockup บริเวณ ม.พะเยา และสถานที่ฮิต (เพื่อใช้ทดสอบโดยเฉพาะ)
+      const mockupLocations: Record<string, { lat: number; lng: number; name: string }> = {
+        "หน้ามอ": { lat: 19.0287, lng: 99.8973, name: "หน้า ม.พะเยา (หน้ามอ)" },
+        "หน้าม.พะเยา": { lat: 19.0287, lng: 99.8973, name: "หน้า ม.พะเยา" },
+        "หน้า ม.พะเยา": { lat: 19.0287, lng: 99.8973, name: "หน้า ม.พะเยา" },
+        "ม.พะเยา": { lat: 19.0287, lng: 99.8973, name: "มหาวิทยาลัยพะเยา" },
+        "เกท 1": { lat: 19.0305, lng: 99.8950, name: "เกท 1 ม.พะเยา (Gate 1)" },
+        "เกท 2": { lat: 19.0315, lng: 99.8965, name: "เกท 2 ม.พะเยา (Gate 2)" },
+        "เกท 3": { lat: 19.0330, lng: 99.8980, name: "เกท 3 ม.พะเยา (Gate 3)" },
+        "เกท 4": { lat: 19.0350, lng: 99.9000, name: "เกท 4 ม.พะเยา (Gate 4)" },
+        "หลังมอ": { lat: 19.0210, lng: 99.8800, name: "หลัง ม.พะเยา (หลังมอ)" },
+        "หลัง ม.พะเยา": { lat: 19.0210, lng: 99.8800, name: "หลัง ม.พะเยา" },
+        "สแควร์": { lat: 19.0295, lng: 99.8960, name: "UP Square (หน้ามอ)" },
+        
+        // 🎯 สถานที่เฉพาะเจาะจงตามที่ผู้ใช้ต้องการทดสอบ (Mockup Locations)
+        "ไผ่แดง": { lat: 19.028306660390673, lng: 99.92671256826632, name: "ไผ่แดงหมูกระทะ หน้า ม.พะเยา" },
+        "หมูกะทะไผ่แดง": { lat: 19.028306660390673, lng: 99.92671256826632, name: "ไผ่แดงหมูกระทะ หน้า ม.พะเยา" },
+        "เจริญภัณฑ์": { lat: 19.1666, lng: 99.9022, name: "ห้างเจริญภัณฑ์ (เมืองพะเยา)" },
+        "เจริญภัณฑ์ หน้ามอ": { lat: 19.029146375033267, lng: 99.92585925010889, name: "เจริญภัณฑ์เอ็กซ์เพรส สาขา หน้า ม.พะเยา" },
+        "เจริญภัณฑ์ หน้า ม.พะเยา": { lat: 19.029146375033267, lng: 99.92585925010889, name: "เจริญภัณฑ์เอ็กซ์เพรส สาขา หน้า ม.พะเยา" },
+        "กาดเขียว": { lat: 19.0307171, lng: 99.9265772, name: "กาดเขียว" },
+        "ตลาดนัดวันศุกร์": { lat: 19.033944826420683, lng: 99.92846779759432, name: "ตลาดนัดวันศุกร์" },
+        "ตลาด one market": { lat: 19.031077404419495, lng: 99.92686756739701, name: "ตลาด One market (กาดหลุม)" },
+        "กาดหลุม": { lat: 19.031077404419495, lng: 99.92686756739701, name: "ตลาด One market (กาดหลุม)" },
+        "lotus": { lat: 19.030682956480472, lng: 99.92654135078719, name: "Lotus's Go Fresh หน้ามหาวิทยาลัยพะเยา" },
+        "โลตัส": { lat: 19.030682956480472, lng: 99.92654135078719, name: "Lotus's Go Fresh หน้ามหาวิทยาลัยพะเยา" },
+        "ตลาดนำโชค": { lat: 19.029464573433987, lng: 99.92613204249007, name: "ตลาดนำโชค" },
+        "หนานคำ": { lat: 19.027095830460155, lng: 99.92348777407973, name: "รถตู้หนานคำ สาขาม.พะเยา" },
+        "รถตู้หนานคำ": { lat: 19.027095830460155, lng: 99.92348777407973, name: "รถตู้หนานคำ สาขาม.พะเยา" },
+        "เซเว่น แม่กา": { lat: 19.027391835141692, lng: 99.92352086681264, name: "7-Eleven สาขา แม่กา ทล.1 (19498)" },
+        "7-11 แม่กา": { lat: 19.027391835141692, lng: 99.92352086681264, name: "7-Eleven สาขา แม่กา ทล.1 (19498)" },
+        "7-eleven แม่กา": { lat: 19.027391835141692, lng: 99.92352086681264, name: "7-Eleven สาขา แม่กา ทล.1 (19498)" },
+        "เซเว่น หน้ามอ": { lat: 19.029974016982443, lng: 99.92626195332112, name: "7-Eleven สาขา หน้า ม.พะเยา (09175)" },
+        "7-11 หน้ามอ": { lat: 19.029974016982443, lng: 99.92626195332112, name: "7-Eleven สาขา หน้า ม.พะเยา (09175)" },
+        "7-eleven หน้ามอ": { lat: 19.029974016982443, lng: 99.92626195332112, name: "7-Eleven สาขา หน้า ม.พะเยา (09175)" },
+      };
+
+      const query = shopLocation.trim().toLowerCase();
+      let matchedMockup = null;
+      const sortedKeys = Object.keys(mockupLocations).sort((a, b) => b.length - a.length);
+      for (const key of sortedKeys) {
+        if (query.includes(key)) {
+          matchedMockup = mockupLocations[key];
+          break;
+        }
+      }
+
+      if (matchedMockup) {
+        setShopLocation(matchedMockup.name);
+        if (mapInstanceRef.current && leafletModuleRef.current) {
+          updateMapMarker(matchedMockup.lat, matchedMockup.lng, mapInstanceRef.current, leafletModuleRef.current);
+          mapInstanceRef.current.setView([matchedMockup.lat, matchedMockup.lng], 16);
+        }
+        return; // สิ้นสุดการค้นหาจาก Mockup
+      }
+
+      // ถ้าไม่ตรงกับ Mockup เลย จะลองหาในแผนที่จริง
       let searchQuery = shopLocation.trim();
       if (!searchQuery.includes("พะเยา") && !searchQuery.includes("Thailand")) {
         searchQuery = `${searchQuery}, พะเยา`;
@@ -176,11 +235,26 @@ export default function CreateRecipePage() {
         });
 
         if (mapRef.current) {
-          const map = L.map(mapRef.current).setView([19.1645, 99.9094], 13);
+          // ตั้งค่าเริ่มต้นของแผนที่ไปที่ หน้า ม.พะเยา แทนตัวเมือง เพื่อให้เข้ากับ Mockup
+          const map = L.map(mapRef.current).setView([19.0287, 99.8973], 15);
           
           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: '&copy; OpenStreetMap contributors',
           }).addTo(map);
+
+          if (navigator.geolocation && !pinCoord) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                map.setView([latitude, longitude], 13);
+                updateMapMarker(latitude, longitude, map, L);
+                setShopLocation(`พิกัดร้านปัจจุบัน (Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)})`);
+              },
+              (error) => {
+                console.warn("Geolocation failed or denied:", error);
+              }
+            );
+          }
 
           map.on("click", (e: LeafletMouseEvent) => {
             const { lat, lng } = e.latlng;
@@ -379,72 +453,88 @@ export default function CreateRecipePage() {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
+      const payload: any = {
+        recipeName: title,
+        description,
+        instructions,
+        visibility: visibility === "public" || visibility === "private" ? visibility : "public",
+        postAs,
+        ingredients: ingredients
+          .filter(i => i.name.trim() !== "")
+          .map(i => ({
+            name: i.name,
+            quantity: parseFloat(i.quantity) || 1,
+            unit: i.unit || "กรัม"
+          })),
+        equipmentItems: equipments
+          .filter(e => e.name.trim() !== "")
+          .map(e => ({ name: e.name })),
+      };
 
-      // ข้อมูลพื้นฐาน
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("instructions", instructions);
-      formData.append("visibility", visibility);
-      formData.append("postAs", postAs);
-      
       if (pickedRecipe) {
-        formData.append("systemRecipeId", pickedRecipe.id);
+        payload.systemRecipeId = pickedRecipe.id;
       }
 
-      // ข้อมูลแบบ Array (แปลงเป็น JSON String)
-      const formattedIngredients = ingredients.map(i => ({
-        name: i.name,
-        category: i.category,
-        quantity: parseFloat(i.quantity) || 0,
-        unit: i.unit
-      }));
-      formData.append("ingredients", JSON.stringify(formattedIngredients));
-      
-      const formattedEquipments = equipments.filter(e => e.name.trim() !== "").map(e => e.name);
-      formData.append("equipmentItems", JSON.stringify(formattedEquipments));
+      // ⚠️ Upload files
+      const uploadFile = async (file: File): Promise<string | null> => {
+        const fd = new FormData();
+        fd.append("file", file);
+        try {
+          const res = await fetch("/api/recipes/upload", { method: "POST", body: fd });
+          if (!res.ok) return null;
+          const data = await res.json();
+          return data.url;
+        } catch {
+          return null;
+        }
+      };
 
-      // ไฟล์สื่อของสูตรอาหาร
-      coverImages.forEach((media) => {
-        formData.append("coverImages", media.file);
-      });
-      if (videoFile) {
-        formData.append("videoFile", videoFile.file);
+      const uploadedImages: string[] = [];
+      for (const media of coverImages) {
+        const url = await uploadFile(media.file);
+        if (url) uploadedImages.push(url);
+      }
+
+      if (uploadedImages.length > 0) {
+        payload.featuredImageUrl = uploadedImages[0];
+        payload.images = uploadedImages;
       }
 
       // ข้อมูลเฉพาะร้านค้า (Store)
       if (postAs === "store") {
-        formData.append("shopName", shopName);
-        formData.append("sellingPrice", sellingPrice);
-        formData.append("shopDescription", shopDescription);
-        formData.append("shopLocation", shopLocation);
+        payload.shopName = shopName;
+        payload.sellingPrice = parseFloat(sellingPrice) || 0;
+        payload.shopDescription = shopDescription;
+        payload.shopLocation = shopLocation;
         
         if (pinCoord) {
-          formData.append("pinCoord", JSON.stringify(pinCoord));
-        }
-
-        shopIngredientImages.forEach((media) => {
-          formData.append("shopIngredientImages", media.file);
-        });
-        
-        if (shopIngredientVideo) {
-          formData.append("shopIngredientVideo", shopIngredientVideo.file);
+          payload.pinCoord = pinCoord;
         }
       }
 
       // ยิง API ส่งข้อมูล
       const response = await fetch("/api/recipes", {
         method: "POST",
-        body: formData, 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload), 
       });
 
       if (!response.ok) {
-        throw new Error("Failed to submit recipe API");
+        const errText = await response.text();
+        console.error("API Error Response:", errText);
+        alert("เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง");
+        return;
       }
 
       const result = await response.json();
       console.log("Success:", result);
       alert("บันทึกและเผยแพร่สูตรอาหารสำเร็จ!");
+      
+      if (result.data?.id) {
+        router.push(`/recipe/${result.data.id}`);
+      } else {
+        router.push("/home");
+      }
       
     } catch (error) {
       console.error("Error submitting recipe:", error);
@@ -917,11 +1007,17 @@ export default function CreateRecipePage() {
                               <option value="kg">กิโลกรัม (kg)</option>
                               <option value="ml">มิลลิลิตร (ml)</option>
                               <option value="l">ลิตร (l)</option>
-                              <option value="piece">ชิ้น/ฟอง/หัว</option>
+                              <option value="piece">ตัว / ชิ้น / ฟอง</option>
+                              <option value="head">หัว / ลูก / ผล</option>
+                              <option value="slice">แว่น</option>
                               <option value="tablespoon">ช้อนโต๊ะ</option>
                               <option value="teaspoon">ช้อนชา</option>
                               <option value="cup">ถ้วยตวง</option>
-                              <option value="pinch">หยิบมือ/เล็กน้อย</option>
+                              <option value="pinch">หยิบมือ / เล็กน้อย</option>
+                              <option value="leaf">ใบ / กลีบ / ฝัก / ต้น</option>
+                              <option value="seed">เม็ด / เมล็ด</option>
+                              <option value="pack">ห่อ / ถุง / ซอง</option>
+                              <option value="bunch">กำ / มัด / พวง</option>
                             </select>
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
