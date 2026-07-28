@@ -129,10 +129,10 @@ test.describe('Profile E2E', () => {
 
   test('PATCH /api/users/me - requests email update', async ({ page }) => {
     const timestamp = Date.now();
-    const testEmail = `e2e_patch_email_${timestamp}@test.com`;
+    const testEmail = `e2e_patch_${timestamp}@gmail.com`;
     const testPassword = 'StrongPassword1!';
     const testUsername = `emailuser${timestamp}`;
-    const newEmail = `e2e_patch_email_new_${timestamp}@test.com`;
+    const newEmail = `e2e_patch_new_${timestamp}@gmail.com`;
 
     // Signup
     const signupPage = new SignupPage(page);

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation'
-import { createClient } from "@/lib/supabase/client";
 
 interface SettingModalProps {
   isOpen: boolean;
@@ -52,8 +51,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
-  const supabase = createClient();
-
 
   useEffect(() => {
     if (userProfile) {
@@ -88,26 +85,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
-  };
-
-  const uploadAvatar = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `avatar-${Date.now()}.${fileExt}`;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id;
-    const filePath = userId ? `${userId}/${fileName}` : fileName;
-
-    const { data, error } = await supabase.storage
-      .from('avatars')
-      .upload(filePath, file, { upsert: true });
-
-    if (error) throw error;
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(data.path);
-
-    return publicUrl;
   };
 
   const passwordError =

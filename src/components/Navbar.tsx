@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -44,18 +44,6 @@ export default function Navbar() {
     item.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      if (res.ok) {
-        const data = await res.json();
-        setUserProfile(data.user);
-      }
-    } catch (error) {
-      console.error("Failed to fetch user", error);
-    }
-  }, []);
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -71,8 +59,23 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    fetchUser();
-  }, [isSettingOpen, fetchUser]);
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const res = await fetch('/api/auth/me', { signal: controller.signal });
+        if (res.ok) {
+          const data = await res.json();
+          setUserProfile(data.user);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          console.error("Failed to fetch user", error);
+        }
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [isSettingOpen]);
 
   const handleSearchSubmit = (term: string) => {
     if (!term.trim()) return;

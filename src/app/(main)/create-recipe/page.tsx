@@ -3,6 +3,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
+import type { Map, Marker, LeafletMouseEvent } from "leaflet";
+
+type LeafletModule = typeof import("leaflet");
 
 type SystemRecipe = {
   id: string;
@@ -93,8 +96,9 @@ export default function CreateRecipePage() {
   const [pinCoord, setPinCoord] = useState<{ lat: number; lng: number } | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstanceRef = useRef<Map | null>(null);
+  const markerRef = useRef<Marker | null>(null);
+  const leafletModuleRef = useRef<LeafletModule | null>(null);
 
   const [shopIngredientImages, setShopIngredientImages] = useState<UploadedMedia[]>([]);
   const [shopImageIndex, setShopImageIndex] = useState(0);
@@ -112,7 +116,7 @@ export default function CreateRecipePage() {
   // State สำหรับจัดการสถานะ Loading ระหว่างรออัปโหลด
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const updateMapMarker = (lat: number, lng: number, map: any, L: any) => {
+  const updateMapMarker = (lat: number, lng: number, map: Map, L: LeafletModule) => {
     setPinCoord({ lat, lng });
     if (markerRef.current) {
       markerRef.current.setLatLng([lat, lng]);
@@ -140,8 +144,8 @@ export default function CreateRecipePage() {
 
         setShopLocation(display_name);
         
-        if (mapInstanceRef.current && (window as any).L) {
-          updateMapMarker(latitude, longitude, mapInstanceRef.current, (window as any).L);
+        if (mapInstanceRef.current && leafletModuleRef.current) {
+          updateMapMarker(latitude, longitude, mapInstanceRef.current, leafletModuleRef.current);
         }
       } else {
         alert("ไม่พบชื่อร้านนี้ในระบบแผนที่สาธารณะ แนะนำให้พิมพ์ชื่อถนน/ตำบล หรือคลิกปักหมุดบนแผนที่ได้เลยครับ");
@@ -154,8 +158,9 @@ export default function CreateRecipePage() {
   useEffect(() => {
     if (postAs === "shop" && isMounted && mapRef.current && !mapInstanceRef.current) {
       import("leaflet").then((L) => {
-        (window as any).L = L;
+        leafletModuleRef.current = L;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- leaflet internal property
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
@@ -170,7 +175,7 @@ export default function CreateRecipePage() {
             attribution: '&copy; OpenStreetMap contributors',
           }).addTo(map);
 
-          map.on("click", (e: any) => {
+          map.on("click", (e: LeafletMouseEvent) => {
             const { lat, lng } = e.latlng;
             updateMapMarker(lat, lng, map, L);
             setShopLocation(`พิกัดร้าน (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);

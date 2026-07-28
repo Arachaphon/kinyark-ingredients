@@ -38,7 +38,7 @@ export async function PATCH(request: Request) {
       return Response.json({ error: firstError.message }, { status: 400 })
     }
 
-    const { username, email, avatarUrl, currentPassword, newPassword, confirmPassword } = parsed.data
+    const { username, email, avatarUrl, currentPassword, newPassword } = parsed.data
 
     let passwordUpdated = false
     let emailChangePending = false

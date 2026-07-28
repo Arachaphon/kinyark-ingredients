@@ -94,7 +94,20 @@ const mockSearchResults = [
 // =========================================
 // 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
 // =========================================
-const formatAndSortResults = (dataList: any[]) => {
+interface RecipeResult {
+  id: string;
+  title: string;
+  image: string;
+  tags: string[];
+  author: string;
+  authorAvatar: string;
+  likes: number;
+  rating: number;
+  initialFavorite: boolean;
+  isAi: boolean;
+}
+
+const formatAndSortResults = (dataList: RecipeResult[]) => {
   const aiRecipes = dataList.filter((item) => item.isAi);
   const userRecipes = dataList.filter((item) => !item.isAi);
 
@@ -112,7 +125,7 @@ function ResultsContent() {
   const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
 
   const [isLoading, setIsLoading] = useState(true);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<RecipeResult[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -130,22 +143,27 @@ function ResultsContent() {
         const data = await response.json();
 
         if (data && data.length > 0) {
-          const formattedData = data.map((item: any) => {
+          const formattedData = data.map((item: Record<string, unknown>) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
-            const recipeTitle = item.recipeName || item.title;
+            const recipeTitle = (item.recipeName || item.title) as string;
 
-            const finalImage = item.images?.[0]?.imageUrl || item.image || 
+            const images = item.images as { imageUrl: string }[] | undefined;
+            const finalImage = images?.[0]?.imageUrl || (item.image as string) || 
                                (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
 
+            const recipeIngredients = item.recipeIngredients as { ingredient?: { name: string } }[] | undefined;
+            const tags = recipeIngredients?.map((ri) => ri.ingredient?.name).filter(Boolean).slice(0, 5) as string[] || (item.tags as string[]) || [];
+            const user = item.user as { username?: string; avatarUrl?: string } | undefined;
+
             return {
-              id: item.id,
+              id: item.id as string,
               title: recipeTitle,
               image: finalImage,
-              tags: item.recipeIngredients?.map((ri: any) => ri.ingredient?.name).filter(Boolean).slice(0, 5) || item.tags || [],
-              author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
-              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
-              likes: item.favoriteCount || item.likes || 0,
-              rating: item.rating || 0,
+              tags,
+              author: user?.username || (item.author as string) || "ผู้ใช้งานทั่วไป",
+              authorAvatar: user?.avatarUrl || (item.authorAvatar as string) || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+              likes: (item.favoriteCount as number) || (item.likes as number) || 0,
+              rating: (item.rating as number) || 0,
               initialFavorite: false,
               isAi: isAiRecipe,
             };
@@ -186,7 +204,7 @@ function ResultsContent() {
     };
   }, [queryTitle]);
 
-  const setupFavorites = (dataArray: any[]) => {
+  const setupFavorites = (dataArray: RecipeResult[]) => {
     const initialFavs = dataArray.reduce(
       (acc, current) => ({ ...acc, [current.id]: current.initialFavorite || false }),
       {}

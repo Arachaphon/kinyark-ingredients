@@ -55,7 +55,7 @@ test.describe('Authentication E2E', () => {
       role: 'user'
     });
     await signupPage.submit();
-    await expect(page).toHaveURL(/.*\/home/, { timeout: 10000 });
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
     // Clear cookies to log out
     await page.context().clearCookies();
@@ -91,7 +91,7 @@ test.describe('Authentication E2E', () => {
       role: 'user'
     });
     await signupPage.submit();
-    await expect(page).toHaveURL(/.*\/home/, { timeout: 10000 });
+    await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
     // Clear cookies to log out
     await page.context().clearCookies();
