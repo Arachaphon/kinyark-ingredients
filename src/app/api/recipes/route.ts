@@ -32,42 +32,71 @@ export async function POST(request: Request) {
   }
 
   try {
-    const ingredientRecords = await Promise.all(
-      result.data.ingredients.map((ing) =>
-        prisma.ingredient.upsert({
-          where: { name: ing.name },
-          update: {},
-          create: { name: ing.name },
-        }),
-      ),
-    );
+    const recipe = await prisma.$transaction(async (tx) => {
+      const ingredientRecords = await Promise.all(
+        result.data.ingredients.map((ing) =>
+          tx.ingredient.upsert({
+            where: { name: ing.name },
+            update: {},
+            create: { name: ing.name },
+          }),
+        ),
+      );
 
-    const recipeIngredientsData = ingredientRecords.map((dbIng, index) => {
-      const inputIng = result.data.ingredients[index];
-      return {
-        ingredientId: dbIng.id,
-        quantity: inputIng.quantity,
-        unit: inputIng.unit,
-      };
-    });
+      const recipeIngredientsData = ingredientRecords.map((dbIng, index) => {
+        const inputIng = result.data.ingredients[index];
+        return {
+          ingredientId: dbIng.id,
+          quantity: inputIng.quantity,
+          unit: inputIng.unit,
+        };
+      });
 
-    const recipe = await prisma.recipe.create({
-      data: {
-        userId: user.id,
-        recipeName: result.data.recipeName,
-        description: result.data.description,
-        instructions: result.data.instructions,
-        recipeIngredients: {
-          create: recipeIngredientsData,
+      const equipmentData = result.data.equipmentItems?.map((eq) => ({
+        name: eq.name,
+      })) || [];
+
+      const imagesData: { imageUrl: string }[] = [];
+      if (result.data.featuredImageUrl) {
+        imagesData.push({ imageUrl: result.data.featuredImageUrl });
+      }
+      if (result.data.images) {
+        result.data.images.forEach((img) => imagesData.push({ imageUrl: img }));
+      }
+
+      const videosData = result.data.videos?.map((vid) => ({
+        videoUrl: vid,
+      })) || [];
+
+      return await tx.recipe.create({
+        data: {
+          userId: user.id,
+          recipeName: result.data.recipeName,
+          description: result.data.description,
+          instructions: result.data.instructions,
+          bgColor: result.data.bgColor,
+          aiProvider: result.data.aiProvider,
+          visibility: result.data.visibility,
+          recipeIngredients: {
+            create: recipeIngredientsData,
+          },
+          ...(equipmentData.length > 0 && {
+            equipmentItems: {
+              create: equipmentData,
+            },
+          }),
+          ...(imagesData.length > 0 && {
+            images: {
+              create: imagesData,
+            },
+          }),
+          ...(videosData.length > 0 && {
+            videos: {
+              create: videosData,
+            },
+          }),
         },
-        ...(result.data.featuredImageUrl ? {
-          images: {
-            create: {
-              imageUrl: result.data.featuredImageUrl,
-            }
-          }
-        } : {}),
-      },
+      });
     });
 
     return Response.json(
