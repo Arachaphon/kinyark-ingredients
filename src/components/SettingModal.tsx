@@ -22,21 +22,24 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   
-  // State สำหรับแท็บ AI Personalization (Toggles)
   const [aiRec, setAiRec] = useState(true);
   const [aiHistory, setAiHistory] = useState(true);
   const [dailySug, setDailySug] = useState(false);
 
-  // State สำหรับแท็บ Food Preferences
   const [diet, setDiet] = useState("มังสวิรัติ");
   const [allergy, setAllergy] = useState("ถั่วลิสง");
 
-  // State สำหรับฟอร์มโปรไฟล์
   const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formConfirmPassword, setFormConfirmPassword] = useState("");
   const [formCurrentPassword, setFormCurrentPassword] = useState("");
+  
+  // States สำหรับควบคุมการซ่อน/แสดงรหัสผ่าน
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [showFormConfirmPassword, setShowFormConfirmPassword] = useState(false);
+  const [showFormCurrentPassword, setShowFormCurrentPassword] = useState(false);
+
   const [isSaving, setIsSaving] = useState(false);
   const [currentPasswordError, setCurrentPasswordError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -44,22 +47,40 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+
   useEffect(() => {
     if (userProfile) {
       setFormUsername(userProfile.username || "");
       setFormEmail(userProfile.email || "");
+      setPreviewUrl(userProfile.avatarUrl || null);
     }
   }, [userProfile]);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
-  const supabase = createClient();
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarError(null);
     const file = e.target.files?.[0];
     if (file) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setAvatarError("รองรับเฉพาะไฟล์ JPEG, PNG, WebP เท่านั้น");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setAvatarError("ไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+        e.target.value = "";
+        return;
+      }
       setPreviewUrl(URL.createObjectURL(file));
       setAvatarFile(file);
     }
@@ -114,22 +135,15 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   if (!isOpen) return null;
 
   return (
-    /* 🌟 แก้ไขตรงนี้: จาก bg-black bg-opacity-40 เป็น bg-black/40 เพื่อให้ฉากหลังโปร่งแสงใน Tailwind v4 */
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fade-in font-anuphan">
       
-      {/* กล่อง Modal หลัก - ปรับความสูงจอมือถือเป็น h-auto และให้ขยายสูงสุดได้ max-h-[92vh] เพื่อไม่ให้เลยขอบจอ และรองรับการเลื่อนภายใน */}
       <div className="bg-white w-full max-w-[900px] h-auto md:h-[550px] max-h-[92vh] md:max-h-none rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100 animate-scale-up relative">
         
-        {/* =========================================
-            แถบเมนูด้านซ้าย (Sidebar สีเหลืองทอง)
-            ========================================= */}
         <div className="w-full md:w-[260px] bg-[#FFC700] p-4 md:p-6 flex flex-row md:flex-col justify-between shrink-0 text-black items-center md:items-stretch gap-2 md:gap-4 border-b md:border-b-0 md:border-r border-black/5">
           <div className="w-full flex md:flex-col justify-between md:justify-start items-center md:items-stretch">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black md:mb-8 tracking-wide whitespace-nowrap">ตั้งค่า</h2>
             
-            {/* ปรับแถบเมนูนำทางในมือถือให้กระชับยิ่งขึ้น */}
             <nav className="flex flex-row md:flex-col gap-1 sm:gap-2 overflow-x-auto no-scrollbar ml-4 md:ml-0">
-              {/* ปุ่ม Profile */}
               <button 
                 onClick={() => setActiveTab("profile")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -143,7 +157,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 โปรไฟล์
               </button>
 
-              {/* ปุ่ม Food Preferences */}
               <button 
                 onClick={() => setActiveTab("preferences")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -156,7 +169,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 ข้อมูลโภชนาการที่ชอบ
               </button>
 
-              {/* ปุ่ม AI Personalization */}
               <button 
                 onClick={() => setActiveTab("ai")}
                 className={`flex items-center gap-2 md:gap-3 py-1.5 px-3 md:py-3 md:px-4 rounded-xl text-left font-bold text-xs sm:text-sm md:text-base transition-all whitespace-nowrap ${
@@ -172,9 +184,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </nav>
           </div>
 
-          {/* ปุ่มด้านล่างสุด (Delete & Logout) แสดงเฉพาะบนเดสก์ท็อปตามเดิม */}
           <div className="hidden md:flex flex-col gap-1 border-t border-black/10 pt-4">
-            {/* 🌟 เปลี่ยนเป็น hover:bg-red-500/10 */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors"
@@ -199,9 +209,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           </div>
         </div>
 
-        {/* =========================================
-            เนื้อหาฝั่งขวา (เปลี่ยนไปตามเเท็บที่เลือก)
-            ========================================= */}
         <div className="flex-grow p-5 sm:p-6 md:p-8 relative flex flex-col overflow-y-auto bg-white min-h-0">
           
           <button 
@@ -215,7 +222,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </svg>
           </button>
 
-          {/* เเท็บโปรไฟล์ */}
           {activeTab === "profile" && (
             <div className="flex flex-col gap-4 md:gap-6 h-full justify-between">
               <div className="overflow-y-auto md:overflow-visible pr-1">
@@ -252,10 +258,25 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
                     <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
                   </div>
-                  <button onClick={handleUploadClick} className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700">
+                  
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                  <button 
+                    onClick={handleUploadClick}
+                    type="button"
+                    className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
+                  >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     เปลี่ยนรูปโปรไฟล์
                   </button>
+                  {avatarError && (
+                    <p className="text-red-500 text-xs mt-1 w-full text-center sm:text-left">{avatarError}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
@@ -263,24 +284,102 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ชื่อผู้ใช้งาน</label>
                     <input type="text" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
+                  
+                  {/* ช่องรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่านใหม่</label>
-                    <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
+                    <div className="relative">
+                      <input 
+                        type={showFormPassword ? "text" : "password"} 
+                        value={formPassword} 
+                        onChange={(e) => setFormPassword(e.target.value)} 
+                        placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" 
+                        className="w-full p-2.5 pr-10 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFormPassword(!showFormPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showFormPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     {passwordError && (
                       <p className="text-red-500 text-xs mt-1">{passwordError}</p>
                     )}
                   </div>
+
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
                     <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
+
+                  {/* ช่องยืนยันรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่านใหม่</label>
-                    <input type="password" value={formConfirmPassword} onChange={(e) => setFormConfirmPassword(e.target.value)} placeholder="ยืนยันรหัสผ่านใหม่" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
+                    <div className="relative">
+                      <input 
+                        type={showFormConfirmPassword ? "text" : "password"} 
+                        value={formConfirmPassword} 
+                        onChange={(e) => setFormConfirmPassword(e.target.value)} 
+                        placeholder="ยืนยันรหัสผ่านใหม่" 
+                        className="w-full p-2.5 pr-10 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowFormConfirmPassword(!showFormConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                      >
+                        {showFormConfirmPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <input type="password" value={formCurrentPassword} onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" />
+                {/* ช่องรหัสผ่านปัจจุบัน พร้อมไอคอนลูกตา */}
+                <div className="relative">
+                  <input 
+                    type={showFormCurrentPassword ? "text" : "password"} 
+                    value={formCurrentPassword} 
+                    onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} 
+                    placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" 
+                    className="w-full p-2.5 pr-10 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowFormCurrentPassword(!showFormCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showFormCurrentPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 17.772 17.772m-10.46-10.46a4.5 4.5 0 0 0 6.364 6.364m-6.364-6.364a4.5 4.5 0 0 1 6.364 6.364" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
 
                 {currentPasswordError && (
                   <p className="text-red-500 text-xs mt-1">{currentPasswordError}</p>
@@ -291,7 +390,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 )}
               </div>
 
-              {/* 🛠️ เพิ่มปุ่ม Logout และ ลบบัญชีผู้ใช้ ท้ายหน้าโปรไฟล์สำหรับจอมือถือ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-4">
                 <button 
                   onClick={handleLogout}
@@ -322,8 +420,19 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
                       if (formPassword.length > 0) body.newPassword = formPassword;
                       if (avatarFile) {
-                        const avatarUrl = await uploadAvatar(avatarFile);
-                        body.avatarUrl = avatarUrl;
+                        const formData = new FormData();
+                        formData.append("avatar", avatarFile);
+                        const uploadRes = await fetch("/api/users/me/avatar", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        if (!uploadRes.ok) {
+                          const err = await uploadRes.json();
+                          setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการอัปโหลดรูปโปรไฟล์");
+                          return;
+                        }
+                        const uploadData = await uploadRes.json();
+                        body.avatarUrl = uploadData.data.user.avatarUrl;
                       }
 
                       const res = await fetch("/api/users/me", {
@@ -363,7 +472,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </div>
           )}
 
-          {/* เเท็บข้อมูลโภชนาการ */}
           {activeTab === "preferences" && (
             <div className="flex flex-col h-full justify-between">
               <div>
@@ -403,7 +511,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 </div>
               </div>
 
-              {/* ชุดปุ่ม Logout สำหรับจอมือถือในหน้าอื่นๆ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-8">
                 <button 
                   onClick={handleLogout}
@@ -418,7 +525,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             </div>
           )}
 
-          {/* เเท็บ AI */}
           {activeTab === "ai" && (
             <div className="h-full flex flex-col justify-between">
               <div>
@@ -461,7 +567,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 </div>
               </div>
 
-              {/* ปุ่มลบ/ออกจากระบบเพิ่มเติมสำหรับ Mobile ในหน้าอื่นๆ */}
               <div className="flex md:hidden flex-col gap-2 border-t border-gray-100 pt-4 mt-8">
                 <button 
                   onClick={handleLogout}

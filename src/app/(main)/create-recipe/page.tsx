@@ -1011,6 +1011,7 @@ export default function CreateRecipePage() {
                     ) : (
                       <div className="flex flex-col gap-3">
                         <div className="w-full h-[200px] border border-[#71B254] rounded-md overflow-hidden relative group shadow-sm bg-black flex items-center justify-center">
+                          {/* รูปภาพที่กำลังแสดง */}
                           {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, next/image not supported */}
                           <img 
                             src={coverImages[currentImageIndex].previewUrl} 

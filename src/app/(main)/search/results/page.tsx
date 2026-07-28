@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import Image from "next/image";
+import React, { useState, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -212,73 +213,24 @@ function ResultsContent() {
 
       {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
-        
-        {/* 1. Loading State */}
-        {isLoading ? (
-          <>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex flex-col md:flex-row gap-6 p-4 border border-gray-200 rounded-xl bg-white animate-pulse">
-                <div className="w-full md:w-[180px] h-[160px] bg-gray-200 rounded-lg shrink-0"></div>
-                <div className="flex-grow flex flex-col justify-between py-2">
-                  <div>
-                    <div className="h-8 bg-gray-200 rounded-md w-3/4 mb-4"></div>
-                    <div className="flex gap-2">
-                      <div className="h-6 w-16 bg-gray-200 rounded-md"></div>
-                      <div className="h-6 w-20 bg-gray-200 rounded-md"></div>
-                      <div className="h-6 w-14 bg-gray-200 rounded-md"></div>
-                    </div>
-                  </div>
-                  <div className="h-8 w-24 bg-gray-200 rounded-full mt-4 md:mt-0"></div>
-                </div>
-                <div className="w-full md:w-32 flex flex-col items-end justify-between py-1 shrink-0">
-                  <div className="flex flex-col items-end gap-3 w-full">
-                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
-                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
-                  </div>
-                  <div className="mt-4 md:mt-0 h-10 w-full bg-gray-200 rounded-full"></div>
-                </div>
-              </div>
-            ))}
-          </>
-        ) 
-        
-        /* 2. Empty State */
-        : results.length === 0 ? (
-          <div className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="text-7xl mb-4 opacity-50">🧐</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
-            <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ "{queryTitle}" ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
-            </p>
-            <Link
-              href="/search"
-              className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full hover:bg-[#5b9642] transition shadow-md"
+        {mockSearchResults.map((recipe) => {
+          const isLiked = favorites[recipe.id];
+          return (
+            <div
+              key={recipe.id}
+              className="flex flex-col md:flex-row gap-6 p-4 border border-[#71B254] rounded-xl bg-white hover:shadow-md transition-shadow relative"
             >
-              กลับไปเลือกวัตถุดิบใหม่
-            </Link>
-          </div>
-        ) 
-        
-        /* 3. Results */
-        : (
-          results.map((recipe, index) => {
-            const isLiked = favorites[recipe.id];
-            const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
 
-            return (
-              <div
-                key={`${recipe.id}-${index}`}
-                className={`flex flex-col md:flex-row gap-6 p-4 border ${cardBorderClass} rounded-xl bg-white hover:shadow-md transition-shadow relative`}
-              >
-                {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
-                <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
-                  {/* 🚀 แก้ไขเป็นแท็ก img ธรรมดาตามที่ต้องการ และจัดการขนาดด้วย h-full w-full แทน */}
-                  <img
-                    src={recipe.image}
-                    alt={recipe.title}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
+              {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
+              <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
+                <Image
+                  src={recipe.image}
+                  alt={recipe.title}
+                  fill
+                  className="object-cover rounded-lg"
+                  sizes="180px"
+                />
+              </div>
 
                 {/* กลาง: รายละเอียด ชื่อสูตร, ป้ายวัตถุดิบ, คนโพสต์ */}
                 <div className="flex-grow flex flex-col justify-between py-1">
@@ -301,21 +253,22 @@ function ResultsContent() {
                     </div>
                   </div>
 
-                  {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
-                  <div className="flex items-center gap-3 mt-4 md:mt-0">
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0">
-                      {/* รูป Avatar ก็เป็น img ธรรมดาเช่นกัน */}
-                      <img
-                        src={recipe.authorAvatar}
-                        alt={recipe.author}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className="font-bold text-gray-800 text-sm truncate">
-                      {recipe.author}
-                    </span>
+                {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
+                <div className="flex items-center gap-3 mt-4 md:mt-0">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100">
+                    <Image
+                      src={recipe.authorAvatar}
+                      alt={recipe.author}
+                      width={32}
+                      height={32}
+                      className="object-cover"
+                    />
                   </div>
+                  <span className="font-bold text-gray-800 text-sm">
+                    {recipe.author}
+                  </span>
                 </div>
+              </div>
 
                 {/* ขวา: สถิติจำนวนคนกดใจ, ดาวคะแนน และปุ่ม View Recipe */}
                 <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">

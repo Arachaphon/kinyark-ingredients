@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -44,6 +44,18 @@ export default function Navbar() {
     item.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data.user);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user", error);
+    }
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -55,22 +67,12 @@ export default function Navbar() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          setUserProfile(data.user);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user", error);
-      }
-    };
-    fetchUser();
-
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    fetchUser();
+  }, [isSettingOpen, fetchUser]);
 
   const handleSearchSubmit = (term: string) => {
     if (!term.trim()) return;
