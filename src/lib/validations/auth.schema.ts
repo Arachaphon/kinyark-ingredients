@@ -15,7 +15,7 @@ export const registerSchema = z.object({
     .string()
     .min(2, 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษร')
     .max(30, 'ชื่อผู้ใช้ยาวเกินไป'),
-  role: z.enum(['user', 'shop']).default('user'),
+  role: z.enum(['user', 'store']).default('user'),
 })
 
 export const loginSchema = z.object({

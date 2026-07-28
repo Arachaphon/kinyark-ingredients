@@ -61,7 +61,8 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
 
 export default function CreateRecipePage() {
   const [isMounted, setIsMounted] = useState(false);
-  const [postAs, setPostAs] = useState<"user" | "shop">("user");
+  const [postAs, setPostAs] = useState<"user" | "store">("user");
+  const [userRole, setUserRole] = useState<string>("USER");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -86,6 +87,12 @@ export default function CreateRecipePage() {
 
   useEffect(() => {
     setIsMounted(true);
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user?.role) setUserRole(data.user.role);
+      })
+      .catch(console.error);
   }, []);
 
   const [shopName, setShopName] = useState("");
@@ -156,7 +163,7 @@ export default function CreateRecipePage() {
   };
 
   useEffect(() => {
-    if (postAs === "shop" && isMounted && mapRef.current && !mapInstanceRef.current) {
+    if (postAs === "store" && isMounted && mapRef.current && !mapInstanceRef.current) {
       import("leaflet").then((L) => {
         leafletModuleRef.current = L;
 
@@ -191,7 +198,7 @@ export default function CreateRecipePage() {
     }
 
     return () => {
-      if (postAs !== "shop" && mapInstanceRef.current) {
+      if (postAs !== "store" && mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markerRef.current = null;
@@ -405,8 +412,8 @@ export default function CreateRecipePage() {
         formData.append("videoFile", videoFile.file);
       }
 
-      // ข้อมูลเฉพาะร้านค้า (Shop)
-      if (postAs === "shop") {
+      // ข้อมูลเฉพาะร้านค้า (Store)
+      if (postAs === "store") {
         formData.append("shopName", shopName);
         formData.append("sellingPrice", sellingPrice);
         formData.append("shopDescription", shopDescription);
@@ -468,33 +475,35 @@ export default function CreateRecipePage() {
             <span className="text-lg font-bold">หน้าหลัก</span>
           </Link>
 
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full p-1 text-sm">
-            <button
-              type="button"
-              id="role-user-btn"
-              onClick={() => setPostAs("user")}
-              className={`px-3 py-1 rounded-full font-bold transition-colors ${
-                postAs === "user" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              คนทั่วไป
-            </button>
-            <button
-              type="button"
-              id="role-shop-btn"
-              onClick={() => setPostAs("shop")}
-              className={`px-3 py-1 rounded-full font-bold transition-colors ${
-                postAs === "shop" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              ร้านค้า
-            </button>
-          </div>
+          {(userRole === "STORE" || userRole === "ADMIN") && (
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full p-1 text-sm">
+              <button
+                type="button"
+                id="role-user-btn"
+                onClick={() => setPostAs("user")}
+                className={`px-3 py-1 rounded-full font-bold transition-colors ${
+                  postAs === "user" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                คนทั่วไป
+              </button>
+              <button
+                type="button"
+                id="role-store-btn"
+                onClick={() => setPostAs("store")}
+                className={`px-3 py-1 rounded-full font-bold transition-colors ${
+                  postAs === "store" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                ร้านค้า
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm relative z-10">
 
-          {postAs === "shop" && (
+          {postAs === "store" && (
             <div className="mb-10 pb-10 border-b border-[#71B254] relative z-20">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">1</div>
@@ -745,7 +754,7 @@ export default function CreateRecipePage() {
 
                 <div className="pl-11 flex flex-col gap-8">
 
-                  {postAs === "shop" && (
+                  {postAs === "store" && (
                     <div>
                       <div className="flex gap-2 mb-4">
                         <button

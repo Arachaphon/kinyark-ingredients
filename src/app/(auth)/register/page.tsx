@@ -113,7 +113,7 @@ export default function RegisterPage() {
             >
               <option value="" disabled>เลือกสถานะการใช้งาน</option>
               <option value="user">คนทั่วไป</option>
-              <option value="shop">ร้านค้า</option>
+              <option value="store">ร้านค้า</option>
             </select>
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none group-focus-within:text-amber-400">
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
