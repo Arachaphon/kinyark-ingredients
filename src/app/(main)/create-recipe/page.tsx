@@ -13,6 +13,11 @@ type SystemRecipe = {
   instructions: string;
 };
 
+type UploadedMedia = {
+  file: File;
+  previewUrl: string;
+};
+
 const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
   {
     id: "r1",
@@ -58,9 +63,9 @@ export default function CreateRecipePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [videoFile, setVideoFile] = useState<string | null>(null);
   
-  const [coverImages, setCoverImages] = useState<string[]>([]);
+  const [videoFile, setVideoFile] = useState<UploadedMedia | null>(null);
+  const [coverImages, setCoverImages] = useState<UploadedMedia[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const [visibility, setVisibility] = useState<"public" | "protected" | "private">("public");
@@ -91,15 +96,19 @@ export default function CreateRecipePage() {
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
-  const [shopIngredientImages, setShopIngredientImages] = useState<string[]>([]);
+  const [shopIngredientImages, setShopIngredientImages] = useState<UploadedMedia[]>([]);
   const [shopImageIndex, setShopImageIndex] = useState(0);
-  const [shopIngredientVideo, setShopIngredientVideo] = useState<string | null>(null);
+  const [shopIngredientVideo, setShopIngredientVideo] = useState<UploadedMedia | null>(null);
   const shopImageInputRef = useRef<HTMLInputElement>(null);
   const shopVideoInputRef = useRef<HTMLInputElement>(null);
 
   const [recipeSourceMode, setRecipeSourceMode] = useState<"manual" | "system">("manual");
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [pickedRecipe, setPickedRecipe] = useState<SystemRecipe | null>(null);
+  
+  // State สำหรับเก็บข้อมูลสูตรอาหารที่ดึงมาจาก API (ตั้งค่าเริ่มต้นเป็น Mock)
+  const [availableRecipes, setAvailableRecipes] = useState<SystemRecipe[]>(SAMPLE_SYSTEM_RECIPES);
+  const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
 
   const updateMapMarker = (lat: number, lng: number, map: any, L: any) => {
     setPinCoord({ lat, lng });
@@ -183,14 +192,46 @@ export default function CreateRecipePage() {
     };
   }, [postAs, isMounted]);
 
+  // ดึงข้อมูล Recipe จาก API จริงๆ เมื่อผู้ใช้เลือกโหมด "system"
+  useEffect(() => {
+    if (recipeSourceMode === "system" && availableRecipes === SAMPLE_SYSTEM_RECIPES) {
+      const fetchRealRecipes = async () => {
+        setIsLoadingRecipes(true);
+        try {
+          // TODO: เปลี่ยน URL ตรงนี้เป็น API จริงของโปรเจกต์ เช่น '/api/recipes?visibility=public'
+          const response = await fetch('/api/recipes'); 
+          if (!response.ok) throw new Error("API endpoint not ready or not found");
+          
+          const data = await response.json();
+          if (data && data.length > 0) {
+            // ถ้าโครงสร้างข้อมูลจาก API ไม่ตรงกับ SystemRecipe สามารถใช้ .map() แปลงข้อมูลตรงนี้ได้
+            setAvailableRecipes(data);
+          }
+        } catch (error) {
+          console.warn("Failed to fetch real recipes, falling back to mock data.", error);
+          // หากดึงไม่ได้ ระบบจะใช้ Mock Data ต่อไป (ไม่ต้องเปลี่ยนค่า State)
+        } finally {
+          setIsLoadingRecipes(false);
+        }
+      };
+
+      fetchRealRecipes();
+    }
+  }, [recipeSourceMode, availableRecipes]);
+
   const handleShopImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     const availableSlots = 4 - shopIngredientImages.length;
     const filesToAdd = files.slice(0, availableSlots);
-    const newUrls = filesToAdd.map(file => URL.createObjectURL(file));
+    
+    const newMedia = filesToAdd.map(file => ({
+      file,
+      previewUrl: URL.createObjectURL(file)
+    }));
+
     setShopIngredientImages(prev => {
-      const updated = [...prev, ...newUrls];
+      const updated = [...prev, ...newMedia];
       setShopImageIndex(updated.length - 1);
       return updated;
     });
@@ -211,14 +252,16 @@ export default function CreateRecipePage() {
 
   const handleShopVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setShopIngredientVideo(URL.createObjectURL(file));
+    if (file) setShopIngredientVideo({ file, previewUrl: URL.createObjectURL(file) });
   };
 
   const filteredSystemRecipes = (() => {
     const terms = ingredientSearch.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
-    if (terms.length === 0) return SAMPLE_SYSTEM_RECIPES;
-    return SAMPLE_SYSTEM_RECIPES.filter(r =>
-      r.matchTags.some(tag => terms.some(t => tag.toLowerCase().includes(t)))
+    if (terms.length === 0) return availableRecipes;
+    return availableRecipes.filter(r =>
+      // ค้นหาได้ทั้งจาก Tag (ถ้ามี) หรือ ค้นหาจากชื่อวัตถุดิบโดยตรงเผื่อ API ไม่ได้ส่ง Tag มา
+      (r.matchTags && r.matchTags.some(tag => terms.some(t => tag.toLowerCase().includes(t)))) ||
+      (r.ingredients && r.ingredients.some(ing => terms.some(t => ing.name.toLowerCase().includes(t))))
     );
   })();
 
@@ -286,10 +329,14 @@ export default function CreateRecipePage() {
 
     const availableSlots = 4 - coverImages.length;
     const filesToAdd = files.slice(0, availableSlots);
-    const newImagesUrls = filesToAdd.map(file => URL.createObjectURL(file));
+    
+    const newMedia = filesToAdd.map(file => ({
+      file,
+      previewUrl: URL.createObjectURL(file)
+    }));
 
     setCoverImages(prev => {
-      const updated = [...prev, ...newImagesUrls];
+      const updated = [...prev, ...newMedia];
       setCurrentImageIndex(updated.length - 1); 
       return updated;
     });
@@ -311,7 +358,7 @@ export default function CreateRecipePage() {
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setVideoFile(URL.createObjectURL(file));
+    if (file) setVideoFile({ file, previewUrl: URL.createObjectURL(file) });
   };
 
   const handleSubmitRecipe = () => {
@@ -327,10 +374,20 @@ export default function CreateRecipePage() {
         unit: i.unit
       })),
       equipmentItems: equipments.filter(e => e.name.trim() !== ""),
-      coverImages,
-      videoFile,
+      coverImages: coverImages.map(m => m.file),
+      videoFile: videoFile ? videoFile.file : null,
       postAs,
-      ...(postAs === "shop" ? { shopName, sellingPrice, shopDescription, shopLocation, pinCoord } : {})
+      // แนบ systemRecipeId หากเลือกจากระบบ
+      systemRecipeId: pickedRecipe ? pickedRecipe.id : null,
+      ...(postAs === "shop" ? { 
+        shopName, 
+        sellingPrice, 
+        shopDescription, 
+        shopLocation, 
+        pinCoord,
+        shopIngredientImages: shopIngredientImages.map(m => m.file),
+        shopIngredientVideo: shopIngredientVideo ? shopIngredientVideo.file : null
+      } : {})
     };
     console.log("Submitting Recipe Payload:", payload);
     alert("บันทึกและเผยแพร่สูตรอาหารสำเร็จ!");
@@ -454,7 +511,7 @@ export default function CreateRecipePage() {
                           <div className="w-full h-[195px] border border-[#71B254] rounded-md overflow-hidden relative group shadow-sm bg-black flex items-center justify-center">
                             {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, next/image not supported */}
                             <img
-                              src={shopIngredientImages[shopImageIndex]}
+                              src={shopIngredientImages[shopImageIndex].previewUrl}
                               alt={`วัตถุดิบ ${shopImageIndex + 1}`}
                               className="w-full h-full object-cover transition-opacity duration-300"
                             />
@@ -513,7 +570,7 @@ export default function CreateRecipePage() {
                       <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
-                          <video src={shopIngredientVideo} controls className="w-full h-full object-contain" />
+                          <video src={shopIngredientVideo.previewUrl} controls className="w-full h-full object-contain" />
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button type="button" id="remove-shop-video-btn" onClick={() => setShopIngredientVideo(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
@@ -679,8 +736,16 @@ export default function CreateRecipePage() {
                                 className="w-full py-2.5 px-4 mb-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
                               />
 
-                              <div className="flex flex-col gap-2">
-                                {filteredSystemRecipes.length === 0 ? (
+                              <div className="flex flex-col gap-2 min-h-[100px]">
+                                {isLoadingRecipes ? (
+                                  <div className="flex items-center justify-center py-4 text-sm text-[#71B254] font-semibold gap-2">
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    กำลังโหลดข้อมูลสูตรอาหาร...
+                                  </div>
+                                ) : filteredSystemRecipes.length === 0 ? (
                                   <p className="text-sm text-gray-400 py-2">ไม่พบสูตรที่ตรงกัน ลองพิมพ์วัตถุดิบอื่น</p>
                                 ) : (
                                   filteredSystemRecipes.map((r) => (
@@ -727,7 +792,7 @@ export default function CreateRecipePage() {
                                   <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                                 สูตรต้นฉบับโดย <span className="font-bold text-gray-700">{pickedRecipe.ownerName}</span>
-                                <span className="ml-auto text-gray-400">จะแสดงชื่อนี้บนโพสต์เมื่อเผยแพร่</span>
+                                <span className="ml-auto text-gray-400">ID: {pickedRecipe.id}</span>
                               </div>
                             </div>
                           )}
@@ -899,7 +964,7 @@ export default function CreateRecipePage() {
                         <div className="w-full h-[200px] border border-[#71B254] rounded-md overflow-hidden relative group shadow-sm bg-black flex items-center justify-center">
                           {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, next/image not supported */}
                           <img 
-                            src={coverImages[currentImageIndex]} 
+                            src={coverImages[currentImageIndex].previewUrl} 
                             alt={`Cover ${currentImageIndex + 1}`} 
                             className="w-full h-full object-cover transition-opacity duration-300" 
                           />
@@ -968,7 +1033,7 @@ export default function CreateRecipePage() {
                       <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
                       {videoFile ? (
                         <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
-                          <video src={videoFile} controls className="w-full h-full object-contain" />
+                          <video src={videoFile.previewUrl} controls className="w-full h-full object-contain" />
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity z-10">
                             <button type="button" id="remove-recipe-video-btn" onClick={() => setVideoFile(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
