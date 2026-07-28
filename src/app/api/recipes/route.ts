@@ -32,67 +32,80 @@ export async function POST(request: Request) {
   }
 
   try {
+    const {
+      recipeName,
+      description,
+      instructions,
+      ingredients,
+      equipmentItems = [],
+      featuredImageUrl,
+      images = [],
+      videos = [],
+      bgColor,
+      aiProvider,
+      visibility,
+    } = result.data;
+
+    const allImageUrls = [featuredImageUrl, ...images].filter((url): url is string => !!url);
+    const uniqueImageUrls = Array.from(new Set(allImageUrls));
+
+    const equipmentToCreate = equipmentItems.map((equipment) => ({
+      name: equipment.name,
+    }));
+
+    const imagesToCreate = uniqueImageUrls.map((url) => ({
+      imageUrl: url,
+    }));
+
+    const videosToCreate = videos.map((url) => ({
+      videoUrl: url,
+    }));
+
     const recipe = await prisma.$transaction(async (tx) => {
-      const ingredientRecords = await Promise.all(
-        result.data.ingredients.map((ing) =>
+      const savedIngredients = await Promise.all(
+        ingredients.map((ingredient) =>
           tx.ingredient.upsert({
-            where: { name: ing.name },
+            where: { name: ingredient.name },
             update: {},
-            create: { name: ing.name },
-          }),
-        ),
+            create: { name: ingredient.name },
+          })
+        )
       );
 
-      const recipeIngredientsData = ingredientRecords.map((dbIng, index) => {
-        const inputIng = result.data.ingredients[index];
+      const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
+        const requestedIngredient = ingredients[index];
         return {
-          ingredientId: dbIng.id,
-          quantity: inputIng.quantity,
-          unit: inputIng.unit,
+          ingredientId: savedIngredient.id,
+          quantity: requestedIngredient.quantity,
+          unit: requestedIngredient.unit,
         };
       });
 
-      const equipmentData = result.data.equipmentItems?.map((eq) => ({
-        name: eq.name,
-      })) || [];
-
-      const imagesData: { imageUrl: string }[] = [];
-      if (result.data.featuredImageUrl) {
-        imagesData.push({ imageUrl: result.data.featuredImageUrl });
-      }
-      if (result.data.images) {
-        result.data.images.forEach((img) => imagesData.push({ imageUrl: img }));
-      }
-
-      const videosData = result.data.videos?.map((vid) => ({
-        videoUrl: vid,
-      })) || [];
-
-      return await tx.recipe.create({
+      return tx.recipe.create({
         data: {
           userId: user.id,
-          recipeName: result.data.recipeName,
-          description: result.data.description,
-          instructions: result.data.instructions,
-          bgColor: result.data.bgColor,
-          aiProvider: result.data.aiProvider,
-          visibility: result.data.visibility,
+          recipeName,
+          description,
+          instructions,
+          bgColor,
+          aiProvider,
+          visibility,
           recipeIngredients: {
-            create: recipeIngredientsData,
+            create: recipeIngredientsToCreate,
           },
-          ...(equipmentData.length > 0 && {
+          ...(equipmentToCreate.length > 0 && {
             equipmentItems: {
-              create: equipmentData,
+              create: equipmentToCreate,
             },
           }),
-          ...(imagesData.length > 0 && {
+          ...(imagesToCreate.length > 0 && {
             images: {
-              create: imagesData,
+              create: imagesToCreate,
             },
           }),
-          ...(videosData.length > 0 && {
+          ...(videosToCreate.length > 0 && {
             videos: {
-              create: videosData,
+              create: videosToCreate,
             },
           }),
         },
