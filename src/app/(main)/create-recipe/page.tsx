@@ -106,9 +106,11 @@ export default function CreateRecipePage() {
   const [ingredientSearch, setIngredientSearch] = useState("");
   const [pickedRecipe, setPickedRecipe] = useState<SystemRecipe | null>(null);
   
-  // State สำหรับเก็บข้อมูลสูตรอาหารที่ดึงมาจาก API (ตั้งค่าเริ่มต้นเป็น Mock)
   const [availableRecipes, setAvailableRecipes] = useState<SystemRecipe[]>(SAMPLE_SYSTEM_RECIPES);
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
+  
+  // State สำหรับจัดการสถานะ Loading ระหว่างรออัปโหลด
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateMapMarker = (lat: number, lng: number, map: any, L: any) => {
     setPinCoord({ lat, lng });
@@ -192,24 +194,20 @@ export default function CreateRecipePage() {
     };
   }, [postAs, isMounted]);
 
-  // ดึงข้อมูล Recipe จาก API จริงๆ เมื่อผู้ใช้เลือกโหมด "system"
   useEffect(() => {
     if (recipeSourceMode === "system" && availableRecipes === SAMPLE_SYSTEM_RECIPES) {
       const fetchRealRecipes = async () => {
         setIsLoadingRecipes(true);
         try {
-          // TODO: เปลี่ยน URL ตรงนี้เป็น API จริงของโปรเจกต์ เช่น '/api/recipes?visibility=public'
           const response = await fetch('/api/recipes'); 
           if (!response.ok) throw new Error("API endpoint not ready or not found");
           
           const data = await response.json();
           if (data && data.length > 0) {
-            // ถ้าโครงสร้างข้อมูลจาก API ไม่ตรงกับ SystemRecipe สามารถใช้ .map() แปลงข้อมูลตรงนี้ได้
             setAvailableRecipes(data);
           }
         } catch (error) {
           console.warn("Failed to fetch real recipes, falling back to mock data.", error);
-          // หากดึงไม่ได้ ระบบจะใช้ Mock Data ต่อไป (ไม่ต้องเปลี่ยนค่า State)
         } finally {
           setIsLoadingRecipes(false);
         }
@@ -259,7 +257,6 @@ export default function CreateRecipePage() {
     const terms = ingredientSearch.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
     if (terms.length === 0) return availableRecipes;
     return availableRecipes.filter(r =>
-      // ค้นหาได้ทั้งจาก Tag (ถ้ามี) หรือ ค้นหาจากชื่อวัตถุดิบโดยตรงเผื่อ API ไม่ได้ส่ง Tag มา
       (r.matchTags && r.matchTags.some(tag => terms.some(t => tag.toLowerCase().includes(t)))) ||
       (r.ingredients && r.ingredients.some(ing => terms.some(t => ing.name.toLowerCase().includes(t))))
     );
@@ -361,36 +358,88 @@ export default function CreateRecipePage() {
     if (file) setVideoFile({ file, previewUrl: URL.createObjectURL(file) });
   };
 
-  const handleSubmitRecipe = () => {
-    const payload = {
-      recipeName: title,
-      description,
-      instructions,
-      visibility,
-      ingredients: ingredients.map(i => ({
+  const handleSubmitRecipe = async () => {
+    if (!title.trim()) {
+      alert("กรุณากรอกชื่อเมนูอาหาร");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+
+      // ข้อมูลพื้นฐาน
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("instructions", instructions);
+      formData.append("visibility", visibility);
+      formData.append("postAs", postAs);
+      
+      if (pickedRecipe) {
+        formData.append("systemRecipeId", pickedRecipe.id);
+      }
+
+      // ข้อมูลแบบ Array (แปลงเป็น JSON String)
+      const formattedIngredients = ingredients.map(i => ({
         name: i.name,
         category: i.category,
         quantity: parseFloat(i.quantity) || 0,
         unit: i.unit
-      })),
-      equipmentItems: equipments.filter(e => e.name.trim() !== ""),
-      coverImages: coverImages.map(m => m.file),
-      videoFile: videoFile ? videoFile.file : null,
-      postAs,
-      // แนบ systemRecipeId หากเลือกจากระบบ
-      systemRecipeId: pickedRecipe ? pickedRecipe.id : null,
-      ...(postAs === "shop" ? { 
-        shopName, 
-        sellingPrice, 
-        shopDescription, 
-        shopLocation, 
-        pinCoord,
-        shopIngredientImages: shopIngredientImages.map(m => m.file),
-        shopIngredientVideo: shopIngredientVideo ? shopIngredientVideo.file : null
-      } : {})
-    };
-    console.log("Submitting Recipe Payload:", payload);
-    alert("บันทึกและเผยแพร่สูตรอาหารสำเร็จ!");
+      }));
+      formData.append("ingredients", JSON.stringify(formattedIngredients));
+      
+      const formattedEquipments = equipments.filter(e => e.name.trim() !== "").map(e => e.name);
+      formData.append("equipmentItems", JSON.stringify(formattedEquipments));
+
+      // ไฟล์สื่อของสูตรอาหาร
+      coverImages.forEach((media) => {
+        formData.append("coverImages", media.file);
+      });
+      if (videoFile) {
+        formData.append("videoFile", videoFile.file);
+      }
+
+      // ข้อมูลเฉพาะร้านค้า (Shop)
+      if (postAs === "shop") {
+        formData.append("shopName", shopName);
+        formData.append("sellingPrice", sellingPrice);
+        formData.append("shopDescription", shopDescription);
+        formData.append("shopLocation", shopLocation);
+        
+        if (pinCoord) {
+          formData.append("pinCoord", JSON.stringify(pinCoord));
+        }
+
+        shopIngredientImages.forEach((media) => {
+          formData.append("shopIngredientImages", media.file);
+        });
+        
+        if (shopIngredientVideo) {
+          formData.append("shopIngredientVideo", shopIngredientVideo.file);
+        }
+      }
+
+      // ยิง API ส่งข้อมูล
+      const response = await fetch("/api/create-recipe", {
+        method: "POST",
+        body: formData, 
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit recipe API");
+      }
+
+      const result = await response.json();
+      console.log("Success:", result);
+      alert("บันทึกและเผยแพร่สูตรอาหารสำเร็จ!");
+      
+    } catch (error) {
+      console.error("Error submitting recipe:", error);
+      alert("เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isMounted) {
@@ -1144,8 +1193,28 @@ export default function CreateRecipePage() {
               </button>
             </div>
             <div className="lg:col-span-1">
-              <button type="button" id="publish-recipe-btn" onClick={handleSubmitRecipe} className="w-full py-3.5 bg-[#71B254] text-white rounded-md font-bold hover:bg-[#5b9642] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center text-lg shadow-md">
-                เผยแพร่เมนูอาหาร
+              <button 
+                type="button" 
+                id="publish-recipe-btn" 
+                onClick={handleSubmitRecipe} 
+                disabled={isSubmitting}
+                className={`w-full py-3.5 rounded-md font-bold transition-all text-center text-lg shadow-md ${
+                  isSubmitting 
+                    ? "bg-gray-400 text-gray-100 cursor-not-allowed" 
+                    : "bg-[#71B254] text-white hover:bg-[#5b9642] hover:-translate-y-0.5 active:translate-y-0"
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    กำลังอัปโหลดข้อมูล...
+                  </span>
+                ) : (
+                  "เผยแพร่เมนูอาหาร"
+                )}
               </button>
             </div>
           </div>
