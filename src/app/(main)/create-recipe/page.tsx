@@ -433,7 +433,7 @@ export default function CreateRecipePage() {
       }
 
       // ยิง API ส่งข้อมูล
-      const response = await fetch("/api/create-recipe", {
+      const response = await fetch("/api/recipes", {
         method: "POST",
         body: formData, 
       });
