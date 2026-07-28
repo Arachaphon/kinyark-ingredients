@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -169,92 +169,10 @@ function IngredientFilterPanel({
   );
 }
 
-function IngredientFilterPanel({
-  currentCategoryData,
-  selectedIngredients,
-  onCheckboxChange,
-}: {
-  currentCategoryData: (typeof categoriesData)[0];
-  selectedIngredients: string[];
-  onCheckboxChange: (ingredient: string) => void;
-}) {
-  const [ingSearchTerm, setIngSearchTerm] = useState("");
-
-  const filteredIngredients = currentCategoryData.ingredients.filter((ing) =>
-    ing.toLowerCase().includes(ingSearchTerm.toLowerCase())
-  );
-
-  return (
-    <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
-        <h2 className="text-xl font-black text-gray-900 pr-6">
-          {currentCategoryData.name}
-        </h2>
-
-        <div className="relative w-full sm:w-[260px]">
-          <input
-            type="text"
-            placeholder={`ค้นหาใน${currentCategoryData.name}...`}
-            value={ingSearchTerm}
-            onChange={(e) => setIngSearchTerm(e.target.value)}
-            className="w-full py-2 pl-4 pr-10 rounded-full bg-gray-50 border border-gray-200 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#71B254] focus:bg-white transition-all shadow-inner"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      <div className="h-[280px] overflow-y-auto pr-2 border border-gray-50 rounded-xl p-4 bg-gray-50/30 scrollbar-thin">
-        {filteredIngredients.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-8">
-            {filteredIngredients.map((ingredient) => {
-              const isChecked = selectedIngredients.includes(ingredient);
-              return (
-                <label
-                  key={ingredient}
-                  className="flex items-center gap-3 cursor-pointer select-none group w-fit"
-                >
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => onCheckboxChange(ingredient)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-5 h-5 border-2 border-gray-400 rounded-md bg-white peer-checked:bg-black peer-checked:border-black transition-all flex items-center justify-center">
-                      {isChecked && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-gray-800 font-bold text-base group-hover:text-black transition-colors">
-                    {ingredient}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-16 text-gray-400 italic text-base">
-            ไม่พบวัตถุดิบที่ตรงกับ &quot;{ingSearchTerm}&quot;
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const activeCategory = searchParams.get("category") || "Meat";
   const activeCategory = searchParams.get("category") || "Meat";
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>(["ไก่"]);
 

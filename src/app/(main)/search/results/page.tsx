@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -326,7 +326,7 @@ function ResultsContent() {
               </div>
             );
           })
-        )}
+        }
       </div>
 
     </div>
