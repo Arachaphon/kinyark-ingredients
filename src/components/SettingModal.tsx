@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation'
 
 interface SettingModalProps {
@@ -13,10 +13,11 @@ type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
+    await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
+    window.location.href = '/login'
   }
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
@@ -30,136 +31,79 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const [diet, setDiet] = useState("มังสวิรัติ");
   const [allergy, setAllergy] = useState("ถั่วลิสง");
 
-  // ===== State สำหรับแท็บโปรไฟล์ (แก้ไขข้อมูลได้จริง) =====
-  const [username, setUsername] = useState(userProfile?.username || "");
-  const [email, setEmail] = useState(userProfile?.email || "");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
+  // State สำหรับฟอร์มโปรไฟล์
+  const [formUsername, setFormUsername] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formConfirmPassword, setFormConfirmPassword] = useState("");
+  const [formCurrentPassword, setFormCurrentPassword] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(userProfile?.avatarUrl || null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // State เพิ่มเติมสำหรับจัดการไฟล์รูปภาพและการพรีวิว
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  useEffect(() => {
+    if (userProfile) {
+      setFormUsername(userProfile.username || "");
+      setFormEmail(userProfile.email || "");
+      setPreviewUrl(userProfile.avatarUrl || null);
+      setSelectedFile(null); // รีเซ็ตไฟล์เมื่อโปรไฟล์เปลี่ยนหรือรีโหลด
+    }
+  }, [userProfile]);
 
-  if (!isOpen) return null;
+  // ฟังก์ชันจัดการเมื่อเลือกไฟล์รูปภาพ
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
 
-  // มีการเปลี่ยนแปลงข้อมูลจริงหรือไม่ (เทียบกับค่าตั้งต้น)
-  const hasChanges =
-    username !== (userProfile?.username || "") ||
-    email !== (userProfile?.email || "") ||
-    newPassword.length > 0 ||
-    confirmPassword.length > 0 ||
-    avatarFile !== null;
-
-  // ต้องกรอกรหัสผ่านปัจจุบันเสมอเพื่อยืนยันการเปลี่ยนแปลง
-  const canSubmit = hasChanges && currentPassword.length > 0 && !isSubmitting;
-
-  const handleAvatarClick = () => {
+  // ฟังก์ชันคลิกปุ่มอัปโหลด (ไปเรียกคลิก input ที่ซ่อนไว้)
+  const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const passwordError =
+    formPassword.length > 0
+      ? formPassword.length < 8
+        ? "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร"
+        : !/[A-Z]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักษรตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว"
+        : !/[a-z]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักษรตัวพิมพ์เล็กอย่างน้อย 1 ตัว"
+        : !/\d/.test(formPassword)
+        ? "รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว"
+        : !/[^a-zA-Z0-9]/.test(formPassword)
+        ? "รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว"
+        : ""
+      : "";
 
-    if (!file.type.startsWith("image/")) {
-      setProfileError("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileError("ขนาดไฟล์ต้องไม่เกิน 5MB");
-      return;
-    }
+  const isFormValid = formCurrentPassword.length > 0;
+  
+  // ปรับให้เช็คพ่วงกรณีมีการเปลี่ยนรูปโปรไฟล์ด้วย
+  const hasChanges =
+    formUsername !== (userProfile?.username || "") ||
+    formPassword !== "" ||
+    formEmail !== (userProfile?.email || "") ||
+    selectedFile !== null;
 
-    setProfileError(null);
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  };
-
-  const resetMessages = () => {
-    setProfileError(null);
-    setProfileSuccess(null);
-  };
-
-  const handleCancel = () => {
-    setUsername(userProfile?.username || "");
-    setEmail(userProfile?.email || "");
-    setNewPassword("");
-    setConfirmPassword("");
-    setCurrentPassword("");
-    setAvatarFile(null);
-    setAvatarPreview(userProfile?.avatarUrl || null);
-    resetMessages();
-    onClose();
-  };
-
-  const handleUpdateProfile = async () => {
-    resetMessages();
-
-    if (!currentPassword) {
-      setProfileError("กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล");
-      return;
-    }
-
-    if (newPassword || confirmPassword) {
-      if (newPassword.length < 8) {
-        setProfileError("รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร");
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        setProfileError("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append("username", username);
-      formData.append("email", email);
-      formData.append("currentPassword", currentPassword);
-      if (newPassword) {
-        formData.append("newPassword", newPassword);
-      }
-      if (avatarFile) {
-        formData.append("avatar", avatarFile);
-      }
-
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.message || "ไม่สามารถอัปเดตโปรไฟล์ได้ กรุณาลองใหม่อีกครั้ง");
-      }
-
-      setProfileSuccess("อัปเดตโปรไฟล์เรียบร้อยแล้ว");
-      setNewPassword("");
-      setConfirmPassword("");
-      setCurrentPassword("");
-      setAvatarFile(null);
-
-      // รีเฟรชข้อมูลหน้าเพื่อดึงโปรไฟล์ล่าสุด
-      router.refresh();
-    } catch (err) {
-      setProfileError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (!isOpen) return null;
 
   return (
     /* 🌟 แก้ไขตรงนี้: จาก bg-black bg-opacity-40 เป็น bg-black/40 เพื่อให้ฉากหลังโปร่งแสงใน Tailwind v4 */
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fade-in font-anuphan">
       
       {/* กล่อง Modal หลัก - ปรับความสูงจอมือถือเป็น h-auto และให้ขยายสูงสุดได้ max-h-[92vh] เพื่อไม่ให้เลยขอบจอ และรองรับการเลื่อนภายใน */}
-      <div className="bg-white w-full max-w-[900px] h-auto md:h-[550px] max-h-[92vh] md:max-h-none rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100 animate-scale-up">
+      <div className="bg-white w-full max-w-[900px] h-auto md:h-[550px] max-h-[92vh] md:max-h-none rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100 animate-scale-up relative">
         
         {/* =========================================
             แถบเมนูด้านซ้าย (Sidebar สีเหลืองทอง)
@@ -215,7 +159,11 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
 
           {/* ปุ่มด้านล่างสุด (Delete & Logout) แสดงเฉพาะบนเดสก์ท็อปตามเดิม */}
           <div className="hidden md:flex flex-col gap-1 border-t border-black/10 pt-4">
-            <button className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors">
+            {/* 🌟 เปลี่ยนเป็น hover:bg-red-500/10 */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-3 w-full py-2.5 px-4 rounded-xl text-left font-bold text-red-600 hover:bg-red-500/10 transition-colors"
+            >
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -257,34 +205,37 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
             <div className="flex flex-col gap-4 md:gap-6 h-full justify-between">
               <div className="overflow-y-auto md:overflow-visible pr-1">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
-
+                
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
-                  {avatarPreview ? (
+                  {previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
                     <img 
-                      src={avatarPreview} 
-                      alt={username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
+                      src={previewUrl} 
+                      alt={userProfile?.username || "User"} className="w-14 h-14 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-100" 
                     />
                   ) : (
                     <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gray-100 border-2 border-gray-100 flex items-center justify-center shrink-0">
                       <span className="text-xl sm:text-3xl font-bold text-gray-400">
-                        {username?.charAt(0).toUpperCase() || email?.charAt(0).toUpperCase() || "U"}
+                        {userProfile?.username?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase() || "U"}
                       </span>
                     </div>
                   )}
                   <div className="text-center sm:text-left">
-                    <h4 className="text-base sm:text-xl font-bold text-gray-800">{username || "User"}</h4>
-                    <p className="text-gray-400 text-xs sm:text-sm">{email || ""}</p>
+                    <h4 className="text-base sm:text-xl font-bold text-gray-800">{userProfile?.username || "User"}</h4>
+                    <p className="text-gray-400 text-xs sm:text-sm">{userProfile?.email || ""}</p>
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={fileInputRef}
-                    onChange={handleAvatarChange}
-                    className="hidden"
+                  
+                  {/* ซ่อน input file เอาไว้ภายใต้ปุ่มเดิม */}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/*" 
+                    className="hidden" 
                   />
-                  <button
+                  <button 
+                    onClick={handleUploadClick}
                     type="button"
-                    onClick={handleAvatarClick}
                     className="w-full sm:w-auto sm:ml-auto py-1.5 px-3 border border-gray-300 rounded-md text-xs sm:text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2 transition shadow-sm text-gray-700"
                   >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -295,55 +246,33 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ชื่อผู้ใช้งาน</label>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => { setUsername(e.target.value); resetMessages(); }}
-                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
-                    />
+                    <input type="text" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่าน</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => { setNewPassword(e.target.value); resetMessages(); }}
-                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
-                    />
+                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่านใหม่</label>
+                    <input type="password" value={formPassword} onChange={(e) => setFormPassword(e.target.value)} placeholder="กรอกรหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
+                    {passwordError && (
+                      <p className="text-red-500 text-xs mt-1">{passwordError}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); resetMessages(); }}
-                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
-                    />
+                    <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่าน</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value); resetMessages(); }}
-                      className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm"
-                    />
+                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่านใหม่</label>
+                    <input type="password" value={formConfirmPassword} onChange={(e) => setFormConfirmPassword(e.target.value)} placeholder="ยืนยันรหัสผ่านใหม่" className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 placeholder-gray-400 text-sm" />
                   </div>
                 </div>
 
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => { setCurrentPassword(e.target.value); resetMessages(); }}
-                  placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล"
-                  className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm"
-                />
+                <input type="password" value={formCurrentPassword} onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" />
 
-                {profileError && (
-                  <p className="text-red-600 text-xs sm:text-sm font-semibold mt-2">{profileError}</p>
+                {currentPasswordError && (
+                  <p className="text-red-500 text-xs mt-1">{currentPasswordError}</p>
                 )}
-                {profileSuccess && (
-                  <p className="text-green-600 text-xs sm:text-sm font-semibold mt-2">{profileSuccess}</p>
+
+                {formPassword.length > 0 && formPassword !== formConfirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน</p>
                 )}
               </div>
 
@@ -355,23 +284,65 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 >
                   ออกจากระบบ
                 </button>
-                <button className="w-full py-2 px-4 text-red-600 text-xs font-bold text-center hover:bg-red-50 rounded-lg transition">
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full py-2 px-4 text-red-600 text-xs font-bold text-center hover:bg-red-50 rounded-lg transition"
+                >
                   ลบบัญชีผู้ใช้
                 </button>
               </div>
 
               <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 mt-2">
-                <button onClick={handleCancel} className="px-5 py-2 sm:px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-xs sm:text-sm">ยกเลิก</button>
+                <button onClick={onClose} className="px-5 py-2 sm:px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-xs sm:text-sm">ยกเลิก</button>
                 <button
-                  onClick={handleUpdateProfile}
-                  disabled={!canSubmit}
+                  disabled={!isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError}
+                  onClick={async () => {
+                    if (formPassword !== formConfirmPassword) return;
+                    setCurrentPasswordError("");
+                    setIsSaving(true);
+                    try {
+                      // ตรวจสอบว่า API รองรับ Multipart Form Data หรือไม่ 
+                      // ด้านล่างนี้เป็นตัวอย่างโครงสร้างส่งแบบ FormData เพื่อรองรับไฟล์รูปภาพ
+                      const formData = new FormData();
+                      formData.append("currentPassword", formCurrentPassword);
+                      
+                      if (formUsername !== (userProfile?.username || "")) formData.append("username", formUsername);
+                      if (formEmail !== (userProfile?.email || "")) formData.append("email", formEmail);
+                      if (formPassword.length > 0) formData.append("newPassword", formPassword);
+                      if (selectedFile) formData.append("avatar", selectedFile); // แนบไฟล์รูปภาพส่งไปด้วย
+
+                      const res = await fetch("/api/users/me", {
+                        method: "PATCH",
+                        // หมายเหตุ: ห้ามใส่ 'Content-Type': 'application/json' หรือ 'multipart/form-data' ใน headers 
+                        // ปล่อยให้เบราว์เซอร์จัดการ Boundary อัตโนมัติเมื่อใช้ FormData
+                        body: formData,
+                      });
+
+                      if (!res.ok) {
+                        const err = await res.json();
+                        setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                        return;
+                      }
+
+                      setFormPassword("");
+                      setFormConfirmPassword("");
+                      setFormCurrentPassword("");
+                      setCurrentPasswordError("");
+                      setSelectedFile(null);
+                      onClose();
+                    } catch {
+                      setCurrentPasswordError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
                   className={`px-5 py-2 sm:px-6 font-bold rounded-md transition-colors text-xs sm:text-sm ${
-                    canSubmit
-                      ? "bg-[#FFC700] text-black hover:bg-[#e6b400] cursor-pointer"
-                      : "bg-[#CCCCCC] text-white cursor-not-allowed"
+                    !isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError
+                      ? "bg-[#CCCCCC] text-white cursor-not-allowed"
+                      : "bg-[#FFC700] text-black hover:bg-[#e6b300] cursor-pointer"
                   }`}
                 >
-                  {isSubmitting ? "กำลังบันทึก..." : "ยืนยัน"}
+                  {isSaving ? "กำลังบันทึก..." : "ยืนยัน"}
                 </button>
               </div>
             </div>
@@ -491,6 +462,64 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           )}
 
         </div>
+
+        {showDeleteConfirm && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-[24px]">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">ลบบัญชีผู้ใช้</h3>
+              <p className="text-gray-500 text-sm mb-4">การกระทำนี้ไม่สามารถย้อนกลับได้ กรุณากรอกรหัสผ่านเพื่อยืนยันการลบบัญชี</p>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                placeholder="กรอกรหัสผ่าน"
+                className="w-full p-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-red-500 text-gray-700 placeholder-gray-400 text-sm mb-3"
+              />
+              {deleteError && (
+                <p className="text-red-500 text-xs mb-3">{deleteError}</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError(""); }}
+                  className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-sm"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  disabled={isDeleting || deletePassword.length === 0}
+                  onClick={async () => {
+                    setDeleteError("");
+                    setIsDeleting(true);
+                    try {
+                      const res = await fetch("/api/auth/delete-account", {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password: deletePassword }),
+                      });
+                      if (!res.ok) {
+                        const err = await res.json();
+                        setDeleteError(err.message || "เกิดข้อผิดพลาด");
+                        return;
+                      }
+                      router.push("/login");
+                    } catch {
+                      setDeleteError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+                    } finally {
+                      setIsDeleting(false);
+                    }
+                  }}
+                  className={`px-4 py-2 font-bold rounded-md transition-colors text-sm ${
+                    isDeleting || deletePassword.length === 0
+                      ? "bg-red-300 text-white cursor-not-allowed"
+                      : "bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                  }`}
+                >
+                  {isDeleting ? "กำลังลบ..." : "ยืนยันการลบ"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

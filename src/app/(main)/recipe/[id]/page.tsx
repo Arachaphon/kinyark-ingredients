@@ -13,14 +13,19 @@ const anuphan = Anuphan({
 
 // =========================================
 // 🍱 ข้อมูลจำลองสำหรับดูโพสต์ (Mock Data)
+// อัปเดตฟิลด์ images เป็น array รองรับ 4 รูปภาพ
 // =========================================
 const mockRecipeData = {
   title: "มีตโลฟแมคแอนด์ชีส",
   author: "Ratatouille",
   authorAvatar:
     "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80",
-  image:
+  images: [
     "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600&q=80",
+    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
+    "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80",
+    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=600&q=80",
+  ],
   rating: 3.0,
   ingredients: [
     "ไข่ 2 ฟอง",
@@ -83,6 +88,8 @@ export default function ViewRecipePage() {
 
   const router = useRouter();
   const [isCommentOpen, setIsCommentOpen] = useState(false);
+  // State สำหรับจัดการการเลือกรูปภาพ (เริ่มต้นที่รูปแรก index 0)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const renderStars = (rating: number) => {
     return (
@@ -156,14 +163,44 @@ export default function ViewRecipePage() {
           </button>
 
           <div className="flex flex-col md:flex-row gap-10 mt-14 md:mt-6">
-            <div className="w-full md:w-[350px] h-[350px] flex-shrink-0">
-              <img
-                src={mockRecipeData.image}
-                alt={mockRecipeData.title}
-                className="w-full h-full object-cover rounded-3xl shadow-md"
-              />
+            {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ 4 รูป */}
+            <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
+              {/* รูปภาพหลัก */}
+              <div className="w-full h-[320px] relative">
+                <img
+                  src={mockRecipeData.images[selectedImageIndex]}
+                  alt={mockRecipeData.title}
+                  className="w-full h-full object-cover rounded-3xl shadow-md transition-all duration-300"
+                />
+                {/* Badge แสดงจำนวนรูป เช่น 1/4 */}
+                <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                  {selectedImageIndex + 1} / {mockRecipeData.images.length}
+                </span>
+              </div>
+
+              {/* Thumbnails ตัวเลือกดูรูปทั้ง 4 รูป */}
+              <div className="grid grid-cols-4 gap-2">
+                {mockRecipeData.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedImageIndex === idx
+                        ? "border-[#71B254] scale-95 shadow-sm"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`รูปที่ ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {/* รายละเอียดบทความ */}
             <div className="flex flex-col justify-center gap-6">
               <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
                 {mockRecipeData.title}
