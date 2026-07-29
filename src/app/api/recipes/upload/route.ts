@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import {
   validateImageFile,
+  validateVideoFile,
   validateImageSignature,
   generateStoragePath,
   uploadAvatar,
@@ -28,14 +29,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const validation = validateImageFile(file)
-    if (!validation.valid) {
-      return NextResponse.json({ error: validation.error }, { status: validation.status })
-    }
+    const isVideo = file.type.startsWith('video/')
+    if (isVideo) {
+      const validation = validateVideoFile(file)
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: validation.status })
+      }
+    } else {
+      const validation = validateImageFile(file)
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: validation.status })
+      }
 
-    const signatureCheck = await validateImageSignature(file)
-    if (!signatureCheck.valid) {
-      return NextResponse.json({ error: signatureCheck.error }, { status: signatureCheck.status })
+      const signatureCheck = await validateImageSignature(file)
+      if (!signatureCheck.valid) {
+        return NextResponse.json({ error: signatureCheck.error }, { status: signatureCheck.status })
+      }
     }
 
     const path = generateStoragePath(user.id, file.type)

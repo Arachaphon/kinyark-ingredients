@@ -63,13 +63,24 @@ export async function POST(request: Request) {
 
     const recipe = await prisma.$transaction(async (tx) => {
       const savedIngredients = await Promise.all(
-        ingredients.map((ingredient) =>
-          tx.ingredient.upsert({
+        ingredients.map(async (ingredient) => {
+          let dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
+
+          if (ingredient.category) {
+            const cat = await tx.category.findFirst({
+              where: { name: { equals: ingredient.category, mode: 'insensitive' } }
+            });
+            if (cat) {
+              dataToCreate.categoryId = cat.id;
+            }
+          }
+
+          return tx.ingredient.upsert({
             where: { name: ingredient.name },
             update: {},
-            create: { name: ingredient.name },
+            create: dataToCreate,
           })
-        )
+        })
       );
 
       const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {

@@ -4,6 +4,7 @@ export const ingredientItemSchema = z.object({
   name: z.string().min(1, "Ingredient name cannot be empty"),
   quantity: z.coerce.number().positive("Quantity must be greater than 0"),
   unit: z.string().min(1, "Unit is required"),
+  category: z.string().optional(),
 })
 
 export const equipmentItemSchema = z.object({

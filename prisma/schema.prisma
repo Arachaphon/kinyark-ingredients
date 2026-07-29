@@ -27,31 +27,19 @@ model User {
 
 model Category {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
-  subCategories SubCategory[]
+  ingredients Ingredient[]
 
   @@map("categories")
 }
 
-model SubCategory {
-  id          Int    @id @default(autoincrement())
-  categoryId Int
-  name        String
-
-  category    Category     @relation(fields: [categoryId], references: [id])
-  ingredients Ingredient[]
-
-  @@map("sub_categories")
-}
-
 model Ingredient {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
-  subCategoryId  Int?
-  
+  id         Int    @id @default(autoincrement())
+  name       String @unique
+  categoryId Int?
 
-  subCategory       SubCategory?       @relation(fields: [subCategoryId], references: [id])
+  category          Category?          @relation(fields: [categoryId], references: [id])
   recipeIngredients RecipeIngredient[]
 
   @@map("ingredients")

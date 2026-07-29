@@ -87,12 +87,21 @@ export default function CreateRecipePage() {
     { id: 1, name: "" }
   ]);
 
+  const [existingIngredients, setExistingIngredients] = useState<{id: number, name: string}[]>([]);
+
   useEffect(() => {
     setIsMounted(true);
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
         if (data.user?.role) setUserRole(data.user.role);
+      })
+      .catch(console.error);
+      
+    fetch('/api/ingredients')
+      .then(res => res.json())
+      .then(res => {
+        if (res.data) setExistingIngredients(res.data);
       })
       .catch(console.error);
   }, []);
@@ -462,9 +471,10 @@ export default function CreateRecipePage() {
         ingredients: ingredients
           .filter(i => i.name.trim() !== "")
           .map(i => ({
-            name: i.name,
+            name: i.name.trim(),
             quantity: parseFloat(i.quantity) || 1,
-            unit: i.unit || "กรัม"
+            unit: i.unit || "กรัม",
+            category: i.category || undefined
           })),
         equipmentItems: equipments
           .filter(e => e.name.trim() !== "")
@@ -498,6 +508,21 @@ export default function CreateRecipePage() {
       if (uploadedImages.length > 0) {
         payload.featuredImageUrl = uploadedImages[0];
         payload.images = uploadedImages;
+      }
+
+      const uploadedVideos: string[] = [];
+      if (videoFile) {
+        const url = await uploadFile(videoFile.file);
+        if (url) uploadedVideos.push(url);
+      }
+      
+      if (postAs === "store" && shopIngredientVideo) {
+        const url = await uploadFile(shopIngredientVideo.file);
+        if (url) uploadedVideos.push(url);
+      }
+
+      if (uploadedVideos.length > 0) {
+        payload.videos = uploadedVideos;
       }
 
       // ข้อมูลเฉพาะร้านค้า (Store)
@@ -1027,6 +1052,7 @@ export default function CreateRecipePage() {
                           <input 
                             id={`ingredient-name-${ing.id}`}
                             type="text" 
+                            list="existing-ingredients-list"
                             placeholder="เช่น อกไก่, แครอท" 
                             value={ing.name} 
                             onChange={(e) => handleIngredientChange(ing.id, "name", e.target.value)}
@@ -1046,6 +1072,11 @@ export default function CreateRecipePage() {
                       <button type="button" id="add-ingredient-btn" onClick={addIngredient} className="w-fit mt-2 px-4 py-2 border border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] transition text-sm flex items-center gap-1 shrink-0 bg-white">
                         <span>+</span> เพิ่มวัตถุดิบ
                       </button>
+                      <datalist id="existing-ingredients-list">
+                        {existingIngredients.map(ingredient => (
+                          <option key={ingredient.id} value={ingredient.name} />
+                        ))}
+                      </datalist>
                     </div>
                   </div>
                   )}

@@ -18,9 +18,21 @@ const MIME_EXTENSIONS: Record<AllowedMimeType, string> = {
   'image/webp': 'webp',
 }
 
+const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as const
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024
+type AllowedVideoMimeType = (typeof ALLOWED_VIDEO_MIME_TYPES)[number]
+
+const VIDEO_MIME_EXTENSIONS: Record<AllowedVideoMimeType, string> = {
+  'video/mp4': 'mp4',
+  'video/quicktime': 'mov',
+  'video/webm': 'webm',
+}
+
 function getExtension(mimeType: string): string | null {
   const entry = Object.entries(MIME_EXTENSIONS).find(([mime]) => mime === mimeType)
-  return entry ? entry[1] : null
+  if (entry) return entry[1]
+  const vidEntry = Object.entries(VIDEO_MIME_EXTENSIONS).find(([mime]) => mime === mimeType)
+  return vidEntry ? vidEntry[1] : null
 }
 
 function checkMagicBytes(buffer: ArrayBuffer, mimeType: AllowedMimeType): boolean {
@@ -37,6 +49,22 @@ function checkMagicBytes(buffer: ArrayBuffer, mimeType: AllowedMimeType): boolea
     if (riff !== 'RIFF' || webp !== 'WEBP') return false
   }
   return true
+}
+
+export function validateVideoFile(file: File): { valid: true } | { valid: false; error: string; status: number } {
+  if (!file || file.size === 0) {
+    return { valid: false, error: 'File is empty', status: 400 }
+  }
+
+  if (file.size > MAX_VIDEO_SIZE) {
+    return { valid: false, error: 'File too large. Maximum size is 50 MB', status: 413 }
+  }
+
+  if (!ALLOWED_VIDEO_MIME_TYPES.includes(file.type as AllowedVideoMimeType)) {
+    return { valid: false, error: 'Invalid file type. Allowed: MP4, MOV, WebM', status: 400 }
+  }
+
+  return { valid: true }
 }
 
 export function validateImageFile(file: File): { valid: true } | { valid: false; error: string; status: number } {

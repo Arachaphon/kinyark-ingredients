@@ -27,77 +27,49 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// =========================================
-// 🍱 ข้อมูลจำลองวัตถุดิบแบบครอบคลุมทั่วโลก (Mock Data)
-// =========================================
-const categoriesData = [
-  {
-    id: "Meat",
-    name: "เนื้อสัตว์",
-    emoji: "🥩",
-    ingredients: [
-      "ไก่", "หมู", "เนื้อวัว", "เนื้อแกะ", "เป็ด", "ไก่งวง", "เบคอน", "แฮม", "ไส้กรอก",
-      "เนื้อกวาง", "เนื้อลูกวัว", "เนื้อแพะ", "เปปเปอโรนี", "ซาลามี", "พรอสชุตโต", "นกกระทา",
-      "ห่าน", "วากิวบีฟ", "หมูสับ", "เนื้อสับ", "สามชั้น"
-    ]
-  },
-  {
-    id: "Fruits",
-    name: "ผลไม้",
-    emoji: "🥗",
-    ingredients: [
-      "แอปเปิ้ล", "กล้วย", "ส้ม", "สตรอว์เบอร์รี", "องุ่น", "แตงโม", "มะม่วง",
-      "สับปะรด", "กีวี", "บลูเบอร์รี", "ราสพ์เบอร์รี", "แบล็คเบอร์รี", "พีช", "สาลี่",
-      "พลัม", "เชอร์รี", "มะนาวเหลือง", "มะนาวเขียว", "มะพร้าว", "อะโวคาโด", "ทับทิม",
-      "มะเดื่อ", "มะละกอ", "แก้วมังกร", "ทุเรียน", "ลิ้นจี่", "เมลอน"
-    ]
-  },
-  {
-    id: "Seafood",
-    name: "อาหารทะเล",
-    emoji: "🦞",
-    ingredients: [
-      "กุ้ง", "ปู", "แซลมอน", "ปลาหมึก", "หอยแมลงภู่", "กุ้งมังกร", "ปลาหมึกยักษ์", "หอยลาย",
-      "หอยนางรม", "ปลาทูน่า", "ปลาคอด", "ปลาเทราต์", "ปลาแมคเคอเรล", "ปลากะพง", "ปลาซาร์ดีน",
-      "หอยเชลล์", "เม่นทะเล (อูนิ)", "ปลาไหล (อูนางิ)", "คาเวียร์", "สาหร่าย", "แมงกะพรุน"
-    ]
-  },
-  {
-    id: "Vegetables",
-    name: "ผัก",
-    emoji: "🥦",
-    ingredients: [
-      "มะเขือเทศ", "หัวหอม", "กระเทียม", "แครอท", "มันฝรั่ง", "กะหล่ำปลี", "บรอกโคลี",
-      "ผักโขม", "ผักกาดหอม", "แตงกวา", "พริกหยวก", "พริก", "เห็ด",
-      "ขิง", "ตะไคร้", "หน่อไม้ฝรั่ง", "ซูกินี", "มะเขือยาว", "ข้าวโพด", "ถั่วลันเตา",
-      "กะหล่ำดอก", "ขึ้นฉ่าย", "เคล", "ฟักทอง", "มันเทศ", "หัวไชเท้า", "ผักกวางตุ้ง"
-    ]
-  },
-  {
-    id: "Kitchen Tools",
-    name: "อุปกรณ์ครัว",
-    emoji: "🍳",
-    ingredients: [
-      "กระทะ", "หม้อ", "เตาอบ", "เครื่องปั่น", "แอร์ฟรายเออร์", "มีด", "ไมโครเวฟ", "เครื่องปิ้งขนมปัง",
-      "ตะกร้อ", "กระต่ายขูด", "ที่ปอกเปลือก", "เขียงหั่น", "ถ้วยตวง", "พาย",
-      "คีม", "ไม้นวดแป้ง", "หม้อหุงข้าว", "เครื่องประมวลผลอาหาร", "เครื่องผสม", "กระชอน"
-    ]
-  }
-];
+// ข้อมูล metadata (ชื่อภาษาไทย + emoji) รายหมวดหมู่ — ingredients จะดึงจาก DB
+const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
+  'Meat':                   { name: 'เนื้อสัตว์',            emoji: '🥩' },
+  'Seafood':                { name: 'อาหารทะเล',            emoji: '🦞' },
+  'Vegetables':             { name: 'ผัก',                    emoji: '🥦' },
+  'Fruits':                 { name: 'ผลไม้',                 emoji: '🍊' },
+  'Kitchen Tools':          { name: 'อุปกรณ์ครัว',         emoji: '🍳' },
+  'Grains, Pasta & Baking': { name: 'ข้าว เส้น และแป้ง',   emoji: '🍞' },
+  'Dairy & Eggs':           { name: 'ไข่และผลิตภัณฑ์นม',   emoji: '🥚' },
+  'Condiments & Sauces':    { name: 'เครื่องปรุงและซอส',   emoji: '🧄' },
+  'Spices & Herbs':         { name: 'เครื่องเทศและสมุนไพร',  emoji: '🌿' },
+  'Nuts & Seeds':           { name: 'ถั่วและเมล็ดพืช',        emoji: '🥜' },
+  'Fats & Oils':            { name: 'น้ำมันและไขมัน',       emoji: '🫒' },
+  'Liquids & Beverages':    { name: 'เครื่องดื่มและของเหลว', emoji: '🍺' },
+  'Others':                 { name: 'อื่นๆ',                  emoji: '📦' },
+  'Seasoning':              { name: 'เครื่องปรุงรส',        emoji: '🧂' },
+};
+
+type CategoryItem = { id: string; name: string; emoji: string; ingredients: string[] };
 
 function IngredientFilterPanel({
   currentCategoryData,
   selectedIngredients,
   onCheckboxChange,
+  loading,
 }: {
-  currentCategoryData: (typeof categoriesData)[0];
+  currentCategoryData: CategoryItem | undefined;
   selectedIngredients: string[];
   onCheckboxChange: (ingredient: string) => void;
+  loading?: boolean;
 }) {
   const [ingSearchTerm, setIngSearchTerm] = useState("");
   
   // ใช้ Debounce กับช่องค้นหาวัตถุดิบ
   const debouncedSearchTerm = useDebounce(ingSearchTerm, 300);
+
+  if (loading) {
+    return <div className="text-center py-20 text-gray-400 animate-pulse">กำลังโหลดวัตถุดิบ...</div>;
+  }
+
+  if (!currentCategoryData) {
+    return <div className="text-center py-20 text-gray-400">ไม่พบหมวดหมู่</div>;
+  }
 
   const filteredIngredients = currentCategoryData.ingredients.filter((ing) =>
     ing.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
@@ -173,8 +145,56 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const activeCategory = searchParams.get("category") || "Meat";
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(["ไก่"]);
+  const [dbIngredients, setDbIngredients] = useState<any[]>([]);
+  const [loadingIngredients, setLoadingIngredients] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/ingredients', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(res => {
+        if (res.data) setDbIngredients(res.data);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingIngredients(false));
+  }, []);
+
+  // สร้าง categories จาก DB จัดกลุ่มตาม category.name
+  const categoriesData = React.useMemo(() => {
+    const grouped: Record<string, string[]> = {};
+    for (const ing of dbIngredients) {
+      const catName: string = ing.category?.name ?? 'Others';
+      if (!grouped[catName]) grouped[catName] = [];
+      grouped[catName].push(ing.name);
+    }
+
+    // เรียงหมวดตามลำดับที่ต้องการ
+    const ORDER = [
+      'Meat', 'Seafood', 'Vegetables', 'Fruits',
+      'Grains, Pasta & Baking', 'Dairy & Eggs', 'Condiments & Sauces',
+      'Spices & Herbs', 'Seasoning', 'Nuts & Seeds', 'Fats & Oils',
+      'Liquids & Beverages', 'Kitchen Tools', 'Others',
+    ];
+
+    const result = ORDER
+      .filter(id => grouped[id] && grouped[id].length > 0)
+      .map(id => ({
+        id,
+        name: CATEGORY_META[id]?.name ?? id,
+        emoji: CATEGORY_META[id]?.emoji ?? '🟡',
+        ingredients: grouped[id].sort((a, b) => a.localeCompare(b, 'th')),
+      }));
+
+    // เพิ่มหมวดที่ไม่อยู่ใน ORDER
+    for (const [id, names] of Object.entries(grouped)) {
+      if (!ORDER.includes(id)) {
+        result.push({ id, name: CATEGORY_META[id]?.name ?? id, emoji: CATEGORY_META[id]?.emoji ?? '🟡', ingredients: names.sort((a, b) => a.localeCompare(b, 'th')) });
+      }
+    }
+
+    return result;
+  }, [dbIngredients]);
+
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   const handleCheckboxChange = (ingredient: string) => {
     if (selectedIngredients.includes(ingredient)) {
@@ -184,8 +204,17 @@ function SearchContent() {
     }
   };
 
-  const currentCategoryData =
-    categoriesData.find((cat) => cat.id === activeCategory) || categoriesData[0];
+  const mergedCategoriesData = categoriesData;
+
+  const rawCategory = searchParams.get('category');
+  const activeCategory = React.useMemo(() => {
+    if (!rawCategory) return mergedCategoriesData[0]?.id ?? '';
+    // ตรวจว่ามีใน list จริง (กรณี URL encode)
+    const found = mergedCategoriesData.find(cat => cat.id === rawCategory || encodeURIComponent(cat.id) === rawCategory);
+    return found?.id ?? mergedCategoriesData[0]?.id ?? '';
+  }, [rawCategory, mergedCategoriesData]);
+
+  const currentCategoryData = mergedCategoriesData.find((cat) => cat.id === activeCategory);
 
   return (
     <div className="w-[95%] max-w-[1200px] mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-start">
@@ -208,7 +237,7 @@ function SearchContent() {
                 )}
                 <button
                   onClick={() => {
-                    router.push(`/search?category=${cat.id}`);
+                    router.push(`/search?category=${encodeURIComponent(cat.id)}`);
                   }}
                   className={`w-full flex items-center gap-4 bg-white py-3 px-6 rounded-2xl transition-all duration-200 border-b-4 border-l-4 ${
                     isActive
@@ -240,12 +269,7 @@ function SearchContent() {
             currentCategoryData={currentCategoryData}
             selectedIngredients={selectedIngredients}
             onCheckboxChange={handleCheckboxChange}
-          />
-          <IngredientFilterPanel
-            key={activeCategory}
-            currentCategoryData={currentCategoryData}
-            selectedIngredients={selectedIngredients}
-            onCheckboxChange={handleCheckboxChange}
+            loading={loadingIngredients}
           />
         </div>
 
