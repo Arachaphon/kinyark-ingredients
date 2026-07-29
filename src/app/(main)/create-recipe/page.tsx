@@ -1294,15 +1294,49 @@ export default function CreateRecipePage() {
                             </div>
                           </div>
 
-                          <input 
-                            id={`ingredient-name-${ing.id}`}
-                            type="text" 
-                            list="existing-ingredients-list"
-                            placeholder="เช่น อกไก่, แครอท" 
-                            value={ing.name} 
-                            onChange={(e) => handleIngredientChange(ing.id, "name", e.target.value)}
-                            className="w-full sm:w-[190px] py-2 px-3 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm"
-                          />
+                          {/* 🌟 ช่องกรอกชื่อวัตถุดิบพร้อมระบบ Autocomplete (จาก PR #27) */}
+                          <div className="relative w-full sm:w-[190px]">
+                            <input 
+                              id={`ingredient-name-${ing.id}`}
+                              type="text" 
+                              placeholder="เช่น อกไก่, แครอท" 
+                              value={ing.name} 
+                              onChange={(e) => handleIngredientChange(ing.id, "name", e.target.value)}
+                              onFocus={() => setFocusedIngredientId(ing.id)}
+                              onBlur={() => {
+                                setFocusedIngredientId(null);
+                                handleIngredientNameBlur(ing.category, ing.name);
+                              }}
+                              autoComplete="off"
+                              className="w-full py-2 px-3 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm"
+                            />
+                            
+                            {/* Dropdown แสดงผลการค้นหาวัตถุดิบ */}
+                            {focusedIngredientId === ing.id && ing.category && ing.name.trim() !== "" && (
+                              <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#71B254] rounded-md shadow-lg max-h-48 overflow-y-auto z-50 scrollbar-thin">
+                                {suggestions.length > 0 ? (
+                                  suggestions.map((s, idx) => (
+                                    <div
+                                      key={idx}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleIngredientChange(ing.id, "name", s);
+                                        setFocusedIngredientId(null);
+                                        handleIngredientNameBlur(ing.category, s);
+                                      }}
+                                      className="px-3 py-2 text-sm text-gray-700 hover:bg-[#F4FAF1] hover:text-[#71B254] cursor-pointer transition-colors border-b border-gray-50 last:border-b-0"
+                                    >
+                                      {s}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="px-3 py-3 text-sm text-gray-400 italic text-center">
+                                    ไม่พบในหมวดหมู่นี้
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
 
                           {ingredients.length > 1 && (
                             <button type="button" id={`remove-ingredient-btn-${ing.id}`} onClick={() => removeIngredient(ing.id)} className="text-red-400 hover:text-red-600 p-1 transition-colors shrink-0">
@@ -1622,6 +1656,30 @@ export default function CreateRecipePage() {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">แจ้งเตือนหมวดหมู่</h3>
+            <p className="text-gray-600 text-sm whitespace-pre-line mb-6 font-medium">
+              {popupError}
+            </p>
+            <button
+              onClick={() => setPopupError(null)}
+              className="w-full py-3 bg-[#71B254] text-white rounded-xl font-bold hover:bg-[#5b9642] transition-colors shadow-md"
+            >
+              รับทราบ
+            </button>
+          </div>
+        </div>
+      )}
+      {/* 🌟 Modal แจ้งเตือนเมื่อกรอกหมวดหมู่ผิด (จาก PR #27) */}
+      {popupError && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
+          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl max-w-sm w-[90%] flex flex-col items-center text-center transform scale-100 animate-scale-up">
+            <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <h3 className="text-xl font-extrabold text-gray-900 mb-2">แจ้งเตือน</h3>
             <p className="text-gray-600 text-sm whitespace-pre-line mb-6 font-medium">
               {popupError}
             </p>
