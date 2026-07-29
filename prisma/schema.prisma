@@ -73,7 +73,23 @@ model Recipe {
   images             RecipeImage[]
   videos             RecipeVideo[]
 
+  store              RecipeStore?
+
   @@map("recipes")
+}
+
+model RecipeStore {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId         String   @unique @db.Uuid
+  storeName        String
+  sellingPrice     Float
+  storeDescription String?
+  storeLocation    String?
+  createdAt        DateTime @default(now()) @db.Timestamptz
+
+  recipe           Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_stores")
 }
 
 model RecipeIngredient {

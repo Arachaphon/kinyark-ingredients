@@ -11,6 +11,13 @@ export const equipmentItemSchema = z.object({
   name: z.string().min(1, "Equipment name cannot be empty"),
 })
 
+export const storeSchema = z.object({
+  storeName: z.string().min(1, "Store name cannot be empty"),
+  sellingPrice: z.coerce.number().min(0, "Selling price must be >= 0"),
+  storeDescription: z.string().optional(),
+  storeLocation: z.string().optional(),
+})
+
 export const createRecipeSchema = z.object({
   recipeName: z.string().min(1, "Recipe name is required"),
   description: z.string().optional(),
@@ -21,6 +28,8 @@ export const createRecipeSchema = z.object({
     .min(1, "Please add at least one ingredient"),
     
   equipmentItems: z.array(equipmentItemSchema).optional(),
+
+  store: storeSchema.optional(),
 
   featuredImageUrl: z.string().optional(),
   

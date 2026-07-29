@@ -807,14 +807,12 @@ export default function CreateRecipePage() {
 
       // ข้อมูลเฉพาะร้านค้า (Store)
       if (postAs === "store") {
-        payload.shopName = shopName;
-        payload.sellingPrice = parseFloat(sellingPrice) || 0;
-        payload.shopDescription = shopDescription;
-        payload.shopLocation = shopLocation;
-        
-        if (pinCoord) {
-          payload.pinCoord = pinCoord;
-        }
+        payload.store = {
+          storeName: shopName,
+          sellingPrice: parseFloat(sellingPrice) || 0,
+          storeDescription: shopDescription,
+          storeLocation: shopLocation,
+        };
       }
 
       // ยิง API ส่งข้อมูล

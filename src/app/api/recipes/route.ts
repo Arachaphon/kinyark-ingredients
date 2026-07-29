@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       instructions,
       ingredients,
       equipmentItems = [],
+      store,
       featuredImageUrl,
       images = [],
       videos = [],
@@ -109,6 +110,16 @@ export async function POST(request: Request) {
               create: equipmentToCreate,
             },
           }),
+          ...(store && {
+            store: {
+              create: {
+                storeName: store.storeName,
+                sellingPrice: store.sellingPrice,
+                storeDescription: store.storeDescription,
+                storeLocation: store.storeLocation,
+              },
+            },
+          }),
           ...(imagesToCreate.length > 0 && {
             images: {
               create: imagesToCreate,
@@ -119,6 +130,9 @@ export async function POST(request: Request) {
               create: videosToCreate,
             },
           }),
+        },
+        include: {
+          store: true,
         },
       });
     }, {
