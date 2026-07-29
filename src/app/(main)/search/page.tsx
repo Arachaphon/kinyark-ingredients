@@ -417,12 +417,6 @@ function SearchContent() {
             selectedIngredients={selectedIngredients}
             onCheckboxChange={handleCheckboxChange}
           />
-          <IngredientFilterPanel
-            key={activeCategory}
-            currentCategoryData={currentCategoryData}
-            selectedIngredients={selectedIngredients}
-            onCheckboxChange={handleCheckboxChange}
-          />
         </div>
 
         <div className="shrink-0 border-t border-gray-100 pt-6 flex flex-col sm:flex-row gap-6 justify-between items-start sm:items-center w-full mt-6">
