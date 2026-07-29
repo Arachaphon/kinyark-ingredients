@@ -119,6 +119,17 @@ export default function CreateRecipePage() {
   const dbCategoriesData = React.useMemo(() => {
     const map: Record<string, { id: string; name: string; emoji: string; ingredients: string[] }> = {};
 
+    // 1. ลงทะเบียนหมวดหมู่หลักทั้งหมดจาก CATEGORY_META ก่อน
+    Object.entries(CATEGORY_META).forEach(([catKey, meta]) => {
+      map[catKey] = {
+        id: catKey,
+        name: meta.name,
+        emoji: meta.emoji,
+        ingredients: [],
+      };
+    });
+
+    // 2. เติมวัตถุดิบที่ดึงจาก Database เข้าตามหมวดหมู่สดๆ
     for (const item of existingIngredients) {
       const catKey = item.category?.name ?? "Others";
       if (!map[catKey]) {
@@ -1070,7 +1081,7 @@ export default function CreateRecipePage() {
                                 className="w-full py-2 pl-3 pr-8 border border-[#71B254] rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 bg-white cursor-pointer shadow-inner text-sm"
                               >
                                 <option value="" disabled hidden>หมวดหมู่...</option>
-                                {categoriesData.filter(c => c.id !== "Kitchen Tools").map(cat => (
+                                {dbCategoriesData.filter(c => c.id !== "Kitchen Tools").map(cat => (
                                   <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
                                 ))}
                               </select>
