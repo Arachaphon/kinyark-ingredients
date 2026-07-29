@@ -42,7 +42,6 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
   'Fats & Oils':            { name: 'น้ำมันและไขมัน',       emoji: '🫒' },
   'Liquids & Beverages':    { name: 'เครื่องดื่มและของเหลว', emoji: '🍺' },
   'Others':                 { name: 'อื่นๆ',                  emoji: '📦' },
-  'Seasoning':              { name: 'เครื่องปรุงรส',        emoji: '🧂' },
 };
 
 type CategoryItem = { id: string; name: string; emoji: string; ingredients: string[] };
@@ -172,7 +171,7 @@ function SearchContent() {
     const ORDER = [
       'Meat', 'Seafood', 'Vegetables', 'Fruits',
       'Grains, Pasta & Baking', 'Dairy & Eggs', 'Condiments & Sauces',
-      'Spices & Herbs', 'Seasoning', 'Nuts & Seeds', 'Fats & Oils',
+      'Spices & Herbs', 'Nuts & Seeds', 'Fats & Oils',
       'Liquids & Beverages', 'Kitchen Tools', 'Others',
     ];
 

@@ -25,7 +25,6 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
   'Fats & Oils':            { name: 'น้ำมันและไขมัน',       emoji: '🫒' },
   'Liquids & Beverages':    { name: 'เครื่องดื่มและของเหลว', emoji: '🍺' },
   'Others':                 { name: 'อื่นๆ',                  emoji: '📦' },
-  'Seasoning':              { name: 'เครื่องปรุงรส',        emoji: '🧂' },
 };
 
 const categoriesData: any[] = [];
