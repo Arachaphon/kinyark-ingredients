@@ -159,9 +159,17 @@ export default function HomePage() {
             <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" />
             <CategoryCard emoji="🥗" text="ผลไม้" />
             <CategoryCard emoji="🦞" text="อาหารทะเล" />
+            <CategoryCard emoji="🥦" text="ผัก" />
+            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" />
+            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" />
+            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" />
+            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" />
+            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" />
+            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" />
+            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="ผัก" />
+                <CategoryCard emoji="📦" text="อื่นๆ" />
               </div>
             </div>
           </div>

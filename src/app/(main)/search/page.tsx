@@ -47,6 +47,7 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
 
 type CategoryItem = { id: string; name: string; emoji: string; ingredients: string[] };
 
+
 function IngredientFilterPanel({
   currentCategoryData,
   selectedIngredients,
@@ -76,8 +77,8 @@ function IngredientFilterPanel({
   );
 
   return (
-    <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
+    <div className="flex flex-col h-full">
+      <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
         <h2 className="text-xl font-black text-gray-900 pr-6">
           {currentCategoryData.name}
         </h2>
@@ -99,7 +100,7 @@ function IngredientFilterPanel({
         </div>
       </div>
 
-      <div className="h-[280px] overflow-y-auto pr-2 border border-gray-50 rounded-xl p-4 bg-gray-50/30 scrollbar-thin">
+      <div className="flex-1 min-h-[280px] overflow-y-auto pr-2 border border-gray-50 rounded-xl p-4 bg-gray-50/30 scrollbar-thin">
         {filteredIngredients.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-5 gap-x-8">
             {filteredIngredients.map((ingredient) => {
@@ -137,7 +138,7 @@ function IngredientFilterPanel({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -193,7 +194,6 @@ function SearchContent() {
 
     return result;
   }, [dbIngredients]);
-
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
 
   const handleCheckboxChange = (ingredient: string) => {
@@ -217,7 +217,7 @@ function SearchContent() {
   const currentCategoryData = mergedCategoriesData.find((cat) => cat.id === activeCategory);
 
   return (
-    <div className="w-[95%] max-w-[1200px] mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-start">
+    <div className="w-[95%] max-w-[1200px] mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-stretch">
 
       {/* ฝั่งซ้าย: รายการหมวดหมู่ */}
       <div className="w-full lg:w-[280px] shrink-0 flex flex-col gap-4">
@@ -225,7 +225,7 @@ function SearchContent() {
           เลือกวัตถุดิบ
         </span>
 
-        <div className="flex flex-col gap-5 w-full">
+        <div className="flex flex-col gap-5 w-full pb-10">
           {categoriesData.map((cat) => {
             const isActive = cat.id === activeCategory;
             return (
@@ -255,15 +255,18 @@ function SearchContent() {
       </div>
 
       {/* ฝั่งขวา: Main Content Card */}
-      <div className="flex-grow w-full bg-white border border-transparent rounded-[24px] p-8 md:p-12 shadow-sm min-h-[580px] flex flex-col justify-between">
-        <div>
+      <div className="flex-grow w-full bg-white border border-transparent rounded-[24px] p-8 md:p-12 shadow-sm flex flex-col">
+        
+        <div className="shrink-0">
           <h1 className="text-3xl md:text-4xl font-extrabold text-black mb-2 tracking-tight">
             คุณมีวัตถุดิบอะไรบ้าง?
           </h1>
           <p className="text-gray-500 text-base md:text-lg mb-6 font-medium">
             เลือกวัตถุดิบที่มีในตู้เย็น แล้วเราจะแนะนำสูตรอาหารให้คุณ
           </p>
+        </div>
 
+        <div className="flex-1 flex flex-col min-h-[300px]">
           <IngredientFilterPanel
             key={activeCategory}
             currentCategoryData={currentCategoryData}
@@ -273,7 +276,7 @@ function SearchContent() {
           />
         </div>
 
-        <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row gap-6 justify-between items-start sm:items-center w-full mt-6">
+        <div className="shrink-0 border-t border-gray-100 pt-6 flex flex-col sm:flex-row gap-6 justify-between items-start sm:items-center w-full mt-6">
           <div className="flex flex-wrap items-center gap-2 max-w-xl">
             <span className="text-gray-800 font-extrabold text-lg mr-2">
               ที่เลือก:
