@@ -313,9 +313,30 @@ export default function CreateRecipePage() {
     { id: 1, name: "" }
   ]);
 
-  const [existingIngredients, setExistingIngredients] = useState<{id: number, name: string}[]>([]);
+  const [existingIngredients, setExistingIngredients] = useState<{id: number, name: string, category?: {id: number, name: string}}[]>([]);
   const [popupError, setPopupError] = useState<string | null>(null);
   const [focusedIngredientId, setFocusedIngredientId] = useState<number | null>(null);
+
+  // 🌟 สร้างหมวดหมู่ที่ดึงข้อมูลวัตถุดิบสดๆ จาก Database
+  const dbCategoriesData = React.useMemo(() => {
+    if (!existingIngredients || existingIngredients.length === 0) return categoriesData;
+
+    const grouped: Record<string, string[]> = {};
+    for (const item of existingIngredients) {
+      const catName = item.category?.name ?? "Others";
+      if (!grouped[catName]) grouped[catName] = [];
+      if (!grouped[catName].includes(item.name)) grouped[catName].push(item.name);
+    }
+
+    return categoriesData.map(cat => {
+      const dbList = grouped[cat.name] || grouped[cat.id] || [];
+      const combined = Array.from(new Set([...dbList, ...cat.ingredients]));
+      return {
+        ...cat,
+        ingredients: combined,
+      };
+    });
+  }, [existingIngredients]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -619,7 +640,26 @@ export default function CreateRecipePage() {
   const handleIngredientNameBlur = (selectedCategory: string, typedName: string) => {
     if (!typedName.trim() || !selectedCategory) return;
 
-    const foundCategory = categoriesData.find(cat =>
+    // 🌟 1. ค้นหาจากข้อมูลวัตถุดิบใน Database ก่อนเป็นหลัก
+    const dbMatch = existingIngredients.find(
+      (ing) => ing.name.toLowerCase() === typedName.toLowerCase().trim()
+    );
+
+    if (dbMatch && dbMatch.category) {
+      const dbCatName = dbMatch.category.name;
+      const matchCatObj = categoriesData.find(
+        (c) => c.name === dbCatName || c.id === dbCatName
+      );
+      const matchCatId = matchCatObj?.id ?? dbCatName;
+
+      if (matchCatId !== selectedCategory && dbCatName !== selectedCategory) {
+        setPopupError(`คุณกรอกวัตถุดิบผิดหมวดหมู่!\n\n"${typedName}" จัดอยู่ในหมวดหมู่ "${matchCatObj?.name || dbCatName}"\nกรุณาแก้ไขหมวดหมู่ให้ถูกต้องครับ`);
+        return;
+      }
+    }
+
+    // 🌟 2. ค้นหาจาก dbCategoriesData
+    const foundCategory = dbCategoriesData.find(cat =>
       cat.id !== "Kitchen Tools" &&
       cat.ingredients.some(ing => ing.toLowerCase() === typedName.toLowerCase().trim())
     );
@@ -1231,8 +1271,8 @@ export default function CreateRecipePage() {
 
                     <div className="flex flex-col gap-3">
                       {ingredients.map((ing) => {
-                        // 🌟 ระบบค้นหาสำหรับ Autocomplete ในหมวดหมู่นั้นๆ
-                        const selectedCatData = categoriesData.find(c => c.id === ing.category);
+                        // 🌟 ระบบค้นหาสำหรับ Autocomplete โดยดึงข้อมูลจาก Database
+                        const selectedCatData = dbCategoriesData.find(c => c.id === ing.category);
                         const suggestions = selectedCatData && ing.name.trim() !== ""
                           ? selectedCatData.ingredients.filter(i => i.toLowerCase().includes(ing.name.toLowerCase().trim()))
                           : [];
