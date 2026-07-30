@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
@@ -94,20 +93,7 @@ const mockSearchResults = [
 // =========================================
 // 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
 // =========================================
-interface RecipeResult {
-  id: string;
-  title: string;
-  image: string;
-  tags: string[];
-  author: string;
-  authorAvatar: string;
-  likes: number;
-  rating: number;
-  initialFavorite: boolean;
-  isAi: boolean;
-}
-
-const formatAndSortResults = (dataList: RecipeResult[]) => {
+const formatAndSortResults = (dataList: any[]) => {
   const aiRecipes = dataList.filter((item) => item.isAi);
   const userRecipes = dataList.filter((item) => !item.isAi);
 
@@ -125,7 +111,7 @@ function ResultsContent() {
   const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
 
   const [isLoading, setIsLoading] = useState(true);
-  const [results, setResults] = useState<RecipeResult[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -143,27 +129,22 @@ function ResultsContent() {
         const data = await response.json();
 
         if (data && data.length > 0) {
-          const formattedData = data.map((item: Record<string, unknown>) => {
+          const formattedData = data.map((item: any) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
-            const recipeTitle = (item.recipeName || item.title) as string;
+            const recipeTitle = item.recipeName || item.title;
 
-            const images = item.images as { imageUrl: string }[] | undefined;
-            const finalImage = images?.[0]?.imageUrl || (item.image as string) || 
+            const finalImage = item.images?.[0]?.imageUrl || item.image || 
                                (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
 
-            const recipeIngredients = item.recipeIngredients as { ingredient?: { name: string } }[] | undefined;
-            const tags = recipeIngredients?.map((ri) => ri.ingredient?.name).filter(Boolean).slice(0, 5) as string[] || (item.tags as string[]) || [];
-            const user = item.user as { username?: string; avatarUrl?: string } | undefined;
-
             return {
-              id: item.id as string,
+              id: item.id,
               title: recipeTitle,
               image: finalImage,
-              tags,
-              author: user?.username || (item.author as string) || "ผู้ใช้งานทั่วไป",
-              authorAvatar: user?.avatarUrl || (item.authorAvatar as string) || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
-              likes: (item.favoriteCount as number) || (item.likes as number) || 0,
-              rating: (item.rating as number) || 0,
+              tags: item.recipeIngredients?.map((ri: any) => ri.ingredient?.name).filter(Boolean).slice(0, 5) || item.tags || [],
+              author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
+              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+              likes: item.favoriteCount || item.likes || 0,
+              rating: item.rating || 0,
               initialFavorite: false,
               isAi: isAiRecipe,
             };
@@ -204,7 +185,7 @@ function ResultsContent() {
     };
   }, [queryTitle]);
 
-  const setupFavorites = (dataArray: RecipeResult[]) => {
+  const setupFavorites = (dataArray: any[]) => {
     const initialFavs = dataArray.reduce(
       (acc, current) => ({ ...acc, [current.id]: current.initialFavorite || false }),
       {}
@@ -231,24 +212,73 @@ function ResultsContent() {
 
       {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
-        {mockSearchResults.map((recipe) => {
-          const isLiked = favorites[recipe.id];
-          return (
-            <div
-              key={recipe.id}
-              className="flex flex-col md:flex-row gap-6 p-4 border border-[#71B254] rounded-xl bg-white hover:shadow-md transition-shadow relative"
-            >
-
-              {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
-              <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
-                <Image
-                  src={recipe.image}
-                  alt={recipe.title}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="180px"
-                />
+        
+        {/* 1. Loading State */}
+        {isLoading ? (
+          <>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex flex-col md:flex-row gap-6 p-4 border border-gray-200 rounded-xl bg-white animate-pulse">
+                <div className="w-full md:w-[180px] h-[160px] bg-gray-200 rounded-lg shrink-0"></div>
+                <div className="flex-grow flex flex-col justify-between py-2">
+                  <div>
+                    <div className="h-8 bg-gray-200 rounded-md w-3/4 mb-4"></div>
+                    <div className="flex gap-2">
+                      <div className="h-6 w-16 bg-gray-200 rounded-md"></div>
+                      <div className="h-6 w-20 bg-gray-200 rounded-md"></div>
+                      <div className="h-6 w-14 bg-gray-200 rounded-md"></div>
+                    </div>
+                  </div>
+                  <div className="h-8 w-24 bg-gray-200 rounded-full mt-4 md:mt-0"></div>
+                </div>
+                <div className="w-full md:w-32 flex flex-col items-end justify-between py-1 shrink-0">
+                  <div className="flex flex-col items-end gap-3 w-full">
+                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
+                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
+                  </div>
+                  <div className="mt-4 md:mt-0 h-10 w-full bg-gray-200 rounded-full"></div>
+                </div>
               </div>
+            ))}
+          </>
+        ) 
+        
+        /* 2. Empty State */
+        : results.length === 0 ? (
+          <div className="py-16 flex flex-col items-center justify-center text-center">
+            <div className="text-7xl mb-4 opacity-50">🧐</div>
+            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
+            <p className="text-gray-500 text-lg max-w-md mb-8">
+              ระบบไม่พบสูตรอาหารสำหรับ "{queryTitle}" ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
+            </p>
+            <Link
+              href="/search"
+              className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full hover:bg-[#5b9642] transition shadow-md"
+            >
+              กลับไปเลือกวัตถุดิบใหม่
+            </Link>
+          </div>
+        ) 
+        
+        /* 3. Results */
+        : (
+          results.map((recipe, index) => {
+            const isLiked = favorites[recipe.id];
+            const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
+
+            return (
+              <div
+                key={`${recipe.id}-${index}`}
+                className={`flex flex-col md:flex-row gap-6 p-4 border ${cardBorderClass} rounded-xl bg-white hover:shadow-md transition-shadow relative`}
+              >
+                {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
+                <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
+                  {/* 🚀 แก้ไขเป็นแท็ก img ธรรมดาตามที่ต้องการ และจัดการขนาดด้วย h-full w-full แทน */}
+                  <img
+                    src={recipe.image}
+                    alt={recipe.title}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
 
                 {/* กลาง: รายละเอียด ชื่อสูตร, ป้ายวัตถุดิบ, คนโพสต์ */}
                 <div className="flex-grow flex flex-col justify-between py-1">
@@ -271,22 +301,21 @@ function ResultsContent() {
                     </div>
                   </div>
 
-                {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
-                <div className="flex items-center gap-3 mt-4 md:mt-0">
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100">
-                    <Image
-                      src={recipe.authorAvatar}
-                      alt={recipe.author}
-                      width={32}
-                      height={32}
-                      className="object-cover"
-                    />
+                  {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
+                  <div className="flex items-center gap-3 mt-4 md:mt-0">
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0">
+                      {/* รูป Avatar ก็เป็น img ธรรมดาเช่นกัน */}
+                      <img
+                        src={recipe.authorAvatar}
+                        alt={recipe.author}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-bold text-gray-800 text-sm truncate">
+                      {recipe.author}
+                    </span>
                   </div>
-                  <span className="font-bold text-gray-800 text-sm">
-                    {recipe.author}
-                  </span>
                 </div>
-              </div>
 
                 {/* ขวา: สถิติจำนวนคนกดใจ, ดาวคะแนน และปุ่ม View Recipe */}
                 <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
@@ -344,7 +373,7 @@ function ResultsContent() {
               </div>
             );
           })
-        }
+        )}
       </div>
 
     </div>
