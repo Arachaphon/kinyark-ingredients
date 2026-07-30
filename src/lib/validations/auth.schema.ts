@@ -60,14 +60,9 @@ export const updateProfileSchema = z
       })
     }
 
-    // กรณีเปลี่ยน Email แล้วไม่กรอก Current Password (ถ้า Business Logic บังคับ)
-    if (data.email && (!data.currentPassword || data.currentPassword.trim() === '')) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อเปลี่ยนอีเมล',
-        path: ['currentPassword'],
-      })
-    }
+    // หมายเหตุ: การเปลี่ยนอีเมลไม่บังคับให้กรอก currentPassword อีกต่อไป
+    // ความปลอดภัยของการเปลี่ยนอีเมลจัดการที่ฝั่ง Supabase Auth
+    // (ต้องยืนยันผ่านลิงก์ที่ส่งไปอีเมลใหม่/เก่าอยู่แล้ว)
 
     if (data.confirmPassword && data.newPassword && data.confirmPassword !== data.newPassword) {
       ctx.addIssue({

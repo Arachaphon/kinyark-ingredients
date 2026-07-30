@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -88,6 +88,17 @@ export default function ViewRecipePage() {
   const router = useRouter();
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // ⏰ ระบบ Auto-slide เลื่อนรูปอัตโนมัติทุกๆ 3 วินาที
+  useEffect(() => {
+    if (mockRecipeData.images.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setSelectedImageIndex((prev) => (prev + 1) % mockRecipeData.images.length);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prev) =>
@@ -180,7 +191,7 @@ export default function ViewRecipePage() {
                 <img
                   src={mockRecipeData.images[selectedImageIndex]}
                   alt={mockRecipeData.title}
-                  className="w-full h-full object-cover transition-all duration-300"
+                  className="w-full h-full object-cover transition-all duration-500 ease-in-out"
                 />
 
                 {/* ปุ่มลูกศรซ้าย */}

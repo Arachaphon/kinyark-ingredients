@@ -69,11 +69,21 @@ export async function PATCH(request: Request) {
     }
 
     if (email) {
+      // เช็คว่าอีเมลนี้ถูกใช้งานโดยผู้ใช้คนอื่นแล้วหรือไม่ ก่อนส่งไปยัง Supabase Auth
+      const existing = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      })
+
+      if (existing && existing.id !== user.id) {
+        return Response.json({ error: "อีเมลนี้ถูกใช้งานแล้ว" }, { status: 400 })
+      }
+
       console.log("PATCH /api/users/me email value:", JSON.stringify(email))
       const { error: emailError } = await supabase.auth.updateUser({ email })
       if (emailError) {
         console.error("PATCH /api/users/me Supabase Auth Error:", emailError.message)
-        
+
         // เช็กครอบคลุมทั้ง dev/test หรือ error เรื่องส่งอีเมลใน local environment
         const isLocalOrTest = process.env.NODE_ENV !== 'production' || process.env.CI
         const isEmailSendError = emailError.message.toLowerCase().includes('email') || emailError.status === 429

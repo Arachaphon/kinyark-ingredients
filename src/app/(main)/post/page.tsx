@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Anuphan } from "next/font/google";
 
@@ -133,6 +133,24 @@ export default function PostsFeedPage() {
   const [openComments, setOpenComments] = useState<Record<number, boolean>>({});
   const [activeImageIndex, setActiveImageIndex] = useState<Record<number, number>>({});
 
+  // ⏰ ระบบเลื่อนรูปอัตโนมัติ (Auto-Slide ทุกๆ 3 วินาที)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveImageIndex((prev) => {
+        const nextState = { ...prev };
+        mockFeedPosts.forEach((post) => {
+          if (post.images.length > 1) {
+            const currentIdx = prev[post.id] || 0;
+            nextState[post.id] = (currentIdx + 1) % post.images.length;
+          }
+        });
+        return nextState;
+      });
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const toggleComments = (postId: number) => {
     setOpenComments((prev) => ({
       ...prev,
@@ -236,7 +254,7 @@ export default function PostsFeedPage() {
                       <img
                         src={post.images[currentImgIdx]}
                         alt={post.title}
-                        className="w-full h-full object-cover transition-all duration-300"
+                        className="w-full h-full object-cover transition-all duration-500 ease-in-out"
                       />
 
                       {/* ปุ่มลูกศรซ้าย */}
