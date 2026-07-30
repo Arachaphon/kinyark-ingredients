@@ -3,13 +3,25 @@ import { prisma } from '@/lib/prisma'
 import { GET } from '@/app/api/auth/me/route'
 import { AUTH_PROFILE_SELECT } from '@/lib/profile'
 
-const mockSupabaseAuth = { getUser: jest.fn() }
+// ประกาศ mock variables
+const mockGetUser = jest.fn()
+const mockFindUnique = jest.fn()
+
 jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
+  createClient: jest.fn(() => ({
+    auth: {
+      getUser: (...args: unknown[]) => mockGetUser(...args),
+    },
+  })),
 }))
 
-const mockPrisma = { user: { findUnique: jest.fn() } }
-jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: (...args: unknown[]) => mockFindUnique(...args),
+    },
+  },
+}))
 
 jest.mock('@/lib/profile', () => {
   const actualProfile = jest.requireActual('@/lib/profile')
@@ -55,11 +67,11 @@ describe('GET /api/auth/me', () => {
   })
 
   test('returns 200 with user profile when authenticated', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser)
+    mockFindUnique.mockResolvedValue(mockUser)
 
     const res = await GET()
     const body = await res.json()
@@ -69,11 +81,11 @@ describe('GET /api/auth/me', () => {
   })
 
   test('does not leak password or sensitive fields', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser)
+    mockFindUnique.mockResolvedValue(mockUser)
 
     const res = await GET()
     const body = await res.json()
@@ -86,7 +98,7 @@ describe('GET /api/auth/me', () => {
   })
 
   test('returns 401 when not authenticated', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     })
@@ -99,7 +111,7 @@ describe('GET /api/auth/me', () => {
   })
 
   test('returns 401 when getUser returns an error but no user', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Token expired'),
     })
@@ -112,11 +124,11 @@ describe('GET /api/auth/me', () => {
   })
 
   test('returns 404 when DB record is missing', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(null)
+    mockFindUnique.mockResolvedValue(null)
 
     const res = await GET()
     const body = await res.json()
@@ -126,7 +138,7 @@ describe('GET /api/auth/me', () => {
   })
 
   test('returns 500 on internal server error', async () => {
-    mockSupabaseAuth.getUser.mockRejectedValue(new Error('Network error'))
+    mockGetUser.mockRejectedValue(new Error('Network error'))
 
     const res = await GET()
     const body = await res.json()
@@ -136,15 +148,15 @@ describe('GET /api/auth/me', () => {
   })
 
   test('passes AUTH_PROFILE_SELECT through to Prisma', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockUser)
+    mockFindUnique.mockResolvedValue(mockUser)
 
     await GET()
 
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+    expect(mockFindUnique).toHaveBeenCalledWith({
       where: { id: mockSupabaseUser.id },
       select: AUTH_PROFILE_SELECT,
     })
