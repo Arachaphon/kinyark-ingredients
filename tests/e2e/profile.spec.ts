@@ -152,9 +152,12 @@ test.describe('Profile E2E', () => {
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // PATCH email
+    // PATCH email (เพิ่ม currentPassword เพื่อผ่าน Validation)
     const patchRes = await page.request.patch('/api/users/me', {
-      data: { email: newEmail },
+      data: { 
+        email: newEmail,
+        currentPassword: testPassword,
+      },
     });
     expect(patchRes.status()).toBe(200);
     const patchBody = await patchRes.json();
