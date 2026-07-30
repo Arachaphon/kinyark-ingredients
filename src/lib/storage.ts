@@ -101,22 +101,26 @@ export function generateStoragePath(userId: string, mimeType: string): string | 
   return `${userId}/${uuid}.${ext}`
 }
 
-export function getPublicUrl(supabase: SupabaseClient, path: string): string {
-  const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path)
+export function getPublicUrl(supabase: SupabaseClient, path: string, bucket: string = BUCKET_NAME): string {
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return data.publicUrl
 }
 
-const AVATARS_BUCKET_PREFIX = `/object/public/${BUCKET_NAME}/`
-
-export function extractPathFromPublicUrl(url: string): string | null {
-  if (!url.includes(AVATARS_BUCKET_PREFIX)) return null
-  const idx = url.indexOf(AVATARS_BUCKET_PREFIX)
+export function extractPathFromPublicUrl(url: string, bucket: string = BUCKET_NAME): string | null {
+  const bucketPrefix = `/object/public/${bucket}/`
+  if (!url.includes(bucketPrefix)) return null
+  const idx = url.indexOf(bucketPrefix)
   if (idx === -1) return null
-  return url.slice(idx + AVATARS_BUCKET_PREFIX.length)
+  return url.slice(idx + bucketPrefix.length)
 }
 
-export async function uploadAvatar(supabase: SupabaseClient, file: File, path: string): Promise<{ data: { path: string }; error: null } | { data: null; error: string }> {
-  const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(path, file, {
+export async function uploadFileToBucket(
+  supabase: SupabaseClient, 
+  file: File, 
+  path: string, 
+  bucket: string = BUCKET_NAME
+): Promise<{ data: { path: string }; error: null } | { data: null; error: string }> {
+  const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
     contentType: file.type,
     upsert: false,
   })
@@ -126,8 +130,12 @@ export async function uploadAvatar(supabase: SupabaseClient, file: File, path: s
   return { data: { path: data.path }, error: null }
 }
 
+export async function uploadAvatar(supabase: SupabaseClient, file: File, path: string): Promise<{ data: { path: string }; error: null } | { data: null; error: string }> {
+  return uploadFileToBucket(supabase, file, path, BUCKET_NAME)
+}
+
 export async function deleteAvatar(supabase: SupabaseClient, url: string, authUserId: string): Promise<{ success: true } | { success: false; error: string }> {
-  const path = extractPathFromPublicUrl(url)
+  const path = extractPathFromPublicUrl(url, BUCKET_NAME)
   if (!path) {
     return { success: false, error: 'URL does not belong to avatars bucket' }
   }
@@ -144,3 +152,27 @@ export async function deleteAvatar(supabase: SupabaseClient, url: string, authUs
 
   return { success: true }
 }
+
+export async function deleteFileByUrl(supabase: SupabaseClient, url: string, bucket?: string): Promise<boolean> {
+  const targetBucket = bucket || (url.includes('/object/public/recipes/') ? 'recipes' : BUCKET_NAME)
+  const path = extractPathFromPublicUrl(url, targetBucket)
+  if (!path) return false
+  const { error } = await supabase.storage.from(targetBucket).remove([path])
+  return !error
+}
+
+export async function deleteUserFolder(supabase: SupabaseClient, userId: string, bucket: string = BUCKET_NAME): Promise<boolean> {
+  try {
+    const { data: files, error: listError } = await supabase.storage.from(bucket).list(userId)
+    if (listError || !files || files.length === 0) return true
+
+    const pathsToDelete = files.map((file) => `${userId}/${file.name}`)
+    const { error: removeError } = await supabase.storage.from(bucket).remove(pathsToDelete)
+    return !removeError
+  } catch (err) {
+    console.error(`Failed to cleanup user folder in ${bucket}:`, err)
+    return false
+  }
+}
+
+

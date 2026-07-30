@@ -21,6 +21,7 @@ model User {
   favorites        Favorite[]
   searchHistories SearchHistory[]
   reviewLikes     ReviewLike[]
+  storePosts      StorePost[]
 
   @@map("users")
 }
@@ -73,23 +74,47 @@ model Recipe {
   images             RecipeImage[]
   videos             RecipeVideo[]
 
-  store              RecipeStore?
+  storePosts         StorePost[]
 
   @@map("recipes")
 }
 
-model RecipeStore {
+model StorePost {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  recipeId         String   @unique @db.Uuid
+  userId           String   @db.Uuid
+  recipeId         String   @db.Uuid
   storeName        String
   sellingPrice     Float
   storeDescription String?
   storeLocation    String?
   createdAt        DateTime @default(now()) @db.Timestamptz
 
-  recipe           Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe           Recipe            @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  images           StorePostImage[]
+  videos           StorePostVideo[]
 
-  @@map("recipe_stores")
+  @@map("store_posts")
+}
+
+model StorePostImage {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storePostId String    @db.Uuid
+  imageUrl    String
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  storePost   StorePost @relation(fields: [storePostId], references: [id], onDelete: Cascade)
+
+  @@map("store_post_images")
+}
+
+model StorePostVideo {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storePostId String    @db.Uuid
+  videoUrl    String
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  storePost   StorePost @relation(fields: [storePostId], references: [id], onDelete: Cascade)
+
+  @@map("store_post_videos")
 }
 
 model RecipeIngredient {

@@ -112,6 +112,7 @@ export default function CreateRecipePage() {
 
   const [existingIngredients, setExistingIngredients] = useState<{id: number, name: string, category?: {id: number, name: string}}[]>([]);
   const [popupError, setPopupError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [focusedIngredientId, setFocusedIngredientId] = useState<number | null>(null);
 
   // 🌟 สร้างหมวดหมู่ที่ดึงข้อมูลวัตถุดิบสดๆ จาก Database 100%
@@ -528,9 +529,48 @@ export default function CreateRecipePage() {
     if (file) setVideoFile({ file, previewUrl: URL.createObjectURL(file) });
   };
 
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+
   const handleSubmitRecipe = async () => {
-    if (!title.trim()) {
-      alert("กรุณากรอกชื่อเมนูอาหาร");
+    setSubmitError(null);
+    setMissingFields([]);
+
+    const missing: string[] = [];
+
+    // 1. ตรวจสอบข้อมูลหลักของสูตรอาหาร
+    if (!title.trim()) missing.push("title");
+    if (!description.trim()) missing.push("description");
+    if (!instructions.trim()) missing.push("instructions");
+    if (coverImages.length === 0) missing.push("coverImages");
+
+    // ตรวจสอบวัตถุดิบ (ต้องมีอย่างน้อย 1 รายการ และกรอกครบทุกช่อง)
+    const validIngredients = ingredients.filter(i => i.name.trim() !== "");
+    if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+      missing.push("ingredients");
+    }
+
+    // อุปกรณ์ (ไม่บังคับ แต่กรองเอาเฉพาะที่มีชื่อ)
+    const validEquipments = equipments.filter(e => e.name.trim() !== "");
+
+    // 2. ถ้าเป็นโพสต์ร้านค้า ตรวจสอบข้อมูลร้านค้าเพิ่มเติม (ทุกช่องต้องระบุ)
+    if (postAs === "store") {
+      if (!shopName.trim()) missing.push("shopName");
+      if (!sellingPrice || parseFloat(sellingPrice) <= 0) missing.push("sellingPrice");
+      if (!shopDescription.trim()) missing.push("shopDescription");
+      if (!shopLocation.trim()) missing.push("shopLocation");
+      if (shopIngredientImages.length === 0) missing.push("shopIngredientImages");
+    }
+
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setSubmitError("กรุณากรอกข้อมูลให้ครบถ้วนทุกช่อง (รวมถึงรูปภาพอย่างน้อย 1 รูป)");
+      
+      // Scroll ขึ้นไปยังจุดที่กรอกไม่ครบ
+      const firstMissingId = missing[0];
+      const element = document.getElementById(`form-field-${firstMissingId}`) || document.getElementById("publish-recipe-btn");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
@@ -538,22 +578,18 @@ export default function CreateRecipePage() {
 
     try {
       const payload: any = {
-        recipeName: title,
-        description,
-        instructions,
+        recipeName: title.trim(),
+        description: description.trim(),
+        instructions: instructions.trim(),
         visibility: visibility === "public" || visibility === "private" ? visibility : "public",
         postAs,
-        ingredients: ingredients
-          .filter(i => i.name.trim() !== "")
-          .map(i => ({
-            name: i.name.trim(),
-            quantity: parseFloat(i.quantity) || 1,
-            unit: i.unit || "กรัม",
-            category: i.category || undefined
-          })),
-        equipmentItems: equipments
-          .filter(e => e.name.trim() !== "")
-          .map(e => ({ name: e.name })),
+        ingredients: validIngredients.map(i => ({
+          name: i.name.trim(),
+          quantity: parseFloat(i.quantity) || 1,
+          unit: i.unit.trim(),
+          category: i.category || undefined
+        })),
+        equipmentItems: validEquipments.map(e => ({ name: e.name.trim() })),
       };
 
       if (pickedRecipe) {
@@ -561,52 +597,81 @@ export default function CreateRecipePage() {
       }
 
       // ⚠️ Upload files
-      const uploadFile = async (file: File): Promise<string | null> => {
+      const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
         const fd = new FormData();
         fd.append("file", file);
         try {
           const res = await fetch("/api/recipes/upload", { method: "POST", body: fd });
-          if (!res.ok) return null;
           const data = await res.json();
-          return data.url;
+          if (!res.ok) return { url: null, error: data.error || "เกิดข้อผิดพลาดในการอัปโหลดไฟล์" };
+          return { url: data.url };
         } catch {
-          return null;
+          return { url: null, error: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่ออัปโหลดไฟล์ได้" };
         }
       };
 
-      const uploadedImages: string[] = [];
+      const uploadedRecipeImages: string[] = [];
       for (const media of coverImages) {
-        const url = await uploadFile(media.file);
-        if (url) uploadedImages.push(url);
+        const result = await uploadFile(media.file);
+        if (result.error) {
+          setSubmitError(`อัปโหลดรูปภาพสูตรล้มเหลว: ${result.error}`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (result.url) uploadedRecipeImages.push(result.url);
       }
 
-      if (uploadedImages.length > 0) {
-        payload.featuredImageUrl = uploadedImages[0];
-        payload.images = uploadedImages;
+      if (uploadedRecipeImages.length > 0) {
+        payload.featuredImageUrl = uploadedRecipeImages[0];
+        payload.images = uploadedRecipeImages;
       }
 
-      const uploadedVideos: string[] = [];
+      const uploadedRecipeVideos: string[] = [];
       if (videoFile) {
-        const url = await uploadFile(videoFile.file);
-        if (url) uploadedVideos.push(url);
-      }
-      
-      if (postAs === "store" && shopIngredientVideo) {
-        const url = await uploadFile(shopIngredientVideo.file);
-        if (url) uploadedVideos.push(url);
+        const result = await uploadFile(videoFile.file);
+        if (result.error) {
+          setSubmitError(`อัปโหลดวิดีโอสูตรล้มเหลว: ${result.error}`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (result.url) uploadedRecipeVideos.push(result.url);
       }
 
-      if (uploadedVideos.length > 0) {
-        payload.videos = uploadedVideos;
+      if (uploadedRecipeVideos.length > 0) {
+        payload.videos = uploadedRecipeVideos;
       }
 
       // ข้อมูลเฉพาะร้านค้า (Store)
       if (postAs === "store") {
+        const storeImages: string[] = [];
+        for (const media of shopIngredientImages) {
+          const result = await uploadFile(media.file);
+          if (result.error) {
+            setSubmitError(`อัปโหลดรูปร้านค้าล้มเหลว: ${result.error}`);
+            setIsSubmitting(false);
+            return;
+          }
+          if (result.url) storeImages.push(result.url);
+        }
+
+        const storeVideos: string[] = [];
+        if (shopIngredientVideo) {
+          const result = await uploadFile(shopIngredientVideo.file);
+          if (result.error) {
+            setSubmitError(`อัปโหลดวิดีโอร้านค้าล้มเหลว: ${result.error}`);
+            setIsSubmitting(false);
+            return;
+          }
+          if (result.url) storeVideos.push(result.url);
+        }
+
         payload.store = {
-          storeName: shopName,
+          storeName: shopName.trim(),
           sellingPrice: parseFloat(sellingPrice) || 0,
-          storeDescription: shopDescription,
-          storeLocation: shopLocation,
+          storeDescription: shopDescription.trim(),
+          storeLocation: shopLocation.trim(),
+          storeImages,
+          storeVideos,
         };
       }
 
@@ -618,15 +683,15 @@ export default function CreateRecipePage() {
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("API Error Response:", errText);
-        alert("เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง");
+        const data = await response.json().catch(() => ({}));
+        console.error("API Error Response:", data);
+        setSubmitError(data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาตรวจสอบและลองใหม่อีกครั้ง");
+        setIsSubmitting(false);
         return;
       }
 
       const result = await response.json();
       console.log("Success:", result);
-      alert("บันทึกและเผยแพร่สูตรอาหารสำเร็จ!");
       
       if (result.data?.id) {
         router.push(`/recipe/${result.data.id}`);
@@ -636,7 +701,7 @@ export default function CreateRecipePage() {
       
     } catch (error) {
       console.error("Error submitting recipe:", error);
-      alert("เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง");
+      setSubmitError("เกิดข้อผิดพลาดในการอัปโหลด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSubmitting(false);
     }
@@ -700,32 +765,46 @@ export default function CreateRecipePage() {
 
               <div className="pl-11 flex flex-col gap-5">
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-5">
-                  <div>
-                    <label htmlFor="shop-name-input" className="block text-gray-700 text-lg mb-2 font-semibold">ชื่อร้านค้า</label>
+                  <div id="form-field-shopName">
+                    <label htmlFor="shop-name-input" className="block text-gray-700 text-lg mb-2 font-semibold">
+                      ชื่อร้านค้า <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="shop-name-input"
                       type="text"
                       placeholder="เช่น ครัวคุณยาย เชียงราย"
                       value={shopName}
                       onChange={(e) => setShopName(e.target.value)}
-                      className="w-full py-3 px-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
+                      className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
+                        missingFields.includes("shopName")
+                          ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                          : "border-[#71B254] focus:ring-[#71B254]"
+                      }`}
                     />
                   </div>
-                  <div>
-                    <label htmlFor="shop-price-input" className="block text-gray-700 text-lg mb-2 font-semibold">ราคาขาย (บาท)</label>
+                  <div id="form-field-sellingPrice">
+                    <label htmlFor="shop-price-input" className="block text-gray-700 text-lg mb-2 font-semibold">
+                      ราคาขาย (บาท) <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="shop-price-input"
                       type="text"
                       placeholder="เช่น 65"
                       value={sellingPrice}
                       onChange={(e) => setSellingPrice(e.target.value)}
-                      className="w-full py-3 px-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
+                      className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
+                        missingFields.includes("sellingPrice")
+                          ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                          : "border-[#71B254] focus:ring-[#71B254]"
+                      }`}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="shop-desc-textarea" className="block text-gray-700 text-lg mb-2 font-semibold">คำอธิบาย (สำหรับเซ็ตขาย)</label>
+                <div id="form-field-shopDescription">
+                  <label htmlFor="shop-desc-textarea" className="block text-gray-700 text-lg mb-2 font-semibold">
+                    คำอธิบาย (สำหรับเซ็ตขาย) <span className="text-red-500">*</span>
+                  </label>
                   <textarea
                     id="shop-desc-textarea"
                     rows={3}
@@ -733,29 +812,43 @@ export default function CreateRecipePage() {
                     value={shopDescription}
                     onChange={(e) => setShopDescription(e.target.value)}
                     maxLength={300}
-                    className="w-full py-3 px-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed"
+                    className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed ${
+                      missingFields.includes("shopDescription")
+                        ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                        : "border-[#71B254] focus:ring-[#71B254]"
+                    }`}
                   />
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-5">
                   <div className="flex flex-col w-full md:w-[60%] gap-5">
-                    <div>
+                    <div id="form-field-shopIngredientImages">
                       <div className="flex justify-between items-end mb-2">
-                        <label className="block text-gray-600 text-sm font-semibold">รูปภาพวัตถุดิบ</label>
+                        <label className="block text-gray-600 text-sm font-semibold">
+                          รูปภาพวัตถุดิบ <span className="text-red-500">* (อย่างน้อย 1 รูป)</span>
+                        </label>
                         <span className="text-xs font-bold text-gray-400">{shopIngredientImages.length}/4 รูป</span>
                       </div>
 
                       <input id="shop-image-file-input" type="file" accept="image/png, image/jpeg" multiple className="hidden" ref={shopImageInputRef} onChange={handleShopImageUpload} />
 
                       {shopIngredientImages.length === 0 ? (
-                        <div id="upload-shop-image-trigger" onClick={() => shopImageInputRef.current?.click()} className="h-[235px] w-full border border-dashed border-[#71B254] rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center">
-                          <svg className="mb-2 text-[#7FA9A0]" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <div 
+                          id="upload-shop-image-trigger" 
+                          onClick={() => shopImageInputRef.current?.click()} 
+                          className={`h-[235px] w-full border border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center ${
+                            missingFields.includes("shopIngredientImages")
+                              ? "border-red-500 bg-red-50/20"
+                              : "border-[#71B254]"
+                          }`}
+                        >
+                          <svg className={`mb-2 ${missingFields.includes("shopIngredientImages") ? "text-red-500" : "text-[#7FA9A0]"}`} width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                           </svg>
                           <span className="font-bold text-gray-800 text-[12px]">อัปโหลดรูปวัตถุดิบ</span>
-                          <span className="text-gray-400 text-[10px]">รองรับไฟล์ PNG, JPG (สูงสุด 4 รูป)</span>
+                          <span className="text-gray-400 text-[10px]">รองรับไฟล์ PNG, JPG (จำเป็นอย่างน้อย 1 รูป)</span>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -816,8 +909,10 @@ export default function CreateRecipePage() {
                       )}
                     </div>
 
-                    <div>
-                      <label className="block text-gray-600 text-sm font-semibold mb-2">วิดีโอวัตถุดิบ</label>
+                    <div id="form-field-shopIngredientVideo">
+                      <label className="block text-gray-600 text-sm font-semibold mb-2">
+                        วิดีโอวัตถุดิบ <span className="text-gray-400 font-normal">(ไม่บังคับ)</span>
+                      </label>
                       <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
@@ -829,19 +924,26 @@ export default function CreateRecipePage() {
                           </div>
                         </div>
                       ) : (
-                        <div id="upload-shop-video-trigger" onClick={() => shopVideoInputRef.current?.click()} className="h-[235px] w-full border border-dashed border-[#71B254] rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center">
+                        <div 
+                          id="upload-shop-video-trigger" 
+                          onClick={() => shopVideoInputRef.current?.click()} 
+                          className="h-[235px] w-full border border-dashed border-[#71B254] rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center"
+                        >
                           <svg className="mb-2 text-[#7FA9A0]" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                             <path d="M23 7a2 2 0 0 0-2.45-1.45L16 7V5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2l4.55 1.45A2 2 0 0 0 23 17V7z"></path>
                           </svg>
                           <span className="font-bold text-gray-800 text-[12px]">อัปโหลดวิดีโอวัตถุดิบ</span>
+                          <span className="text-gray-400 text-[10px]">รองรับ MP4, MOV (ไม่บังคับ)</span>
                         </div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex flex-col w-full md:w-[40%] gap-5">
-                    <div>
-                      <label htmlFor="shop-location-input" className="block text-gray-700 text-lg mb-2 font-semibold">ที่ตั้งร้าน</label>
+                    <div id="form-field-shopLocation">
+                      <label htmlFor="shop-location-input" className="block text-gray-700 text-lg mb-2 font-semibold">
+                        ที่ตั้งร้าน <span className="text-red-500">*</span>
+                      </label>
                       <div className="flex gap-2">
                         <input
                           id="shop-location-input"
@@ -855,7 +957,11 @@ export default function CreateRecipePage() {
                               handleSearchLocation();
                             }
                           }}
-                          className="w-full py-3 px-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
+                          className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
+                            missingFields.includes("shopLocation")
+                              ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                              : "border-[#71B254] focus:ring-[#71B254]"
+                          }`}
                         />
                         <button
                           type="button"
@@ -891,13 +997,17 @@ export default function CreateRecipePage() {
               
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">1</div>
+                  <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">
+                    {postAs === "store" ? "2" : "1"}
+                  </div>
                   <h2 className="text-2xl font-bold text-gray-800">ข้อมูลพื้นฐาน</h2>
                 </div>
 
                 <div className="flex flex-col gap-5 pl-11">
-                  <div>
-                    <label htmlFor="recipe-title-input" className="block text-gray-700 text-lg mb-2 font-semibold">ชื่อเมนูอาหาร</label>
+                  <div id="form-field-title">
+                    <label htmlFor="recipe-title-input" className="block text-gray-700 text-lg mb-2 font-semibold">
+                      ชื่อเมนูอาหาร <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <input 
                         id="recipe-title-input"
@@ -906,7 +1016,11 @@ export default function CreateRecipePage() {
                         value={title} 
                         onChange={(e) => setTitle(e.target.value)} 
                         maxLength={100}
-                        className="w-full py-3 px-4 pr-20 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
+                        className={`w-full py-3 px-4 pr-20 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
+                          missingFields.includes("title") 
+                            ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" 
+                            : "border-[#71B254] focus:ring-[#71B254]"
+                        }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
                         {title.length}/100
@@ -914,8 +1028,10 @@ export default function CreateRecipePage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label htmlFor="recipe-desc-textarea" className="block text-gray-700 text-lg mb-2 font-semibold">คำอธิบาย</label>
+                  <div id="form-field-description">
+                    <label htmlFor="recipe-desc-textarea" className="block text-gray-700 text-lg mb-2 font-semibold">
+                      คำอธิบาย <span className="text-red-500">*</span>
+                    </label>
                     <div className="relative">
                       <textarea 
                         id="recipe-desc-textarea"
@@ -924,7 +1040,11 @@ export default function CreateRecipePage() {
                         value={description} 
                         onChange={(e) => setDescription(e.target.value)} 
                         maxLength={300}
-                        className="w-full py-3 px-4 pr-20 pb-8 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed"
+                        className={`w-full py-3 px-4 pr-20 pb-8 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed ${
+                          missingFields.includes("description") 
+                            ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" 
+                            : "border-[#71B254] focus:ring-[#71B254]"
+                        }`}
                       />
                       <span className="absolute right-4 bottom-4 text-gray-400 text-sm">
                         {description.length}/300
@@ -936,7 +1056,9 @@ export default function CreateRecipePage() {
 
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">3</div>
+                  <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">
+                    {postAs === "store" ? "3" : "2"}
+                  </div>
                   <h2 className="text-2xl font-bold text-gray-800">วัตถุดิบ และ อุปกรณ์</h2>
                 </div>
 
@@ -1053,8 +1175,10 @@ export default function CreateRecipePage() {
                   )}
 
                   {(postAs === "user" || recipeSourceMode === "manual" || pickedRecipe) && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">วัตถุดิบ</h3>
+                  <div id="form-field-ingredients">
+                    <h3 className="text-lg font-semibold text-gray-700 mb-3 border-b pb-2">
+                      วัตถุดิบ <span className="text-red-500">* (อย่างน้อย 1 รายการ กรอกครบทุกช่อง)</span>
+                    </h3>
                     <div className="hidden sm:flex gap-2 mb-2 text-sm font-bold text-gray-500 tracking-wider pl-1">
                       <div className="w-[150px]">หมวดหมู่</div>
                       <div className="w-[80px] text-center">ปริมาณ</div>
@@ -1064,11 +1188,12 @@ export default function CreateRecipePage() {
 
                     <div className="flex flex-col gap-3">
                       {ingredients.map((ing) => {
-                        // 🌟 ระบบค้นหาสำหรับ Autocomplete โดยดึงข้อมูลจาก Database
                         const selectedCatData = dbCategoriesData.find(c => c.id === ing.category);
                         const suggestions = selectedCatData && ing.name.trim() !== ""
                           ? selectedCatData.ingredients.filter(i => i.toLowerCase().includes(ing.name.toLowerCase().trim()))
                           : [];
+
+                        const isIngMissing = missingFields.includes("ingredients") && (!ing.name.trim() || !ing.quantity || !ing.unit.trim());
 
                         return (
                           <div key={ing.id} className="flex flex-wrap items-center gap-2">
@@ -1077,11 +1202,15 @@ export default function CreateRecipePage() {
                                 id={`ingredient-category-${ing.id}`}
                                 value={ing.category}
                                 onChange={(e) => handleIngredientChange(ing.id, "category", e.target.value)}
-                                className="w-full py-2 pl-3 pr-8 border border-[#71B254] rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 bg-white cursor-pointer shadow-inner text-sm"
+                                className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
+                                  isIngMissing ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                                }`}
                               >
-                                <option value="" disabled hidden>หมวดหมู่...</option>
-                                {dbCategoriesData.filter(c => c.id !== "Kitchen Tools").map(cat => (
-                                  <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
+                                <option value="" disabled hidden>เลือกหมวดหมู่...</option>
+                                {dbCategoriesData.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {cat.emoji} {cat.name}
+                                  </option>
                                 ))}
                               </select>
                               <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
@@ -1095,7 +1224,9 @@ export default function CreateRecipePage() {
                               placeholder="เช่น 2, 0.5" 
                               value={ing.quantity} 
                               onChange={(e) => handleIngredientChange(ing.id, "quantity", e.target.value)}
-                              className="w-full sm:w-[80px] py-2 px-2 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-300 bg-white text-center shadow-inner text-sm"
+                              className={`w-full sm:w-[80px] py-2 px-2 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-300 bg-white text-center shadow-inner text-sm ${
+                                isIngMissing ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                              }`}
                             />
 
                           <div className="relative w-full sm:w-[160px]">
@@ -1103,7 +1234,11 @@ export default function CreateRecipePage() {
                               id={`ingredient-unit-${ing.id}`}
                               value={ing.unit}
                               onChange={(e) => handleIngredientChange(ing.id, "unit", e.target.value)}
-                              className="w-full py-2 pl-3 pr-8 border border-[#71B254] rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 bg-white cursor-pointer shadow-inner text-sm"
+                              className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
+                                isIngMissing && !ing.unit.trim()
+                                  ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                                  : "border-[#71B254] focus:ring-[#71B254]"
+                              }`}
                             >
                               <option value="" disabled hidden>เลือกหน่วย...</option>
                               <option value="g">กรัม (g)</option>
@@ -1127,7 +1262,6 @@ export default function CreateRecipePage() {
                             </div>
                           </div>
 
-                          {/* 🌟 ช่องกรอกชื่อวัตถุดิบพร้อมระบบ Autocomplete (จาก PR #27) */}
                           <div className="relative w-full sm:w-[190px]">
                             <input 
                               id={`ingredient-name-${ing.id}`}
@@ -1141,10 +1275,13 @@ export default function CreateRecipePage() {
                                 handleIngredientNameBlur(ing.category, ing.name);
                               }}
                               autoComplete="off"
-                              className="w-full py-2 px-3 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm"
+                              className={`w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm ${
+                                isIngMissing && !ing.name.trim()
+                                  ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                                  : "border-[#71B254] focus:ring-[#71B254]"
+                              }`}
                             />
                             
-                            {/* Dropdown แสดงผลการค้นหาวัตถุดิบ */}
                             {focusedIngredientId === ing.id && ing.category && ing.name.trim() !== "" && (
                               <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#71B254] rounded-md shadow-lg max-h-48 overflow-y-auto z-50 scrollbar-thin">
                                 {suggestions.length > 0 ? (
@@ -1185,11 +1322,6 @@ export default function CreateRecipePage() {
                       <button type="button" id="add-ingredient-btn" onClick={addIngredient} className="w-fit mt-2 px-4 py-2 border border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] transition text-sm flex items-center gap-1 shrink-0 bg-white">
                         <span>+</span> เพิ่มวัตถุดิบ
                       </button>
-                      <datalist id="existing-ingredients-list">
-                        {existingIngredients.map(ingredient => (
-                          <option key={ingredient.id} value={ingredient.name} />
-                        ))}
-                      </datalist>
                     </div>
                   </div>
                   )}
@@ -1222,7 +1354,6 @@ export default function CreateRecipePage() {
                       </button>
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -1230,20 +1361,20 @@ export default function CreateRecipePage() {
             <div className="lg:col-span-1 flex flex-col gap-6">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">2</div>
                   <h2 className="text-2xl font-bold text-gray-800">รูปภาพและวิดีโอ</h2>
                 </div>
 
                 <div className="pl-11 flex flex-col gap-6">
-                  
-                  <div>
+                  <div id="form-field-coverImages">
                     <div className="flex justify-between items-end mb-2">
-                      <label className="block text-gray-600 text-sm font-semibold">รูปภาพหน้าปก</label>
+                      <label className="block text-gray-600 text-sm font-semibold">
+                        รูปภาพหน้าปก <span className="text-red-500">* (อย่างน้อย 1 รูป)</span>
+                      </label>
                       <span className="text-xs font-bold text-gray-400">{coverImages.length}/4 รูป</span>
                     </div>
                     
                     <input 
-                      id="cover-image-file-input"
+                      id="recipe-image-file-input"
                       type="file" 
                       accept="image/png, image/jpeg" 
                       multiple 
@@ -1253,8 +1384,16 @@ export default function CreateRecipePage() {
                     />
                     
                     {coverImages.length === 0 ? (
-                      <div id="upload-cover-image-trigger" onClick={() => fileInputRef.current?.click()} className="h-[200px] w-full border border-[#71B254] rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center shadow-sm">
-                        <svg className="mb-2 text-[#7FA9A0]" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <div 
+                        id="upload-cover-image-trigger" 
+                        onClick={() => fileInputRef.current?.click()} 
+                        className={`h-[200px] w-full border border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-[#F4FAF1] transition bg-white p-4 text-center shadow-sm ${
+                          missingFields.includes("coverImages") 
+                            ? "border-red-500 bg-red-50/20" 
+                            : "border-[#71B254]"
+                        }`}
+                      >
+                        <svg className={`mb-2 ${missingFields.includes("coverImages") ? "text-red-500" : "text-[#7FA9A0]"}`} width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                           <polyline points="17 8 12 3 7 8"></polyline>
                           <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -1362,10 +1501,14 @@ export default function CreateRecipePage() {
 
           </div>
 
-          <div className="mb-8 relative z-20">
+          <div className="mb-8 relative z-20" id="form-field-instructions">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">4</div>
-              <h2 className="text-2xl font-bold text-gray-800">ขั้นตอนการทำ</h2>
+              <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">
+                {postAs === "store" ? "4" : "3"}
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">
+                ขั้นตอนการทำ <span className="text-red-500">*</span>
+              </h2>
             </div>
 
             <div className="pl-11">
@@ -1375,7 +1518,11 @@ export default function CreateRecipePage() {
                 placeholder="อธิบายขั้นตอนการทำอาหารของคุณ... (เช่น 1. หั่นผักเตรียมไว้ 2. ตั้งกระทะให้ร้อน...)" 
                 value={instructions} 
                 onChange={(e) => setInstructions(e.target.value)}
-                className="w-full py-4 px-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 resize-none leading-relaxed bg-white shadow-inner"
+                className={`w-full py-4 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none leading-relaxed bg-white shadow-inner ${
+                  missingFields.includes("instructions")
+                    ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                    : "border-[#71B254] focus:ring-[#71B254]"
+                }`}
               />
             </div>
           </div>
@@ -1447,7 +1594,17 @@ export default function CreateRecipePage() {
                 บันทึกฉบับร่าง
               </button>
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 flex flex-col gap-2">
+              {submitError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium flex items-start gap-2 shadow-sm animate-fade-in">
+                  <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2"></line>
+                  </svg>
+                  <span>{submitError}</span>
+                </div>
+              )}
               <button 
                 type="button" 
                 id="publish-recipe-btn" 

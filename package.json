@@ -8,6 +8,7 @@
     "test": "jest --ci",
     "start": "next start",
     "lint": "eslint",
+    "clean:users": "node -r dotenv/config -r ts-node/register scripts/clean-users.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -4,7 +4,7 @@ import {
   validateVideoFile,
   validateImageSignature,
   generateStoragePath,
-  uploadAvatar,
+  uploadFileToBucket,
   getPublicUrl,
 } from '@/lib/storage'
 import { NextResponse } from 'next/server'
@@ -52,14 +52,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 })
     }
 
-    // Reuse the avatar upload function since it uploads to the user's folder in the avatars bucket
-    const uploadResult = await uploadAvatar(supabase, file, path)
+    // Upload recipe media (images/videos) to 'recipes' bucket
+    const uploadResult = await uploadFileToBucket(supabase, file, path, 'recipes')
     if (uploadResult.error) {
-      console.error('Storage upload error:', uploadResult.error)
-      return NextResponse.json({ error: 'Failed to upload image. Please try again' }, { status: 502 })
+      console.error('Storage upload error detail:', uploadResult.error)
+      return NextResponse.json({ error: `Storage error: ${uploadResult.error}` }, { status: 502 })
     }
 
-    const publicUrl = getPublicUrl(supabase, path)
+    const publicUrl = getPublicUrl(supabase, path, 'recipes')
     return NextResponse.json({ url: publicUrl })
   } catch (e) {
     console.error('POST /api/recipes/upload error:', e)

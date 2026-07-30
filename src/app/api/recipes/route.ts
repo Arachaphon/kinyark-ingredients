@@ -111,12 +111,23 @@ export async function POST(request: Request) {
             },
           }),
           ...(store && {
-            store: {
+            storePosts: {
               create: {
+                userId: user.id,
                 storeName: store.storeName,
                 sellingPrice: store.sellingPrice,
                 storeDescription: store.storeDescription,
                 storeLocation: store.storeLocation,
+                ...(store.storeImages && store.storeImages.length > 0 && {
+                  images: {
+                    create: store.storeImages.map((url) => ({ imageUrl: url })),
+                  },
+                }),
+                ...(store.storeVideos && store.storeVideos.length > 0 && {
+                  videos: {
+                    create: store.storeVideos.map((url) => ({ videoUrl: url })),
+                  },
+                }),
               },
             },
           }),
@@ -132,7 +143,14 @@ export async function POST(request: Request) {
           }),
         },
         include: {
-          store: true,
+          storePosts: {
+            include: {
+              images: true,
+              videos: true,
+            },
+          },
+          images: true,
+          videos: true,
         },
       });
     }, {
