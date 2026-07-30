@@ -1,17 +1,31 @@
-const mockSupabaseAuth = {
-  getUser: jest.fn(),
-  signInWithPassword: jest.fn(),
-  updateUser: jest.fn(),
-}
-jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
-}))
-
-const mockPrisma = { user: { findUnique: jest.fn(), update: jest.fn() } }
-jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
-
 import { GET, PATCH } from '@/app/api/users/me/route'
 import { FULL_PROFILE_SELECT } from '@/lib/profile'
+
+// ประกาศ Mock Functions
+const mockGetUser = jest.fn()
+const mockSignInWithPassword = jest.fn()
+const mockUpdateUser = jest.fn()
+const mockFindUnique = jest.fn()
+const mockUpdate = jest.fn()
+
+jest.mock('@/lib/supabase/server', () => ({
+  createClient: jest.fn(() => ({
+    auth: {
+      getUser: (...args: unknown[]) => mockGetUser(...args),
+      signInWithPassword: (...args: unknown[]) => mockSignInWithPassword(...args),
+      updateUser: (...args: unknown[]) => mockUpdateUser(...args),
+    },
+  })),
+}))
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: (...args: unknown[]) => mockFindUnique(...args),
+      update: (...args: unknown[]) => mockUpdate(...args),
+    },
+  },
+}))
 
 const mockProfile = {
   id: '550e8400-e29b-41d4-a716-446655440000',
@@ -41,11 +55,11 @@ describe('GET /api/users/me', () => {
   })
 
   test('returns 200 with full profile when authenticated', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await GET()
     const body = await res.json()
@@ -55,11 +69,11 @@ describe('GET /api/users/me', () => {
   })
 
   test('does not leak password or sensitive fields', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await GET()
     const body = await res.json()
@@ -72,7 +86,7 @@ describe('GET /api/users/me', () => {
   })
 
   test('returns 401 when not authenticated', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     })
@@ -85,7 +99,7 @@ describe('GET /api/users/me', () => {
   })
 
   test('returns 401 when getUser returns an error but no user', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Token expired'),
     })
@@ -98,11 +112,11 @@ describe('GET /api/users/me', () => {
   })
 
   test('returns 404 when DB record is missing', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(null)
+    mockFindUnique.mockResolvedValue(null)
 
     const res = await GET()
     const body = await res.json()
@@ -112,7 +126,7 @@ describe('GET /api/users/me', () => {
   })
 
   test('returns 500 on internal server error', async () => {
-    mockSupabaseAuth.getUser.mockRejectedValue(new Error('DB connection failed'))
+    mockGetUser.mockRejectedValue(new Error('DB connection failed'))
 
     const res = await GET()
     const body = await res.json()
@@ -122,15 +136,15 @@ describe('GET /api/users/me', () => {
   })
 
   test('passes FULL_PROFILE_SELECT through to Prisma', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     await GET()
 
-    expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
+    expect(mockFindUnique).toHaveBeenCalledWith({
       where: { id: mockSupabaseUser.id },
       select: FULL_PROFILE_SELECT,
     })
@@ -143,7 +157,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 401 when not authenticated', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: null },
       error: null,
     })
@@ -156,7 +170,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 for malformed JSON', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -174,7 +188,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 when username is too short', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -187,7 +201,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 when username is too long', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -200,7 +214,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 for invalid email', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -213,7 +227,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 for invalid avatarUrl', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -226,7 +240,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 for empty request body', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -239,7 +253,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 when only currentPassword is provided', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -252,7 +266,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 when newPassword is provided without currentPassword', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -265,11 +279,11 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 400 for incorrect current password', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+    mockSignInWithPassword.mockResolvedValue({
       data: { user: null },
       error: new Error('Invalid login credentials'),
     })
@@ -285,11 +299,11 @@ describe('PATCH /api/users/me', () => {
 
   test('returns 200 when updating username only', async () => {
     const updatedProfile = { ...mockProfile, username: 'newusername' }
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.update.mockResolvedValue(updatedProfile)
+    mockUpdate.mockResolvedValue(updatedProfile)
 
     const res = await PATCH(createPatchRequest({ username: 'newusername' }))
     const body = await res.json()
@@ -301,12 +315,12 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 200 when requesting email update', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(createPatchRequest({ email: 'newemail@example.com' }))
     const body = await res.json()
@@ -316,12 +330,12 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('email response reports emailChangePending: true', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(createPatchRequest({ email: 'pending@example.com' }))
     const body = await res.json()
@@ -330,13 +344,13 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('returns 200 when updating password with valid current password', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(
       createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
@@ -349,11 +363,11 @@ describe('PATCH /api/users/me', () => {
 
   test('returns 200 when updating avatarUrl', async () => {
     const updatedProfile = { ...mockProfile, avatarUrl: 'https://example.com/avatar.jpg' }
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.update.mockResolvedValue(updatedProfile)
+    mockUpdate.mockResolvedValue(updatedProfile)
 
     const res = await PATCH(
       createPatchRequest({ avatarUrl: 'https://example.com/avatar.jpg' })
@@ -366,11 +380,11 @@ describe('PATCH /api/users/me', () => {
 
   test('returns 200 when setting avatarUrl to null', async () => {
     const updatedProfile = { ...mockProfile, avatarUrl: null }
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.update.mockResolvedValue(updatedProfile)
+    mockUpdate.mockResolvedValue(updatedProfile)
 
     const res = await PATCH(
       createPatchRequest({ avatarUrl: null })
@@ -382,13 +396,13 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('password fields are never passed to Prisma', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     await PATCH(
       createPatchRequest({
@@ -398,7 +412,7 @@ describe('PATCH /api/users/me', () => {
       })
     )
 
-    const updateCall = mockPrisma.user.update.mock.calls[0]
+    const updateCall = mockUpdate.mock.calls[0]
     if (updateCall) {
       const data = updateCall[0].data
       expect(data).not.toHaveProperty('currentPassword')
@@ -407,25 +421,25 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('email is not passed to Prisma before confirmation', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     await PATCH(createPatchRequest({ email: 'newemail@example.com' }))
 
-    expect(mockPrisma.user.update).not.toHaveBeenCalled()
-    expect(mockPrisma.user.findUnique).toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(mockFindUnique).toHaveBeenCalled()
   })
 
   test('unknown request body fields never reach Prisma', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.update.mockResolvedValue(mockProfile)
+    mockUpdate.mockResolvedValue(mockProfile)
 
     await PATCH(
       createPatchRequest({
@@ -435,8 +449,8 @@ describe('PATCH /api/users/me', () => {
       })
     )
 
-    expect(mockPrisma.user.update).toHaveBeenCalled()
-    const updateCall = mockPrisma.user.update.mock.calls[0]
+    expect(mockUpdate).toHaveBeenCalled()
+    const updateCall = mockUpdate.mock.calls[0]
     const data = updateCall[0].data
     expect(data).not.toHaveProperty('role')
     expect(data).not.toHaveProperty('someUnknownField')
@@ -444,40 +458,40 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('Prisma update is not called for password-only updates', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     await PATCH(
       createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
     )
 
-    expect(mockPrisma.user.update).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   test('Prisma update is not called for email-only updates', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     await PATCH(createPatchRequest({ email: 'new@example.com' }))
 
-    expect(mockPrisma.user.update).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   test('updateUser({ password }) is not called when password verification fails', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+    mockSignInWithPassword.mockResolvedValue({
       data: { user: null },
       error: new Error('Invalid login credentials'),
     })
@@ -486,15 +500,15 @@ describe('PATCH /api/users/me', () => {
       createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'wrong' })
     )
 
-    expect(mockSupabaseAuth.updateUser).not.toHaveBeenCalled()
+    expect(mockUpdateUser).not.toHaveBeenCalled()
   })
 
   test('email update is not called after password update fails', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+    mockSignInWithPassword.mockResolvedValue({
       data: { user: null },
       error: new Error('Invalid login credentials'),
     })
@@ -507,16 +521,16 @@ describe('PATCH /api/users/me', () => {
       })
     )
 
-    expect(mockSupabaseAuth.updateUser).not.toHaveBeenCalled()
+    expect(mockUpdateUser).not.toHaveBeenCalled()
   })
 
   test('Prisma update is not called after an earlier Supabase operation fails', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Password update failed'),
     })
@@ -529,17 +543,17 @@ describe('PATCH /api/users/me', () => {
       })
     )
 
-    expect(mockPrisma.user.update).not.toHaveBeenCalled()
+    expect(mockUpdate).not.toHaveBeenCalled()
   })
 
   test('sensitive password values are not returned in successful responses', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(
       createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
@@ -555,13 +569,13 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('confirmPassword omitted — backward compatible (200)', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(
       createPatchRequest({ newPassword: 'NewPass1!', currentPassword: 'OldPass1!' })
@@ -573,13 +587,13 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('confirmPassword matches newPassword (200)', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await PATCH(
       createPatchRequest({
@@ -595,7 +609,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('confirmPassword does not match newPassword (400)', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -614,7 +628,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('newPassword equals currentPassword (400)', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
@@ -629,12 +643,12 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('Supabase updateUser fails for password (400)', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockSupabaseAuth.signInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
-    mockSupabaseAuth.updateUser.mockResolvedValue({
+    mockSignInWithPassword.mockResolvedValue({ data: { user: mockSupabaseUser }, error: null })
+    mockUpdateUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Password update failed'),
     })
@@ -649,7 +663,7 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('unexpected error returns 500', async () => {
-    mockSupabaseAuth.getUser.mockRejectedValue(new Error('Unexpected crash'))
+    mockGetUser.mockRejectedValue(new Error('Unexpected crash'))
 
     const res = await PATCH(createPatchRequest({ username: 'test' }))
     const body = await res.json()
@@ -659,11 +673,11 @@ describe('PATCH /api/users/me', () => {
   })
 
   test('existing GET tests continue to pass alongside PATCH', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
+    mockGetUser.mockResolvedValue({
       data: { user: mockSupabaseUser },
       error: null,
     })
-    mockPrisma.user.findUnique.mockResolvedValue(mockProfile)
+    mockFindUnique.mockResolvedValue(mockProfile)
 
     const res = await GET()
     const body = await res.json()
