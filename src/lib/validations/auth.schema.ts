@@ -31,7 +31,7 @@ export const updateProfileSchema = z
   .object({
     username: z.string().min(2, 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษร').max(30, 'ชื่อผู้ใช้ยาวเกินไป').optional(),
     email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง').trim().toLowerCase().optional(),
-    avatarUrl: z.string().url('รูปแบบ URL ไม่ถูกต้อง').nullable().optional(),
+    avatarUrl: z.union([z.string().url('รูปแบบ URL ไม่ถูกต้อง'), z.literal('')]).nullable().optional(),
     currentPassword: z.string().optional(),
     newPassword: passwordSchema.optional(),
     confirmPassword: z.string().optional(),
@@ -51,7 +51,8 @@ export const updateProfileSchema = z
       })
     }
 
-    if (data.newPassword && !data.currentPassword) {
+    // กรณีเปลี่ยน Password แล้วไม่กรอก Current Password
+    if (data.newPassword && (!data.currentPassword || data.currentPassword.trim() === '')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'กรุณากรอกรหัสผ่านปัจจุบัน',
@@ -59,10 +60,11 @@ export const updateProfileSchema = z
       })
     }
 
-    if (data.newPassword && data.currentPassword === '') {
+    // กรณีเปลี่ยน Email แล้วไม่กรอก Current Password (ถ้า Business Logic บังคับ)
+    if (data.email && (!data.currentPassword || data.currentPassword.trim() === '')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'กรุณากรอกรหัสผ่านปัจจุบัน',
+        message: 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อเปลี่ยนอีเมล',
         path: ['currentPassword'],
       })
     }
