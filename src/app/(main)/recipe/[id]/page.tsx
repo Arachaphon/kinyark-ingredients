@@ -13,7 +13,6 @@ const anuphan = Anuphan({
 
 // =========================================
 // 🍱 ข้อมูลจำลองสำหรับดูโพสต์ (Mock Data)
-// อัปเดตฟิลด์ images เป็น array รองรับ 4 รูปภาพ
 // =========================================
 const mockRecipeData = {
   title: "มีตโลฟแมคแอนด์ชีส",
@@ -26,6 +25,7 @@ const mockRecipeData = {
     "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80",
     "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=600&q=80",
   ],
+  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // URL ตัวอย่างวิดีโอ
   rating: 3.0,
   ingredients: [
     "ไข่ 2 ฟอง",
@@ -88,8 +88,19 @@ export default function ViewRecipePage() {
 
   const router = useRouter();
   const [isCommentOpen, setIsCommentOpen] = useState(false);
-  // State สำหรับจัดการการเลือกรูปภาพ (เริ่มต้นที่รูปแรก index 0)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const handlePrevImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? mockRecipeData.images.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextImage = () => {
+    setSelectedImageIndex((prev) =>
+      prev === mockRecipeData.images.length - 1 ? 0 : prev + 1
+    );
+  };
 
   const renderStars = (rating: number) => {
     return (
@@ -163,17 +174,80 @@ export default function ViewRecipePage() {
           </button>
 
           <div className="flex flex-col md:flex-row gap-10 mt-14 md:mt-6">
-            {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ 4 รูป */}
+            {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ + จุดไข่ปลา + ปุ่มเลื่อนรูป */}
             <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
               {/* รูปภาพหลัก */}
-              <div className="w-full h-[320px] relative">
+              <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
                 <img
                   src={mockRecipeData.images[selectedImageIndex]}
                   alt={mockRecipeData.title}
-                  className="w-full h-full object-cover rounded-3xl shadow-md transition-all duration-300"
+                  className="w-full h-full object-cover transition-all duration-300"
                 />
-                {/* Badge แสดงจำนวนรูป เช่น 1/4 */}
-                <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+
+                {/* ปุ่มลูกศรซ้าย */}
+                {mockRecipeData.images.length > 1 && (
+                  <button
+                    onClick={handlePrevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
+                    aria-label="Previous Image"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                )}
+
+                {/* ปุ่มลูกศรขวา */}
+                {mockRecipeData.images.length > 1 && (
+                  <button
+                    onClick={handleNextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
+                    aria-label="Next Image"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                )}
+
+                {/* จุดไข่ปลา (Pagination Dots) */}
+                {mockRecipeData.images.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm z-10">
+                    {mockRecipeData.images.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`h-2 transition-all rounded-full ${
+                          idx === selectedImageIndex
+                            ? "w-6 bg-[#71B254]"
+                            : "w-2 bg-white/70 hover:bg-white"
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Badge แสดงจำนวนรูป เช่น 1 / 4 */}
+                <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
                   {selectedImageIndex + 1} / {mockRecipeData.images.length}
                 </span>
               </div>
@@ -259,6 +333,7 @@ export default function ViewRecipePage() {
             </div>
           </div>
 
+          {/* ส่วนผสม และ วิธีทำ */}
           <div className="mt-12 space-y-8">
             <div>
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
@@ -289,8 +364,29 @@ export default function ViewRecipePage() {
               </div>
             </div>
           </div>
+
+          {/* 🎬 ส่วนแสดงผล Video Player (ย้ายมาไว้ข้างล่างสุด) */}
+          {mockRecipeData.videoUrl && (
+            <div className="mt-10">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
+                📹 วิดีโอสอนทำอาหาร
+              </h3>
+              <div className="border border-[#71B254] rounded-md p-4 bg-white">
+                <div className="relative w-full aspect-video rounded-md overflow-hidden bg-black">
+                  <iframe
+                    src={mockRecipeData.videoUrl}
+                    title="Recipe Video"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* ส่วนความคิดเห็น */}
         {isCommentOpen && (
           <div className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top">
             <h2 className="text-2xl font-bold text-[#71B254] mb-8">

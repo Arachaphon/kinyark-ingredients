@@ -12,7 +12,6 @@ const anuphan = Anuphan({
 
 // =========================================
 // 🍱 ข้อมูลจำลองสำหรับหน้า Feed รวมโพสต์ (Mock Data)
-// อัปเดตฟิลด์ images เป็น array รองรับ 4 รูปภาพ
 // =========================================
 const mockFeedPosts = [
   {
@@ -132,7 +131,6 @@ const mockFeedPosts = [
 
 export default function PostsFeedPage() {
   const [openComments, setOpenComments] = useState<Record<number, boolean>>({});
-  // เก็บ State สำหรับเลือกดูรูปภาพของแต่ละโพสต์ (default index = 0)
   const [activeImageIndex, setActiveImageIndex] = useState<Record<number, number>>({});
 
   const toggleComments = (postId: number) => {
@@ -147,6 +145,28 @@ export default function PostsFeedPage() {
       ...prev,
       [postId]: index,
     }));
+  };
+
+  // เลื่อนรูปถอยหลังของโพสต์นั้นๆ
+  const handlePrevImage = (postId: number, totalImages: number) => {
+    setActiveImageIndex((prev) => {
+      const currentIdx = prev[postId] || 0;
+      return {
+        ...prev,
+        [postId]: currentIdx === 0 ? totalImages - 1 : currentIdx - 1,
+      };
+    });
+  };
+
+  // เลื่อนรูปไปข้างหน้าของโพสต์นั้นๆ
+  const handleNextImage = (postId: number, totalImages: number) => {
+    setActiveImageIndex((prev) => {
+      const currentIdx = prev[postId] || 0;
+      return {
+        ...prev,
+        [postId]: currentIdx === totalImages - 1 ? 0 : currentIdx + 1,
+      };
+    });
   };
 
   const renderStars = (rating: number) => {
@@ -202,7 +222,6 @@ export default function PostsFeedPage() {
 
       <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-8">
         {mockFeedPosts.map((post) => {
-          // ดึง Index รูปภาพปัจจุบันของโพสต์นี้ (ถ้ายังไม่เคยเลือกให้แสดงรูปแรก index 0)
           const currentImgIdx = activeImageIndex[post.id] || 0;
 
           return (
@@ -210,17 +229,80 @@ export default function PostsFeedPage() {
               <div className="bg-white border border-[#71B254] rounded-sm p-8 shadow-sm mb-4">
                 <div className="flex flex-col md:flex-row gap-10">
                   
-                  {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ 4 รูป */}
+                  {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ + ปุ่มเลื่อน + จุดไข่ปลา */}
                   <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
                     {/* รูปภาพหลัก */}
-                    <div className="w-full h-[320px] relative">
+                    <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
                       <img
                         src={post.images[currentImgIdx]}
                         alt={post.title}
-                        className="w-full h-full object-cover rounded-3xl shadow-md transition-all duration-300"
+                        className="w-full h-full object-cover transition-all duration-300"
                       />
+
+                      {/* ปุ่มลูกศรซ้าย */}
+                      {post.images.length > 1 && (
+                        <button
+                          onClick={() => handlePrevImage(post.id, post.images.length)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
+                          aria-label="Previous Image"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* ปุ่มลูกศรขวา */}
+                      {post.images.length > 1 && (
+                        <button
+                          onClick={() => handleNextImage(post.id, post.images.length)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
+                          aria-label="Next Image"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* 🔴 จุดไข่ปลา (Pagination Dots) ด้านล่างตรงกลางรูปภาพ */}
+                      {post.images.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm z-10">
+                          {post.images.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSelectImage(post.id, idx)}
+                              className={`h-2 transition-all rounded-full ${
+                                idx === currentImgIdx
+                                  ? "w-6 bg-[#71B254]"
+                                  : "w-2 bg-white/70 hover:bg-white"
+                              }`}
+                              aria-label={`Go to slide ${idx + 1}`}
+                            />
+                          ))}
+                        </div>
+                      )}
+
                       {/* Badge แสดงจำนวนรูป */}
-                      <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
                         {currentImgIdx + 1} / {post.images.length}
                       </span>
                     </div>
@@ -338,7 +420,7 @@ export default function PostsFeedPage() {
                     </div>
                   </div>
 
-                  {/* 🎥 วิดีโอสอนทำอาหาร */}
+                  {/* 🎥 วิดีโอสอนทำอาหาร (ตำแหน่งด้านล่างสุด) */}
                   {post.videoUrl && (
                     <div>
                       <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
