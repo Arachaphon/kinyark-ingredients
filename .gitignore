@@ -1,5 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
+summary.adoc
 # dependencies
 /node_modules
 /.pnp
@@ -50,3 +50,8 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 opencode.json
+
+# Agent settings and sounds
+.agents/
+.claude/
+sounds/

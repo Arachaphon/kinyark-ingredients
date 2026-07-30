@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
@@ -117,8 +118,8 @@ export default function HomePage() {
       <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
         
         {/* โลโก้ขนาดใหญ่ */}
-        <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300">
-          <img src="/photo/logo.png" alt="Kin Yark" className="w-full h-full object-contain" />
+        <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300 relative">
+          <Image src="/photo/logo.png" alt="Kin Yark" fill className="object-contain" />
         </div>
 
         {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
@@ -158,9 +159,17 @@ export default function HomePage() {
             <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" />
             <CategoryCard emoji="🥗" text="ผลไม้" />
             <CategoryCard emoji="🦞" text="อาหารทะเล" />
+            <CategoryCard emoji="🥦" text="ผัก" />
+            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" />
+            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" />
+            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" />
+            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" />
+            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" />
+            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" />
+            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" />
             <div className="col-span-2 flex justify-center mt-2">
               <div className="w-[210px]">
-                <CategoryCard emoji="🥦" text="ผัก" />
+                <CategoryCard emoji="📦" text="อื่นๆ" />
               </div>
             </div>
           </div>
@@ -183,7 +192,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-            <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&get=80" alt="Salad" className="w-full h-full object-cover rounded-full border-[12px] border-white shadow-xl" />
+            <Image src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
           </div>
         </div>
       </main>
@@ -303,10 +312,12 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
     <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <img
+        <Image
           src={image}
           alt={title}
-          className="w-full h-full object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
+          fill
+          className="object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
+          sizes="160px"
         />
       </div>
 

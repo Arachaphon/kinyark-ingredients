@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validations/auth.schema";
@@ -68,6 +67,7 @@ export async function signup(
     return { message: "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองอีกครั้ง", success: false };
   }
 
+  await supabase.auth.signOut();
   revalidatePath("/", "layout");
   return { success: true };
 }

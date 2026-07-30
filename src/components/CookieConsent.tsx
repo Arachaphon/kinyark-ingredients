@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 // 🌟 นำฟอนต์ Anuphan เข้ามาใช้งานตามรูปตัวอย่างที่ต้องการ โดยไม่แตะต้องส่วนอื่นเลย
 import { Anuphan } from "next/font/google";
 

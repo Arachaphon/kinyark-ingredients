@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
@@ -158,11 +159,13 @@ export default function MyRecipePage() {
                   key={recipe.id}
                   className="flex flex-col md:flex-row items-center gap-6 p-4 border border-gray-200 rounded-xl bg-white hover:shadow-md transition-shadow"
                 >
-                  <div className="w-full md:w-36 h-36 flex-shrink-0">
-                    <img
+                  <div className="w-full md:w-36 h-36 flex-shrink-0 relative">
+                    <Image
                       src={recipe.image}
                       alt={recipe.title}
-                      className="w-full h-full object-cover rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
+                      sizes="144px"
                     />
                   </div>
 

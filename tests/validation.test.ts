@@ -6,7 +6,6 @@
 
 import { createRecipeSchema } from "@/lib/validations/recipe.schema";
 import {
-  ingredientSchema,
   ingredientIdSchema,
 } from "@/lib/validations/ingredient.schema";
 import { createReviewSchema } from "@/lib/validations/review.schema";

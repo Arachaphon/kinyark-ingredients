@@ -23,5 +23,68 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'กรุณากรอกรหัสผ่าน'),
 })
 
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, 'กรุณากรอกรหัสผ่านเพื่อยืนยันการลบบัญชี'),
+})
+
+export const updateProfileSchema = z
+  .object({
+    username: z.string().min(2, 'ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 2 ตัวอักษร').max(30, 'ชื่อผู้ใช้ยาวเกินไป').optional(),
+    email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง').trim().toLowerCase().optional(),
+    avatarUrl: z.string().url('รูปแบบ URL ไม่ถูกต้อง').nullable().optional(),
+    currentPassword: z.string().optional(),
+    newPassword: passwordSchema.optional(),
+    confirmPassword: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const hasUpdateField =
+      data.username !== undefined ||
+      data.email !== undefined ||
+      data.avatarUrl !== undefined ||
+      data.newPassword !== undefined
+
+    if (!hasUpdateField) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'ไม่มีข้อมูลที่จะอัปเดต',
+        path: [],
+      })
+    }
+
+    if (data.newPassword && !data.currentPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'กรุณากรอกรหัสผ่านปัจจุบัน',
+        path: ['currentPassword'],
+      })
+    }
+
+    if (data.newPassword && data.currentPassword === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'กรุณากรอกรหัสผ่านปัจจุบัน',
+        path: ['currentPassword'],
+      })
+    }
+
+    if (data.confirmPassword && data.newPassword && data.confirmPassword !== data.newPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน',
+        path: ['confirmPassword'],
+      })
+    }
+
+    if (data.newPassword && data.currentPassword && data.newPassword === data.currentPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'รหัสผ่านใหม่ต้องไม่เหมือนรหัสผ่านปัจจุบัน',
+        path: ['newPassword'],
+      })
+    }
+  })
+
 export type RegisterInput = z.infer<typeof registerSchema>
 export type LoginInput = z.infer<typeof loginSchema>
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>

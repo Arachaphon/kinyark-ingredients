@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -51,11 +51,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect root to home if authenticated, else login
+  // Redirect root to home if authenticated, else allow access to landing page
   if (pathname === '/') {
-    const url = request.nextUrl.clone()
-    url.pathname = user ? '/home' : '/login'
-    return NextResponse.redirect(url)
+    if (user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/home'
+      return NextResponse.redirect(url)
+    }
+    return supabaseResponse
   }
 
   return supabaseResponse

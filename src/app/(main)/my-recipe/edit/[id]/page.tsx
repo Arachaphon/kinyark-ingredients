@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -12,31 +12,29 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
-export default function EditRecipePage() {
-  const params = useParams();
-  const recipeId = params.id;
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [ingredients, setIngredients] = useState([""]);
-  const [coverImage, setCoverImage] = useState<string | null>(null);
+function EditRecipeForm({ recipeId }: { recipeId: string }) {
+  // TODO: Replace mock data with real API fetch (with loading/error state) when backend is ready
+  const [title, setTitle] = useState(
+    recipeId ? "สลัดซีซาร์การ์เดน (แก้ไขแล้ว)" : ""
+  );
+  const [description, setDescription] = useState(
+    recipeId ? "นี่คือคำอธิบายที่อัปเดตแล้วสำหรับสูตรสลัดนี้" : ""
+  );
+  const [instructions, setInstructions] = useState(
+    recipeId
+      ? "ขั้นตอนที่ 1: ล้างผักให้สะอาด...\nขั้นตอนที่ 2: หั่นให้ละเอียด..."
+      : ""
+  );
+  const [ingredients, setIngredients] = useState(
+    recipeId ? ["มะเขือเทศ", "หอมหัวใหญ่หวาน", "พริกไทย"] : [""]
+  );
+  const [coverImage, setCoverImage] = useState<string | null>(
+    recipeId
+      ? "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+      : null
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (recipeId) {
-      console.log(`Fetching data for Recipe ID: ${recipeId}`);
-
-      setTitle("สลัดซีซาร์การ์เดน (แก้ไขแล้ว)");
-      setDescription("นี่คือคำอธิบายที่อัปเดตแล้วสำหรับสูตรสลัดนี้");
-      setIngredients(["มะเขือเทศ", "หอมหัวใหญ่หวาน", "พริกไทย"]);
-      setInstructions("ขั้นตอนที่ 1: ล้างผักให้สะอาด...\nขั้นตอนที่ 2: หั่นให้ละเอียด...");
-      setCoverImage(
-        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
-      );
-    }
-  }, [recipeId]);
 
   const handleIngredientChange = (index: number, value: string) => {
     const newIngredients = [...ingredients];
@@ -211,6 +209,7 @@ export default function EditRecipePage() {
                 />
                 {coverImage ? (
                   <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- blob URL, next/image not supported */}
                     <img
                       src={coverImage}
                       alt="Cover Preview"
@@ -297,4 +296,10 @@ export default function EditRecipePage() {
       </main>
     </div>
   );
+}
+
+export default function EditRecipePage() {
+  const params = useParams();
+  const recipeId = params.id as string;
+  return <EditRecipeForm key={recipeId} recipeId={recipeId} />;
 }
