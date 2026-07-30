@@ -6,6 +6,36 @@ jest.mock('@/lib/supabase/server', () => ({
 const mockPrisma = { user: { findUnique: jest.fn() } }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
+// Mock lib/profile ให้เรียกใช้ logic หรือ mockPrisma จริงๆ ในไฟล์เทส
+jest.mock('@/lib/profile', () => {
+  const actualProfile = jest.requireActual('@/lib/profile')
+  return {
+    ...actualProfile,
+    getProfile: jest.fn().mockImplementation(async (select) => {
+      const { createClient } = require('@/lib/supabase/server')
+      const { prisma } = require('@/lib/prisma')
+
+      const supabase = await createClient()
+      const { data, error } = await supabase.auth.getUser()
+
+      if (error || !data?.user) {
+        return { user: null, error: 'Unauthorized', status: 401 }
+      }
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: data.user.id },
+        select,
+      })
+
+      if (!dbUser) {
+        return { user: null, error: 'Not found', status: 404 }
+      }
+
+      return { user: dbUser, error: null, status: 200 }
+    }),
+  }
+})
+
 import { GET } from '@/app/api/auth/me/route'
 import { AUTH_PROFILE_SELECT } from '@/lib/profile'
 

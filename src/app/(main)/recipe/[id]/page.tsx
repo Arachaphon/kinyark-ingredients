@@ -176,7 +176,7 @@ export default function ViewRecipePage() {
             <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
               {/* รูปภาพหลัก */}
               <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
-                <Image
+                <img
                   src={mockRecipeData.images[selectedImageIndex]}
                   alt={mockRecipeData.title}
                   className="w-full h-full object-cover transition-all duration-300"
@@ -262,7 +262,7 @@ export default function ViewRecipePage() {
                         : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <Image
+                    <img
                       src={img}
                       alt={`รูปที่ ${idx + 1}`}
                       className="w-full h-full object-cover"
@@ -279,7 +279,7 @@ export default function ViewRecipePage() {
               </h1>
 
               <div className="flex items-center gap-3">
-                <Image
+                <img
                   src={mockRecipeData.authorAvatar}
                   alt="ผู้เขียน"
                   width={32}
@@ -399,7 +399,7 @@ export default function ViewRecipePage() {
                   key={comment.id}
                   className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}
                 >
-                  <Image
+                  <img
                     src={comment.avatar}
                     alt={comment.name}
                     width={40}
@@ -423,7 +423,7 @@ export default function ViewRecipePage() {
             </div>
 
             <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
-              <Image
+              <img
                 src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80"
                 alt="โปรไฟล์ของฉัน"
                 width={40}

@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";  
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import { Anuphan } from "next/font/google";
@@ -233,7 +232,7 @@ export default function PostsFeedPage() {
                   <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
                     {/* รูปภาพหลัก */}
                     <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
-                      <Image  
+                      <img
                         src={post.images[currentImgIdx]}
                         alt={post.title}
                         className="w-full h-full object-cover transition-all duration-300"
@@ -319,7 +318,7 @@ export default function PostsFeedPage() {
                               : "border-transparent opacity-60 hover:opacity-100"
                           }`}
                         >
-                          <Image  
+                          <img  
                             src={img}
                             alt={`รูปที่ ${idx + 1}`}
                             className="w-full h-full object-cover"
@@ -336,7 +335,7 @@ export default function PostsFeedPage() {
                     </h1>
 
                     <div className="flex items-center gap-3">
-                      <Image
+                      <img
                         src={post.authorAvatar}
                         alt="ผู้เขียน"
                         className="w-8 h-8 rounded-full object-cover"
@@ -452,7 +451,7 @@ export default function PostsFeedPage() {
                         key={comment.id}
                         className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}
                       >
-                        <Image
+                        <img
                           src={comment.avatar}
                           alt={comment.name}
                           className="w-10 h-10 rounded-full object-cover shrink-0"
@@ -474,7 +473,7 @@ export default function PostsFeedPage() {
                   </div>
 
                   <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
-                    <Image
+                    <img
                       src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80"
                       alt="โปรไฟล์ของฉัน"
                       className="w-10 h-10 rounded-full object-cover shrink-0 mt-1"
