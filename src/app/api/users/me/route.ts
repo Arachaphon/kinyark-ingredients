@@ -8,47 +8,6 @@ import { deleteAvatar } from "@/lib/storage"
 
 
 export async function GET() {
-<<<<<<< HEAD
-
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
-
-
-
-  const profile = await prisma.user.findUnique({
-
-    where: { id: user.id },
-
-    select: {
-
-      id: true,
-
-      username: true,
-
-      email: true,
-
-      avatarUrl: true,
-
-      role: true,
-
-      createdAt: true,
-
-    },
-
-  })
-
-
-
-  if (!profile) return Response.json({ error: "Not found" }, { status: 404 })
-
-
-
-  return Response.json({ data: profile })
-
-=======
   try {
     const { user, error, status } = await getProfile(FULL_PROFILE_SELECT)
 
@@ -61,73 +20,11 @@ export async function GET() {
     console.error("GET /api/users/me error:", e)
     return Response.json({ error: "Internal Server Error" }, { status: 500 })
   }
->>>>>>> f9b633fd3e2c386a797235c9baeb203d18aa15be
 }
 
 
 
 export async function PATCH(request: Request) {
-<<<<<<< HEAD
-
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
-
-
-
-  const body = await request.json()
-
-  const allowed = ["username", "avatarUrl"]
-
-
-
-  const updateData: Record<string, string> = {}
-
-  for (const key of allowed) {
-
-    if (body[key] !== undefined) {
-
-      updateData[key] = body[key]
-
-    }
-
-  }
-
-
-
-  if (Object.keys(updateData).length === 0) {
-
-    return Response.json({ error: "No valid fields to update" }, { status: 400 })
-
-  }
-
-
-
-  try {
-
-    const updated = await prisma.user.update({
-
-      where: { id: user.id },
-
-      data: updateData,
-
-      select: {
-
-        id: true,
-
-        username: true,
-
-        email: true,
-
-        avatarUrl: true,
-
-        role: true,
-
-        createdAt: true,
-
-=======
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -226,27 +123,12 @@ export async function PATCH(request: Request) {
         user: updatedUser,
         passwordUpdated,
         emailChangePending,
->>>>>>> f9b633fd3e2c386a797235c9baeb203d18aa15be
       },
 
     })
-<<<<<<< HEAD
-
-
-
-    return Response.json({ data: updated })
-
-  } catch (error) {
-
-    console.error("Error updating profile:", error)
-
-    return Response.json({ error: "Internal server error" }, { status: 500 })
-
-=======
   } catch (e) {
     console.error("PATCH /api/users/me error:", e)
     return Response.json({ error: "Internal Server Error" }, { status: 500 })
->>>>>>> f9b633fd3e2c386a797235c9baeb203d18aa15be
   }
 
 }
@@ -348,13 +230,7 @@ export async function DELETE() {
   } catch (error) {
 
     console.error("Error deleting account:", error)
-<<<<<<< HEAD
-
-    return Response.json({ error: "Internal server error" }, { status: 500 })
-
-=======
     return Response.json({ error: "Internal Server Error" }, { status: 500 })
->>>>>>> f9b633fd3e2c386a797235c9baeb203d18aa15be
   }
 
 } 
