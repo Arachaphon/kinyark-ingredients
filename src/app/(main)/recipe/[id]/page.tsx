@@ -176,7 +176,7 @@ export default function ViewRecipePage() {
             <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
               {/* รูปภาพหลัก */}
               <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
-                <img
+                <Image
                   src={mockRecipeData.images[selectedImageIndex]}
                   alt={mockRecipeData.title}
                   className="w-full h-full object-cover transition-all duration-300"
@@ -262,7 +262,7 @@ export default function ViewRecipePage() {
                         : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img
+                    <Image
                       src={img}
                       alt={`รูปที่ ${idx + 1}`}
                       className="w-full h-full object-cover"
