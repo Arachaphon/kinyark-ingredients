@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,7 @@ export async function GET(request: Request) {
     const category = searchParams.get("category")
     const id = searchParams.get("id")
 
-    const where: any = {}
+    const where: Prisma.IngredientWhereInput = {}
     if (id) {
       where.id = Number(id)
     }
