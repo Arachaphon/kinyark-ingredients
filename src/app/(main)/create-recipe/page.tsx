@@ -404,6 +404,7 @@ export default function CreateRecipePage() {
   const handleShopVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setShopIngredientVideo({ file, previewUrl: URL.createObjectURL(file) });
+    if (shopVideoInputRef.current) shopVideoInputRef.current.value = "";
   };
 
   const filteredSystemRecipes = (() => {
@@ -527,6 +528,7 @@ export default function CreateRecipePage() {
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setVideoFile({ file, previewUrl: URL.createObjectURL(file) });
+    if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
   const [missingFields, setMissingFields] = useState<string[]>([]);
