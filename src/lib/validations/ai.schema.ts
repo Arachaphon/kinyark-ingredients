@@ -13,13 +13,17 @@ export const userContextSchema = z.object({
   searchHistory: z.array(z.string()).optional(),
 });
 
+export const aiProviderSchema = z.enum(["gemini", "groq"]).default("gemini");
+
 export const generateMenuRequestSchema = z.object({
   ingredients: z.array(ingredientInputSchema).min(1, "ต้องมีวัตถุดิบอย่างน้อย 1 อย่าง"),
   userContext: userContextSchema.optional(),
+  provider: aiProviderSchema.optional(), // 👈 เพิ่มใหม่
 });
 
 export type IngredientInput = z.infer<typeof ingredientInputSchema>;
 export type UserContext = z.infer<typeof userContextSchema>;
+export type AiProvider = z.infer<typeof aiProviderSchema>;
 export type GenerateMenuRequest = z.infer<typeof generateMenuRequestSchema>;
 
 // ----- Response -----

@@ -1,25 +1,44 @@
 import { NextResponse } from "next/server";
-import { generateRecipeFromIngredients } from "@/lib/ai/generate-recipe";
-import { generateMenuRequestSchema } from "@/lib/validations/ai.schema";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const parsed = generateMenuRequestSchema.safeParse(body);
+    const { ingredients } = await req.json();
 
-    if (!parsed.success) {
+    if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
       return NextResponse.json(
-        { error: "ข้อมูลที่ส่งมาไม่ถูกต้อง", details: parsed.error.flatten() },
+        { error: "กรุณาระบุวัตถุดิบอย่างน้อย 1 ชนิด" },
         { status: 400 }
       );
     }
 
-    const result = await generateRecipeFromIngredients(parsed.data);
-    return NextResponse.json({ data: result }, { status: 200 });
-  } catch (err) {
-    console.error(err);
+    const ingredientsStr = ingredients.join(", ");
+
+    const generatedRecipes = [
+      {
+        id: `ai-gemini-${Date.now()}-1`,
+        recipeName: `เมนูสร้างสรรค์จาก ${ingredientsStr}`,
+        aiProvider: "Gemini",
+        isAi: true,
+        rating: 4.8,
+        likes: 65,
+        tags: ingredients,
+      },
+      {
+        id: `ai-deepseek-${Date.now()}-2`,
+        recipeName: `ผัดกลมกล่อม ${ingredientsStr}`,
+        aiProvider: "Deep Seek",
+        isAi: true,
+        rating: 4.5,
+        likes: 52,
+        tags: ingredients,
+      },
+    ];
+
+    return NextResponse.json(generatedRecipes);
+  } catch (error) {
+    console.error("AI Generate Error:", error);
     return NextResponse.json(
-      { error: "เกิดข้อผิดพลาดในการสร้างเมนูอาหาร" },
+      { error: "Failed to generate recipes" },
       { status: 500 }
     );
   }
