@@ -22,6 +22,7 @@ jest.mock("@/lib/prisma", () => ({
 
 const mockSupabaseAuth = {
   signUp: jest.fn(),
+  signOut: jest.fn(),
 };
 jest.mock("@/lib/supabase/server", () => ({
   createClient: jest.fn(() => ({

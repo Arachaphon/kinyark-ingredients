@@ -1,23 +1,16 @@
-import { createClient } from '@/lib/supabase/server';
-import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { getProfile, AUTH_PROFILE_SELECT } from '@/lib/profile'
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, error, status } = await getProfile(AUTH_PROFILE_SELECT)
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error) {
+      return Response.json({ error }, { status: status || 400 })
     }
 
-    const dbUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-      select: { id: true, username: true, email: true, avatarUrl: true }
-    });
-
-    return NextResponse.json({ user: dbUser || { email: user.email } });
-  } catch {
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return Response.json({ user })
+  } catch (e: unknown) {
+    console.error('GET /api/auth/me error:', e)
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }

@@ -55,22 +55,27 @@ export default function Navbar() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    
-    const fetchUser = async () => {
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/auth/me', { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           setUserProfile(data.user);
         }
       } catch (error) {
-        console.error("Failed to fetch user", error);
+        if (!controller.signal.aborted) {
+          console.error("Failed to fetch user", error);
+        }
       }
     };
-    fetchUser();
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    void load();
+    return () => controller.abort();
+  }, [isSettingOpen]);
 
   const handleSearchSubmit = (term: string) => {
     if (!term.trim()) return;
@@ -123,6 +128,7 @@ export default function Navbar() {
         {/* ช่องค้นหา */}
         <div className="w-full relative" ref={dropdownRef}>
           <input
+            id="search-recipe" // 👈 เพิ่ม ID ตรงนี้
             type="text"
             placeholder="ค้นหา..."
             value={searchTerm}
