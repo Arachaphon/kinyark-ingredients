@@ -30,7 +30,9 @@ test.describe('Profile E2E', () => {
 
     await page.locator('div[class*="3AC9B5"]').click();
 
-    await expect(page.getByText(testUsername)).toBeVisible({ timeout: 5000 });
+    // รอจนกว่า fallback "User" (ตอนยังโหลด profile ไม่เสร็จ) หายไป ก่อน assert ข้อมูลจริง
+    await expect(page.getByRole('heading', { name: 'User' })).toHaveCount(0, { timeout: 15000 });
+    await expect(page.getByText(testUsername)).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(testEmail)).toBeVisible();
 
     const logoutButton = page.getByRole('button', { name: /ออกจากระบบ|Logout/i });
