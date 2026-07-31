@@ -21,37 +21,26 @@ model User {
   favorites        Favorite[]
   searchHistories SearchHistory[]
   reviewLikes     ReviewLike[]
+  storePosts      StorePost[]
 
   @@map("users")
 }
 
 model Category {
   id   Int    @id @default(autoincrement())
-  name String
+  name String @unique
 
-  subCategories SubCategory[]
+  ingredients Ingredient[]
 
   @@map("categories")
 }
 
-model SubCategory {
-  id          Int    @id @default(autoincrement())
-  categoryId Int
-  name        String
-
-  category    Category     @relation(fields: [categoryId], references: [id])
-  ingredients Ingredient[]
-
-  @@map("sub_categories")
-}
-
 model Ingredient {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
-  subCategoryId  Int?
-  
+  id         Int    @id @default(autoincrement())
+  name       String @unique
+  categoryId Int?
 
-  subCategory       SubCategory?       @relation(fields: [subCategoryId], references: [id])
+  category          Category?          @relation(fields: [categoryId], references: [id])
   recipeIngredients RecipeIngredient[]
 
   @@map("ingredients")
@@ -85,7 +74,47 @@ model Recipe {
   images             RecipeImage[]
   videos             RecipeVideo[]
 
+  storePosts         StorePost[]
+
   @@map("recipes")
+}
+
+model StorePost {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @db.Uuid
+  recipeId         String   @db.Uuid
+  storeName        String
+  sellingPrice     Float
+  storeDescription String?
+  storeLocation    String?
+  createdAt        DateTime @default(now()) @db.Timestamptz
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe           Recipe            @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  images           StorePostImage[]
+  videos           StorePostVideo[]
+
+  @@map("store_posts")
+}
+
+model StorePostImage {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storePostId String    @db.Uuid
+  imageUrl    String
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  storePost   StorePost @relation(fields: [storePostId], references: [id], onDelete: Cascade)
+
+  @@map("store_post_images")
+}
+
+model StorePostVideo {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storePostId String    @db.Uuid
+  videoUrl    String
+  createdAt   DateTime  @default(now()) @db.Timestamptz
+  storePost   StorePost @relation(fields: [storePostId], references: [id], onDelete: Cascade)
+
+  @@map("store_post_videos")
 }
 
 model RecipeIngredient {
