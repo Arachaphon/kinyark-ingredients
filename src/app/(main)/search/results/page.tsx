@@ -3,8 +3,43 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
+
+// =========================================
+// 📐 Interfaces
+// =========================================
+interface RecipeItem {
+  id: string;
+  title: string;
+  image: string;
+  tags: string[];
+  author: string;
+  authorAvatar: string;
+  likes: number;
+  rating: number;
+  initialFavorite: boolean;
+  isAi: boolean;
+}
+
+interface ApiRecipeItem {
+  id: string;
+  aiProvider?: string;
+  isAi?: boolean;
+  recipeName?: string;
+  title?: string;
+  images?: { imageUrl: string }[];
+  image?: string;
+  recipeIngredients?: { ingredient?: { name: string } }[];
+  tags?: string[];
+  user?: { username?: string; avatarUrl?: string };
+  author?: string;
+  authorAvatar?: string;
+  favoriteCount?: number;
+  likes?: number;
+  rating?: number;
+}
 
 // =========================================
 // 🔤 ตั้งค่าฟอนต์ Anuphan
@@ -19,7 +54,6 @@ const anuphan = Anuphan({
 // 🎨 ฟังก์ชันดึงรูปภาพ API อัตโนมัติสำหรับ AI
 // =========================================
 const getAiImageUrl = (recipeName: string) => {
-  // ใช้บริการสร้างรูปภาพ AI อัตโนมัติฟรี (เปลี่ยนเป็น API หลังบ้านของคุณได้เลย)
   const prompt = `${recipeName} delicious food photography realistic`;
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
 };
@@ -27,7 +61,7 @@ const getAiImageUrl = (recipeName: string) => {
 // =========================================
 // 🍱 ข้อมูลจำลองเมนู (Mock Data)
 // =========================================
-const mockSearchResults = [
+const mockSearchResults: RecipeItem[] = [
   {
     id: "mock-1",
     title: "สลัดซีซาร์สวนผัก",
@@ -93,7 +127,7 @@ const mockSearchResults = [
 // =========================================
 // 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
 // =========================================
-const formatAndSortResults = (dataList: any[]) => {
+const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
   const aiRecipes = dataList.filter((item) => item.isAi);
   const userRecipes = dataList.filter((item) => !item.isAi);
 
@@ -111,8 +145,16 @@ function ResultsContent() {
   const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
 
   const [isLoading, setIsLoading] = useState(true);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<RecipeItem[]>([]);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+  const setupFavorites = (dataArray: RecipeItem[]) => {
+    const initialFavs = dataArray.reduce(
+      (acc, current) => ({ ...acc, [current.id]: current.initialFavorite || false }),
+      {}
+    );
+    setFavorites(initialFavs);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -126,21 +168,26 @@ function ResultsContent() {
           throw new Error("Failed to fetch real data");
         }
 
-        const data = await response.json();
+        const data: ApiRecipeItem[] = await response.json();
 
         if (data && data.length > 0) {
-          const formattedData = data.map((item: any) => {
+          const formattedData: RecipeItem[] = data.map((item) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
-            const recipeTitle = item.recipeName || item.title;
+            const recipeTitle = item.recipeName || item.title || "";
 
             const finalImage = item.images?.[0]?.imageUrl || item.image || 
                                (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
+
+            const mappedTags = item.recipeIngredients
+              ?.map((ri) => ri.ingredient?.name)
+              .filter((name): name is string => Boolean(name))
+              .slice(0, 5) || item.tags || [];
 
             return {
               id: item.id,
               title: recipeTitle,
               image: finalImage,
-              tags: item.recipeIngredients?.map((ri: any) => ri.ingredient?.name).filter(Boolean).slice(0, 5) || item.tags || [],
+              tags: mappedTags,
               author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
               authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
               likes: item.favoriteCount || item.likes || 0,
@@ -184,14 +231,6 @@ function ResultsContent() {
       clearTimeout(timer);
     };
   }, [queryTitle]);
-
-  const setupFavorites = (dataArray: any[]) => {
-    const initialFavs = dataArray.reduce(
-      (acc, current) => ({ ...acc, [current.id]: current.initialFavorite || false }),
-      {}
-    );
-    setFavorites(initialFavs);
-  };
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -248,7 +287,7 @@ function ResultsContent() {
             <div className="text-7xl mb-4 opacity-50">🧐</div>
             <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
             <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ "{queryTitle}" ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
+              ระบบไม่พบสูตรอาหารสำหรับ &quot;{queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
             </p>
             <Link
               href="/search"
@@ -272,11 +311,12 @@ function ResultsContent() {
               >
                 {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
                 <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
-                  {/* 🚀 แก้ไขเป็นแท็ก img ธรรมดาตามที่ต้องการ และจัดการขนาดด้วย h-full w-full แทน */}
-                  <img
+                  <Image
                     src={recipe.image}
                     alt={recipe.title}
-                    className="w-full h-full object-cover rounded-lg"
+                    fill
+                    unoptimized
+                    className="object-cover rounded-lg"
                   />
                 </div>
 
@@ -303,12 +343,13 @@ function ResultsContent() {
 
                   {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
                   <div className="flex items-center gap-3 mt-4 md:mt-0">
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0">
-                      {/* รูป Avatar ก็เป็น img ธรรมดาเช่นกัน */}
-                      <img
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0 relative">
+                      <Image
                         src={recipe.authorAvatar}
                         alt={recipe.author}
-                        className="w-full h-full object-cover"
+                        fill
+                        unoptimized
+                        className="object-cover"
                       />
                     </div>
                     <span className="font-bold text-gray-800 text-sm truncate">
