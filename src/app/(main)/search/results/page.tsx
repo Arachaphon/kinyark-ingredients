@@ -27,7 +27,8 @@ interface ApiRecipeItem {
   title?: string;
   images?: { imageUrl: string }[];
   image?: string;
-  recipeIngredients?: { ingredient?: { name: string } }[];
+  recipeIngredients?: any[]; // ปรับให้ยืดหยุ่นขึ้นเผื่อ API ส่งมาหลายแบบ
+  ingredients?: string[]; 
   tags?: string[];
   user?: { username?: string; avatarUrl?: string };
   author?: string;
@@ -43,7 +44,7 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
-// ✅ คลังรูปภาพอาหารไทยสำรองแบบหลากหลาย (ใช้กรณี Pollinations AI โหลดไม่ได้)
+// ✅ คลังรูปภาพอาหารไทยสำรองแบบหลากหลาย
 const FALLBACK_FOOD_IMAGES = [
   "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=80",
   "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=600&q=80",
@@ -159,15 +160,32 @@ function ResultsContent() {
                 ? imageUrl
                 : getAiImageUrl(recipeTitle, index);
 
-            console.log("Recipe:", recipeTitle);
-            console.log("Image:", finalImage);
+            // 🟢 แก้ไขจุดนี้: กวาดข้อมูลวัตถุดิบจากทุกฟิลด์มารวมกัน เพื่อให้แสดงครบแน่นอน
+            let tempTags: string[] = [];
 
-            const mappedTags =
-              item.recipeIngredients
-                ?.map((ri) => ri.ingredient?.name)
-                .filter((name): name is string => Boolean(name)) ||
-              item.tags ||
-              queryTitle.split(",");
+            if (Array.isArray(item.recipeIngredients)) {
+              item.recipeIngredients.forEach((ri: any) => {
+                if (typeof ri === "string") tempTags.push(ri);
+                else if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
+                else if (ri?.name) tempTags.push(ri.name);
+              });
+            }
+
+            if (Array.isArray(item.ingredients)) {
+              tempTags = [...tempTags, ...item.ingredients];
+            }
+
+            if (Array.isArray(item.tags)) {
+              tempTags = [...tempTags, ...item.tags];
+            }
+
+            // ลบค่าซ้ำ และเอาเฉพาะข้อความที่ไม่ใช่ค่าว่าง
+            let mappedTags = Array.from(new Set(tempTags.filter(t => typeof t === "string" && t.trim() !== "")));
+
+            // ถ้าหาไม่ได้จากทุกที่เลย ค่อยใช้คำค้นหา
+            if (mappedTags.length === 0) {
+              mappedTags = queryTitle.split(",").map(t => t.trim());
+            }
 
             return {
               id: item.id || `recipe-${Math.random()}`,
@@ -199,13 +217,14 @@ function ResultsContent() {
         console.warn("Fallback dynamic recipes:", error);
         if (!isMounted) return;
 
-        const dynamicList = queryTitle.split(",");
+        const dynamicList = queryTitle.split(",").map(s => s.trim());
+        
         const fallbackData: RecipeItem[] = [
           {
             id: `user-fb-1`,
-            title: `ต้มยำ/แกง ${dynamicList.join(" และ ")} สูตรคุณแม่`,
-            image: getAiImageUrl(`แกง ${queryTitle}`, 0),
-            tags: dynamicList,
+            title: `แกงเขียวหวาน${dynamicList.join("และ")} รสกลมกล่อม (สูตรคุณแม่)`,
+            image: getAiImageUrl(`แกงเขียวหวาน ${queryTitle}`, 0),
+            tags: [...dynamicList, "พริกแกงเขียวหวาน", "กะทิ", "มะเขือพวง", "ใบโหระพา"],
             author: "Ratatouille_Cook",
             authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
             likes: 42,
@@ -215,9 +234,9 @@ function ResultsContent() {
           },
           {
             id: `ai-fb-1`,
-            title: `ผัด ${dynamicList.join(" ")} รสเด็ด`,
-            image: getAiImageUrl(`ผัด ${queryTitle}`, 1),
-            tags: dynamicList,
+            title: `ผัดกะเพรา ${dynamicList.join(" ")} รสเด็ด`,
+            image: getAiImageUrl(`ผัดกะเพรา ${queryTitle}`, 1),
+            tags: [...dynamicList, "ใบกะเพรา", "กระเทียม", "พริกสด", "น้ำมันหอย"],
             author: "Gemini AI",
             authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
             likes: 66,
@@ -227,9 +246,9 @@ function ResultsContent() {
           },
           {
             id: `ai-fb-2`,
-            title: `ผัด ${dynamicList.join(" ")} ซอสกลมกล่อม`,
-            image: getAiImageUrl(`ผัด ${queryTitle}`, 2),
-            tags: dynamicList,
+            title: `ต้มยำน้ำข้น ${dynamicList.join(" ")}`,
+            image: getAiImageUrl(`ต้มยำ ${queryTitle}`, 2),
+            tags: [...dynamicList, "ข่า", "ตะไคร้", "ใบมะกรูด", "พริกเผา", "นมสด"],
             author: "Deep Seek",
             authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80",
             likes: 52,
@@ -300,7 +319,7 @@ function ResultsContent() {
                 className={`flex flex-col md:flex-row gap-6 p-4 border ${cardBorderClass} rounded-xl bg-white hover:shadow-md transition-shadow relative`}
               >
                 <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative bg-gray-100 rounded-lg overflow-hidden">
-                <img
+                  <img
                     src={recipe.image || getRandomFallback()}
                     alt={recipe.title}
                     loading="lazy"
@@ -328,8 +347,9 @@ function ResultsContent() {
                       {recipe.isAi && <span className="text-lg" title="สร้างโดย AI">✨</span>}
                     </h3>
 
+                    {/* 🟢 Render แท็กวัตถุดิบทั้งหมดที่มี */}
                     <div className="flex flex-wrap gap-2">
-                      {recipe.tags &&
+                      {recipe.tags && recipe.tags.length > 0 ? (
                         recipe.tags.map((tag: string, idx: number) => (
                           <span
                             key={idx}
@@ -337,7 +357,10 @@ function ResultsContent() {
                           >
                             {tag}
                           </span>
-                        ))}
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-400">ไม่มีข้อมูลวัตถุดิบ</span>
+                      )}
                     </div>
                   </div>
 
