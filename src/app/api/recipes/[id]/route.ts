@@ -1,6 +1,84 @@
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { deleteFileByUrl } from "@/lib/storage"
+import { recipeIdParamSchema } from "@/lib/validations/recipe.schema"
+
+export const dynamic = "force-dynamic"
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const parsed = recipeIdParamSchema.safeParse({ id })
+
+    if (!parsed.success) {
+      return Response.json({ error: "Invalid recipe ID" }, { status: 400 })
+    }
+
+    const recipeId = parsed.data.id
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
+      include: {
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+        recipeIngredients: {
+          include: { ingredient: true },
+          orderBy: { ingredient: { name: "asc" } },
+        },
+        equipmentItems: { orderBy: { createdAt: "asc" } },
+        images: { orderBy: { createdAt: "asc" } },
+        videos: { orderBy: { createdAt: "asc" } },
+        reviews: {
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        storePosts: {
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+            images: { orderBy: { createdAt: "asc" } },
+            videos: { orderBy: { createdAt: "asc" } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    })
+
+    if (!recipe) {
+      return Response.json({ error: "Recipe not found" }, { status: 404 })
+    }
+
+    // Private recipes are only visible to their owner
+    if (recipe.visibility !== "public" && recipe.userId !== user?.id) {
+      return Response.json({ error: "Recipe not found" }, { status: 404 })
+    }
+
+    const favorite = user
+      ? await prisma.favorite.findUnique({
+          where: { userId_recipeId: { userId: user.id, recipeId } },
+        })
+      : null
+
+    return Response.json(
+      { data: { ...recipe, isFavorite: favorite !== null } },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error("GET /api/recipes/[id] error:", error)
+    return Response.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
 
 export async function DELETE(
   request: Request,

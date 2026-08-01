@@ -45,5 +45,23 @@ export const createRecipeSchema = z.object({
 
 export const updateRecipeSchema = createRecipeSchema.partial()
 
+// Validates query params for GET /api/recipes
+// ?mine=true (owner feed, all visibility) vs public feed (visibility = "public")
+export const recipeListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  mine: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
+})
+
+// Validates the :id path param for GET /api/recipes/[id]
+export const recipeIdParamSchema = z.object({
+  id: z.string().uuid("Invalid recipe ID"),
+})
+
+export type RecipeListQuery = z.infer<typeof recipeListQuerySchema>
+
 export type RecipeInput = z.infer<typeof createRecipeSchema>
 export type UpdateRecipeInput = z.infer<typeof updateRecipeSchema>

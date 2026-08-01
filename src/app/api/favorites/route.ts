@@ -54,6 +54,12 @@ export async function GET() {
       recipe: {
         include: {
           images: true,
+          user: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+          recipeIngredients: {
+            include: { ingredient: true },
+          },
         },
       },
     },

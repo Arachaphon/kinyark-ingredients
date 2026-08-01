@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { createClient } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 
 const prisma = new PrismaClient()
 
@@ -13,10 +14,39 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+async function listAllUsers() {
+  const all: User[] = []
+  let page = 1
+  let total = Infinity
+
+  while (all.length < total) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) {
+      console.error('Failed to list users:', error)
+      break
+    }
+    total = (data as { users: User[]; total?: number }).total ?? all.length
+    all.push(...data.users)
+    page += 1
+  }
+
+  return all
+}
+
 async function cleanupUser(userId: string, email: string) {
   console.log(`\n🧹 Starting cleanup for user: ${email} (${userId})`)
 
   try {
+    // 0. Delete user from Supabase Auth FIRST (hard delete)
+    const { error: deleteAuthErr } = await supabaseAdmin.auth.admin.deleteUser(userId, false)
+    if (deleteAuthErr) {
+      console.error(`  └─ ❌ Auth delete FAILED, skipping DB cleanup for this user: ${deleteAuthErr.message}`)
+      return false
+    }
+    console.log(`  └─ Deleted user from Supabase Auth!`)
+
     // 1. Fetch user avatar & recipes media files
     const userData = await prisma.user.findUnique({
       where: { id: userId },
@@ -84,28 +114,17 @@ async function cleanupUser(userId: string, email: string) {
       console.log(`  └─ Deleted ${filePaths.length} files from Storage Bucket (avatars)`)
     }
 
-    // 4. Delete user from Supabase Auth
-    const { error: deleteAuthErr } = await supabaseAdmin.auth.admin.deleteUser(userId)
-    if (deleteAuthErr) {
-      console.warn(`  └─ Auth delete warning: ${deleteAuthErr.message}`)
-    } else {
-      console.log(`  └─ Deleted user from Supabase Auth!`)
-    }
+    return true
   } catch (err) {
     console.error(`❌ Error cleaning up user ${email}:`, err)
+    return false
   }
 }
 
 async function main() {
   const arg = process.argv[2]
 
-  const { data: usersData, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-  if (error) {
-    console.error('Failed to list users:', error)
-    return
-  }
-
-  const allUsers = usersData.users
+  const allUsers = await listAllUsers()
 
   if (arg === '--list') {
     console.log(`📋 Found total ${allUsers.length} account(s) in Supabase Auth:`)
@@ -141,9 +160,13 @@ async function main() {
     console.log(`Found ${testUsers.length} test account(s):`)
     testUsers.forEach((u) => console.log(` - ${u.email}`))
 
+    let successCount = 0
     for (const user of testUsers) {
-      await cleanupUser(user.id, user.email || user.id)
+      const ok = await cleanupUser(user.id, user.email || user.id)
+      if (ok) successCount += 1
+      await sleep(200)
     }
+    console.log(`\n✅ Deleted ${successCount}/${testUsers.length} test account(s) successfully.`)
   } else if (arg) {
     // Single email cleanup
     const email = arg.trim().toLowerCase()

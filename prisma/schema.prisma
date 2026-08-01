@@ -172,10 +172,11 @@ recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 }
 
 model SearchHistory {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String   @db.Uuid
-  searchQuery String
-  createdAt   DateTime @default(now()) @db.Timestamptz
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @db.Uuid
+  searchQuery  String
+  featuredCursor Int?
+  createdAt    DateTime @default(now()) @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -1,6 +1,80 @@
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
-import { createRecipeSchema } from "@/lib/validations/recipe.schema"
+import { recipeListItemSelect } from "@/lib/recipes"
+import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
+import { Prisma } from "@prisma/client"
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+
+    const parsed = recipeListQuerySchema.safeParse({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+      mine: searchParams.get("mine") ?? undefined,
+    })
+
+    if (!parsed.success) {
+      return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+    }
+
+    const { page, limit, mine } = parsed.data
+
+    if (mine) {
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      const [total, recipes] = await Promise.all([
+        prisma.recipe.count({ where: { userId: user.id } }),
+        prisma.recipe.findMany({
+          where: { userId: user.id },
+          select: recipeListItemSelect({ withUser: true }),
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+      ])
+
+      const totalPages = Math.max(1, Math.ceil(total / limit))
+
+      return Response.json({
+        data: recipes,
+        meta: { page, limit, total, totalPages },
+      })
+    }
+
+    const where: Prisma.RecipeWhereInput = { visibility: "public" }
+
+    const [total, recipes] = await Promise.all([
+      prisma.recipe.count({ where }),
+      prisma.recipe.findMany({
+        where,
+        select: recipeListItemSelect({ withUser: true }),
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ])
+
+    const totalPages = Math.max(1, Math.ceil(total / limit))
+
+    return Response.json({
+      data: recipes,
+      meta: { page, limit, total, totalPages },
+    })
+  } catch (error) {
+    console.error("Error fetching recipes:", error)
+    return Response.json({ error: "Internal server error" }, { status: 500 })
+  }
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -65,7 +139,7 @@ export async function POST(request: Request) {
     const recipe = await prisma.$transaction(async (tx) => {
       const savedIngredients = await Promise.all(
         ingredients.map(async (ingredient) => {
-          let dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
+          const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
 
           if (ingredient.category) {
             const cat = await tx.category.findFirst({
