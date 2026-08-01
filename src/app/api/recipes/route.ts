@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         prisma.recipe.count({ where: { userId: user.id } }),
         prisma.recipe.findMany({
           where: { userId: user.id },
-          select: recipeListItemSelect({ withUser: true }),
+          select: recipeListItemSelect({ withUser: true, withIngredients: true }),
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * limit,
           take: limit,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       prisma.recipe.count({ where }),
       prisma.recipe.findMany({
         where,
-        select: recipeListItemSelect({ withUser: true }),
+        select: recipeListItemSelect({ withUser: true, withIngredients: true }),
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,

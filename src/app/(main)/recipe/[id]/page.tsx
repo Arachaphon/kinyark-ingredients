@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
 import type { RecipeDetail } from "@/types/recipes";
+import { translateUnit } from "@/lib/units";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -306,7 +307,9 @@ export default function ViewRecipePage() {
                         className="px-3 py-1 border border-[#71B254] rounded-md text-sm text-gray-800 bg-white shadow-sm"
                       >
                         {ri.ingredient.name}
-                        {ri.quantity > 0 ? ` ${ri.quantity}${ri.unit}` : ""}
+                        {ri.quantity > 0
+                          ? ` ${ri.quantity}${translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
+                          : ""}
                       </span>
                     ))}
                   </div>

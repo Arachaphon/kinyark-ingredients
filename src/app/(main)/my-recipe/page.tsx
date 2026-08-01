@@ -189,6 +189,19 @@ export default function MyRecipePage() {
                                 : "ฉบับร่าง"}
                             </span>
                           </div>
+
+                          {recipe.recipeIngredients && recipe.recipeIngredients.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {recipe.recipeIngredients.slice(0, 5).map((ri) => (
+                                <span
+                                  key={ri.id}
+                                  className="bg-[#EAF5E4] text-[#5A9240] text-xs font-semibold px-2.5 py-1 rounded-sm"
+                                >
+                                  {ri.ingredient.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-5 mt-5 text-gray-500 text-sm font-medium">

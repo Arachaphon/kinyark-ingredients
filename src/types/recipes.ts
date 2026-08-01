@@ -30,6 +30,7 @@ export interface RecipeListItem {
   visibility: string
   images: RecipeImage[]
   user: RecipeUser
+  recipeIngredients: RecipeIngredientItem[]
 }
 
 export interface RecipeListMeta {

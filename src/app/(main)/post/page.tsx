@@ -142,6 +142,19 @@ export default function PostsFeedPage() {
                     {post.recipeName}
                   </h1>
 
+                  {post.recipeIngredients && post.recipeIngredients.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {post.recipeIngredients.slice(0, 5).map((ri) => (
+                        <span
+                          key={ri.id}
+                          className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
+                        >
+                          {ri.ingredient.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3">
                     <Image
                       src={post.user?.avatarUrl ?? FALLBACK_AVATAR}
