@@ -3,13 +3,9 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
 
-// =========================================
-// 📐 Interfaces
-// =========================================
 interface RecipeItem {
   id: string;
   title: string;
@@ -31,7 +27,8 @@ interface ApiRecipeItem {
   title?: string;
   images?: { imageUrl: string }[];
   image?: string;
-  recipeIngredients?: { ingredient?: { name: string } }[];
+  recipeIngredients?: any[]; // ปรับให้ยืดหยุ่นขึ้นเผื่อ API ส่งมาหลายแบบ
+  ingredients?: string[]; 
   tags?: string[];
   user?: { username?: string; avatarUrl?: string };
   author?: string;
@@ -41,108 +38,76 @@ interface ApiRecipeItem {
   rating?: number;
 }
 
-// =========================================
-// 🔤 ตั้งค่าฟอนต์ Anuphan
-// =========================================
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
   display: "swap",
 });
 
-// =========================================
-// 🎨 ฟังก์ชันดึงรูปภาพ API อัตโนมัติสำหรับ AI
-// =========================================
-const getAiImageUrl = (recipeName: string) => {
-  const prompt = `${recipeName} delicious food photography realistic`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
-};
-
-// =========================================
-// 🍱 ข้อมูลจำลองเมนู (Mock Data)
-// =========================================
-const mockSearchResults: RecipeItem[] = [
-  {
-    id: "mock-1",
-    title: "สลัดซีซาร์สวนผัก",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
-    tags: ["มะเขือเทศ", "หัวหอมหวาน", "พริกไทย", "กะหล่ำปลี"],
-    author: "Alice",
-    authorAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    likes: 22,
-    rating: 3.0,
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-2",
-    title: "สลัด (ง่ายและสดใหม่)",
-    image: getAiImageUrl("สลัด ง่ายและสดใหม่"),
-    tags: ["แตงกวา", "มะเขือเทศ", "แครอท", "ผักสลัด"],
-    author: "Deep Seek", 
-    authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80", 
-    likes: 52,
-    rating: 4.5,
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-3",
-    title: "สลัดผลไม้สดชื่น",
-    image: getAiImageUrl("สลัดผลไม้สดชื่น"),
-    tags: ["สับปะรด", "สตรอว์เบอร์รี", "องุ่น", "ส้ม", "กีวี"],
-    author: "Gemini", 
-    authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
-    likes: 65,
-    rating: 4.8, 
-    initialFavorite: true,
-    isAi: true, 
-  },
-  {
-    id: "mock-4",
-    title: "สลัดอกไก่ย่างคลีนๆ",
-    image: "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?auto=format&fit=crop&w=300&q=80",
-    tags: ["อกไก่", "ผักกาดหอม", "แครอท", "น้ำสลัดงา"],
-    author: "Chef_Pond",
-    authorAvatar: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=150&q=80",
-    likes: 120,
-    rating: 4.9, 
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-5",
-    title: "สลัดอะโวคาโดกุ้งย่าง",
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=300&q=80",
-    tags: ["อะโวคาโด", "กุ้ง", "มะนาว", "ผักร็อกเก็ต"],
-    author: "HealthyGirl",
-    authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-    likes: 85,
-    rating: 4.2,
-    initialFavorite: false,
-    isAi: false, 
-  },
+// ✅ คลังรูปภาพอาหารไทยสำรองแบบหลากหลาย
+const FALLBACK_FOOD_IMAGES = [
+  "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80",
+  "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
 ];
 
-// =========================================
-// 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
-// =========================================
+const getRandomFallback = () => {
+  return FALLBACK_FOOD_IMAGES[Math.floor(Math.random() * FALLBACK_FOOD_IMAGES.length)];
+};
+
+// Dictionary แปลงวัตถุดิบไทยเป็นคำศัพท์ภาษาอังกฤษ
+const ingredientMap: Record<string, string> = {
+  หมู: "pork",
+  หมูกรอบ: "crispy pork",
+  เนื้อแก้มวัว: "beef cheek",
+  เนื้อวัว: "beef",
+  เนื้อ: "beef",
+  ไก่: "chicken",
+  กุ้ง: "shrimp",
+  หมึก: "squid",
+  ปลา: "fish",
+  เต้าหู้: "tofu",
+  ไข่: "egg",
+};
+
+const getEnglishIngredient = (text: string) => {
+  for (const [key, val] of Object.entries(ingredientMap)) {
+    if (text.includes(key)) return val;
+  }
+  return "meat";
+};
+
+// สร้างรูป AI จากชื่อเมนูโดยตรง
+const getAiImageUrl = (recipeName: string, index: number = 0) => {
+  const prompt = encodeURIComponent(`
+${recipeName},
+authentic Thai food,
+restaurant quality,
+realistic food photography,
+top view,
+high detail,
+4k,
+served on a white plate
+  `);
+
+  return `https://image.pollinations.ai/prompt/${prompt}?width=500&height=350&seed=${1000 + index}`;
+};
+
+// ✅ ปรับให้เรียงเมนูจาก User ก่อน แล้วค่อยตามด้วยเมนู AI
 const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
   const aiRecipes = dataList.filter((item) => item.isAi);
   const userRecipes = dataList.filter((item) => !item.isAi);
 
-  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
   userRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-  return [
-    ...aiRecipes.slice(0, 2),
-    ...userRecipes.slice(0, 3)
-  ];
+  return [...userRecipes, ...aiRecipes];
 };
 
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
+  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "วัตถุดิบรวม";
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
@@ -164,60 +129,137 @@ function ResultsContent() {
       try {
         const response = await fetch(`/api/search?q=${encodeURIComponent(queryTitle)}`);
         
-        if (!response.ok) {
-          throw new Error("Failed to fetch real data");
+        let data: ApiRecipeItem[] = [];
+        if (response.ok) {
+          data = await response.json();
         }
 
-        const data: ApiRecipeItem[] = await response.json();
+        if (!data || data.length === 0) {
+          const aiResponse = await fetch("/api/ai/generate-recipe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ingredients: queryTitle.split(",") }),
+          });
+
+          if (aiResponse.ok) {
+            data = await aiResponse.json();
+          }
+        }
 
         if (data && data.length > 0) {
-          const formattedData: RecipeItem[] = data.map((item) => {
-            const isAiRecipe = !!item.aiProvider || item.isAi || false;
-            const recipeTitle = item.recipeName || item.title || "";
+          const formattedData: RecipeItem[] = data.map((item, index) => {
+            const isAiRecipe = item.isAi !== undefined ? item.isAi : !!item.aiProvider;
+            const recipeTitle = item.recipeName || item.title || `เมนูจาก ${queryTitle}`;
 
-            const finalImage = item.images?.[0]?.imageUrl || item.image || 
-                               (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
+            const imageUrl =
+              item.image?.trim() ||
+              item.images?.[0]?.imageUrl?.trim();
 
-            const mappedTags = item.recipeIngredients
-              ?.map((ri) => ri.ingredient?.name)
-              .filter((name): name is string => Boolean(name))
-              .slice(0, 5) || item.tags || [];
+            const finalImage =
+              imageUrl && imageUrl.startsWith("http")
+                ? imageUrl
+                : getAiImageUrl(recipeTitle, index);
+
+            // 🟢 แก้ไขจุดนี้: กวาดข้อมูลวัตถุดิบจากทุกฟิลด์มารวมกัน เพื่อให้แสดงครบแน่นอน
+            let tempTags: string[] = [];
+
+            if (Array.isArray(item.recipeIngredients)) {
+              item.recipeIngredients.forEach((ri: any) => {
+                if (typeof ri === "string") tempTags.push(ri);
+                else if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
+                else if (ri?.name) tempTags.push(ri.name);
+              });
+            }
+
+            if (Array.isArray(item.ingredients)) {
+              tempTags = [...tempTags, ...item.ingredients];
+            }
+
+            if (Array.isArray(item.tags)) {
+              tempTags = [...tempTags, ...item.tags];
+            }
+
+            // ลบค่าซ้ำ และเอาเฉพาะข้อความที่ไม่ใช่ค่าว่าง
+            let mappedTags = Array.from(new Set(tempTags.filter(t => typeof t === "string" && t.trim() !== "")));
+
+            // ถ้าหาไม่ได้จากทุกที่เลย ค่อยใช้คำค้นหา
+            if (mappedTags.length === 0) {
+              mappedTags = queryTitle.split(",").map(t => t.trim());
+            }
 
             return {
-              id: item.id,
+              id: item.id || `recipe-${Math.random()}`,
               title: recipeTitle,
               image: finalImage,
               tags: mappedTags,
-              author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
-              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+              author: item.user?.username || item.aiProvider || item.author || "ผู้ใช้งานทั่วไป",
+              authorAvatar:
+                item.user?.avatarUrl ||
+                item.authorAvatar ||
+                "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
               likes: item.favoriteCount || item.likes || 0,
-              rating: item.rating || 0,
+              rating: item.rating || 4.5,
               initialFavorite: false,
               isAi: isAiRecipe,
             };
           });
 
-          const sortedAndSlicedData = formatAndSortResults(formattedData);
+          const sortedData = formatAndSortResults(formattedData);
 
           if (isMounted) {
-            setResults(sortedAndSlicedData);
-            setupFavorites(sortedAndSlicedData);
+            setResults(sortedData);
+            setupFavorites(sortedData);
           }
         } else {
-          throw new Error("Real data is empty, using fallback");
+          throw new Error("No recipes found");
         }
-
       } catch (error) {
-        console.warn("Using mock data fallback:", error);
+        console.warn("Fallback dynamic recipes:", error);
         if (!isMounted) return;
 
-        if (queryTitle.toLowerCase().includes("ไม่มี") || queryTitle.toLowerCase().includes("empty")) {
-          setResults([]);
-        } else {
-          const sortedMockData = formatAndSortResults(mockSearchResults);
-          setResults(sortedMockData);
-          setupFavorites(sortedMockData);
-        }
+        const dynamicList = queryTitle.split(",").map(s => s.trim());
+        
+        const fallbackData: RecipeItem[] = [
+          {
+            id: `user-fb-1`,
+            title: `แกงเขียวหวาน${dynamicList.join("และ")} รสกลมกล่อม (สูตรคุณแม่)`,
+            image: getAiImageUrl(`แกงเขียวหวาน ${queryTitle}`, 0),
+            tags: [...dynamicList, "พริกแกงเขียวหวาน", "กะทิ", "มะเขือพวง", "ใบโหระพา"],
+            author: "Ratatouille_Cook",
+            authorAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+            likes: 42,
+            rating: 4.8,
+            initialFavorite: false,
+            isAi: false,
+          },
+          {
+            id: `ai-fb-1`,
+            title: `ผัดกะเพรา ${dynamicList.join(" ")} รสเด็ด`,
+            image: getAiImageUrl(`ผัดกะเพรา ${queryTitle}`, 1),
+            tags: [...dynamicList, "ใบกะเพรา", "กระเทียม", "พริกสด", "น้ำมันหอย"],
+            author: "Gemini AI",
+            authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
+            likes: 66,
+            rating: 4.8,
+            initialFavorite: false,
+            isAi: true,
+          },
+          {
+            id: `ai-fb-2`,
+            title: `ต้มยำน้ำข้น ${dynamicList.join(" ")}`,
+            image: getAiImageUrl(`ต้มยำ ${queryTitle}`, 2),
+            tags: [...dynamicList, "ข่า", "ตะไคร้", "ใบมะกรูด", "พริกเผา", "นมสด"],
+            author: "Deep Seek",
+            authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80",
+            likes: 52,
+            rating: 4.5,
+            initialFavorite: false,
+            isAi: true,
+          },
+        ];
+
+        setResults(fallbackData);
+        setupFavorites(fallbackData);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -225,10 +267,9 @@ function ResultsContent() {
       }
     };
 
-    const timer = setTimeout(fetchResults, 800);
-    return () => { 
-      isMounted = false; 
-      clearTimeout(timer);
+    fetchResults();
+    return () => {
+      isMounted = false;
     };
   }, [queryTitle]);
 
@@ -238,8 +279,6 @@ function ResultsContent() {
 
   return (
     <div className="bg-white border border-gray-200 rounded-sm p-8 md:p-12 shadow-sm min-h-[500px]">
-
-      {/* ส่วนหัว */}
       <div className="mb-8 flex items-baseline gap-2">
         <h1 className="text-3xl font-bold text-gray-900">{queryTitle}</h1>
         {!isLoading && (
@@ -249,57 +288,27 @@ function ResultsContent() {
         )}
       </div>
 
-      {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
-        
-        {/* 1. Loading State */}
         {isLoading ? (
           <>
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="flex flex-col md:flex-row gap-6 p-4 border border-gray-200 rounded-xl bg-white animate-pulse">
                 <div className="w-full md:w-[180px] h-[160px] bg-gray-200 rounded-lg shrink-0"></div>
                 <div className="flex-grow flex flex-col justify-between py-2">
-                  <div>
-                    <div className="h-8 bg-gray-200 rounded-md w-3/4 mb-4"></div>
-                    <div className="flex gap-2">
-                      <div className="h-6 w-16 bg-gray-200 rounded-md"></div>
-                      <div className="h-6 w-20 bg-gray-200 rounded-md"></div>
-                      <div className="h-6 w-14 bg-gray-200 rounded-md"></div>
-                    </div>
-                  </div>
-                  <div className="h-8 w-24 bg-gray-200 rounded-full mt-4 md:mt-0"></div>
-                </div>
-                <div className="w-full md:w-32 flex flex-col items-end justify-between py-1 shrink-0">
-                  <div className="flex flex-col items-end gap-3 w-full">
-                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
-                    <div className="h-6 w-12 bg-gray-200 rounded-md"></div>
-                  </div>
-                  <div className="mt-4 md:mt-0 h-10 w-full bg-gray-200 rounded-full"></div>
+                  <div className="h-8 bg-gray-200 rounded-md w-3/4 mb-4"></div>
+                  <div className="h-6 w-20 bg-gray-200 rounded-md"></div>
                 </div>
               </div>
             ))}
           </>
-        ) 
-        
-        /* 2. Empty State */
-        : results.length === 0 ? (
+        ) : results.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="text-7xl mb-4 opacity-50">🧐</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
-            <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ &quot;{queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
-            </p>
-            <Link
-              href="/search"
-              className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full hover:bg-[#5b9642] transition shadow-md"
-            >
+            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหาร</h3>
+            <Link href="/search" className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full">
               กลับไปเลือกวัตถุดิบใหม่
             </Link>
           </div>
-        ) 
-        
-        /* 3. Results */
-        : (
+        ) : (
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
@@ -309,18 +318,28 @@ function ResultsContent() {
                 key={`${recipe.id}-${index}`}
                 className={`flex flex-col md:flex-row gap-6 p-4 border ${cardBorderClass} rounded-xl bg-white hover:shadow-md transition-shadow relative`}
               >
-                {/* ซ้าย: รูปภาพอาหารตัวอย่าง */}
-                <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
-                  <Image
-                    src={recipe.image}
+                <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={recipe.image || getRandomFallback()}
                     alt={recipe.title}
-                    fill
-                    unoptimized
-                    className="object-cover rounded-lg"
+                    loading="lazy"
+                    className="w-full h-full object-cover rounded-lg"
+                    onLoad={() => {
+                      console.log("โหลดสำเร็จ:", recipe.title);
+                    }}
+                    onError={(e) => {
+                      console.log("โหลดไม่สำเร็จ:", recipe.title, recipe.image);
+
+                      const target = e.currentTarget;
+
+                      if (!target.dataset.retried) {
+                        target.dataset.retried = "true";
+                        target.src = getRandomFallback();
+                      }
+                    }}
                   />
                 </div>
 
-                {/* กลาง: รายละเอียด ชื่อสูตร, ป้ายวัตถุดิบ, คนโพสต์ */}
                 <div className="flex-grow flex flex-col justify-between py-1">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -328,28 +347,33 @@ function ResultsContent() {
                       {recipe.isAi && <span className="text-lg" title="สร้างโดย AI">✨</span>}
                     </h3>
 
-                    {/* ป้ายวัตถุดิบ (Tags) */}
+                    {/* 🟢 Render แท็กวัตถุดิบทั้งหมดที่มี */}
                     <div className="flex flex-wrap gap-2">
-                      {recipe.tags && recipe.tags.map((tag: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {recipe.tags && recipe.tags.length > 0 ? (
+                        recipe.tags.map((tag: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
+                          >
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-gray-400">ไม่มีข้อมูลวัตถุดิบ</span>
+                      )}
                     </div>
                   </div>
 
-                  {/* ข้อมูลผู้สร้างสรรค์เมนู (User หรือ AI) */}
                   <div className="flex items-center gap-3 mt-4 md:mt-0">
                     <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0 relative">
-                      <Image
+                      <img
                         src={recipe.authorAvatar}
                         alt={recipe.author}
-                        fill
-                        unoptimized
-                        className="object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png";
+                        }}
+                        className="w-full h-full object-cover"
                       />
                     </div>
                     <span className="font-bold text-gray-800 text-sm truncate">
@@ -358,10 +382,8 @@ function ResultsContent() {
                   </div>
                 </div>
 
-                {/* ขวา: สถิติจำนวนคนกดใจ, ดาวคะแนน และปุ่ม View Recipe */}
                 <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
                   <div className="flex flex-col items-end gap-3 w-full">
-                    {/* ยอดกดไลก์หัวใจ */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
                       className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
@@ -379,11 +401,10 @@ function ResultsContent() {
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                       </svg>
                       <span className="font-medium text-gray-700 text-lg">
-                        {isLiked ? (Number(recipe.likes) + 1) : recipe.likes}
+                        {isLiked ? Number(recipe.likes) + 1 : recipe.likes}
                       </span>
                     </div>
 
-                    {/* คะแนนดาวความอร่อย */}
                     <div className="flex items-center gap-2">
                       <svg
                         width="22"
@@ -403,9 +424,8 @@ function ResultsContent() {
                     </div>
                   </div>
 
-                  {/* ปุ่มเปิดดูวิธีทำตัวเต็ม */}
                   <Link
-                    href={`/recipe/${recipe.id}`}
+                    href={`/recipe/${recipe.id}?title=${encodeURIComponent(recipe.title)}&tags=${encodeURIComponent((recipe.tags || []).join(","))}&image=${encodeURIComponent(recipe.image || "")}`}
                     className="mt-4 md:mt-0 w-full md:w-auto px-5 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition text-center shadow-sm block"
                   >
                     ดูสูตรอาหาร
@@ -416,7 +436,6 @@ function ResultsContent() {
           })
         )}
       </div>
-
     </div>
   );
 }

@@ -4,7 +4,7 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
 
 const anuphan = Anuphan({
@@ -13,46 +13,12 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
-// =========================================
-// 🍱 ข้อมูลจำลองสำหรับดูโพสต์ (Mock Data)
-// =========================================
-const mockRecipeData = {
-  title: "มีตโลฟแมคแอนด์ชีส",
-  author: "Ratatouille",
-  authorAvatar:
-    "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80",
-  images: [
-    "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80",
-    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=600&q=80",
-  ],
-  videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", // URL ตัวอย่างวิดีโอ
-  rating: 3.0,
-  ingredients: [
-    "ไข่ 2 ฟอง",
-    "มะเขือเทศ 2 ลูก",
-    "กระเทียม 2 กลีบ",
-    "น้ำมัน 2 ช้อนโต๊ะ",
-    "นม 2 ช้อนโต๊ะ",
-    "ชีส 1/4 ถ้วย",
-    "เกลือ 1/2 ช้อนชา",
-    "พริกไทยดำ 1/4 ช้อนชา",
-    "น้ำตาล 1 ช้อนชา (ไม่ใส่ก็ได้)",
-  ],
-  instructions: [
-    "หั่นมะเขือเทศและสับกระเทียมให้ละเอียด",
-    "ตีไข่กับนม เกลือ และพริกไทยเข้าด้วยกัน",
-    "ตั้งกระทะใส่น้ำมัน ใช้ไฟกลาง",
-    "ผัดกระเทียมจนหอม",
-    "ใส่มะเขือเทศลงไปผัดจนเริ่มนิ่ม",
-    "เทไข่ลงไปแล้วคนเบา ๆ",
-    "ใส่ชีสและคนจนละลาย",
-    "ปรุงรสเพิ่มด้วยน้ำตาลหรือซอสมะเขือเทศ (ไม่ใส่ก็ได้)",
-    "ปรุงจนไข่สุก",
-    "เสิร์ฟขณะอุ่น",
-  ],
-};
+const FOOD_GALLERY_POOL = [
+  "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=800&q=80",
+];
 
 const mockComments = [
   {
@@ -84,31 +50,159 @@ const mockComments = [
   },
 ];
 
+// รายการคีย์เวิร์ดเครื่องปรุง สำหรับแยกออกจากเนื้อสัตว์/ผักสด
+const SEASONING_KEYWORDS = [
+  "ซีอิ๊ว", "น้ำปลา", "ซอส", "น้ำมัน", "พริกไทย", "น้ำเปล่า", "น้ำซุป", "น้ำตาล",
+  "เกลือ", "ผงชูรส", "รสดี", "ซอยพริก", "น้ำมะนาว", "กะทิ", "เนย"
+];
+
 export default function ViewRecipePage() {
   const router = useRouter();
+  const params = useParams();
+
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  // ⏰ ระบบ Auto-slide เลื่อนรูปอัตโนมัติทุกๆ 3 วินาที
+  const [recipeData, setRecipeData] = useState<{
+    title: string;
+    author: string;
+    authorAvatar: string;
+    images: string[];
+    videoUrl: string;
+    rating: number;
+    ingredients: string[];
+    instructions: string[];
+  }>({
+    title: "กำลังโหลดสูตรอาหาร...",
+    author: "Ratatouille_Cook",
+    authorAvatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+    images: [FOOD_GALLERY_POOL[0]],
+    videoUrl: "https://www.youtube.com/embed/5qap5aO4i9A",
+    rating: 4.8,
+    ingredients: [],
+    instructions: [],
+  });
+
   useEffect(() => {
-    if (mockRecipeData.images.length <= 1) return;
+    if (typeof window === "undefined") return;
 
-    const timer = setInterval(() => {
-      setSelectedImageIndex((prev) => (prev + 1) % mockRecipeData.images.length);
-    }, 3000);
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawTitle = urlParams.get("title") || "สูตรอาหารแนะนำ";
+    const queryTagsParam = urlParams.get("tags");
+    const queryTags = queryTagsParam ? queryTagsParam.split(",").map(t => t.trim()).filter(Boolean) : [];
+    const queryImage = urlParams.get("image");
 
-    return () => clearInterval(timer);
+    // 🧹 ตัดคำขยายออกจากชื่อเมนู เช่น "ต้มยำน้ำข้นไก่ แซ่บเวอร์" -> "ต้มยำน้ำข้นไก่"
+    const cleanMenuName = rawTitle.replace(/\s*\(.*?\)\s*/g, "").replace(/(แซ่บเว่อร์|แซ่บเวอร์|ละมุนลิ้น|สูตรเด็ด|สูตรคุณแม่|อร่อย)/g, "").trim();
+
+    // 🥩 แยกแยะส่วนผสมสด (เนื้อสัตว์/ผัก) ออกจาก เครื่องปรุงซอส
+    const freshIngredients: string[] = [];
+    const seasoningIngredients: string[] = [];
+
+    queryTags.forEach((tag) => {
+      const isSeasoning = SEASONING_KEYWORDS.some((kw) => tag.includes(kw));
+      if (isSeasoning) {
+        seasoningIngredients.push(tag);
+      } else {
+        freshIngredients.push(tag);
+      }
+    });
+
+    // ถ้าไม่มีการส่ง Tags มา ให้ตั้งค่าเริ่มต้นไว้
+    const mainFreshList = freshIngredients.length > 0 ? freshIngredients : ["ไก่", "ผักสด"];
+    const mainFreshText = mainFreshList.join(", ");
+
+    // 🖼️ รูปภาพ
+    const defaultGallery = [
+      queryImage || FOOD_GALLERY_POOL[0],
+      FOOD_GALLERY_POOL[1],
+      FOOD_GALLERY_POOL[2],
+      FOOD_GALLERY_POOL[3],
+    ];
+
+    // 🎥 วิดีโอ
+    let dynamicVideoUrl = "https://www.youtube.com/embed/2v-N-GZ2p9Y"; 
+    if (rawTitle.includes("ต้ม") || rawTitle.includes("แกง") || rawTitle.includes("ข่า") || rawTitle.includes("ยำ")) {
+      dynamicVideoUrl = "https://www.youtube.com/embed/5qap5aO4i9A"; 
+    } else if (rawTitle.includes("ผัด") || rawTitle.includes("กระเพรา") || rawTitle.includes("กะเพรา")) {
+      dynamicVideoUrl = "https://www.youtube.com/embed/8-W6EwE0r_k"; 
+    } else if (rawTitle.includes("ทอด") || rawTitle.includes("เจียว")) {
+      dynamicVideoUrl = "https://www.youtube.com/embed/9Z9kQ7DcwjU"; 
+    }
+
+    // 🥕 รายการส่วนผสมแสดงหน้าเว็บ
+    const dynamicIngredients = [
+      ...mainFreshList.map((item) => `${item} 200 กรัม`),
+      "ข่า ตะไคร้ ใบมะกรูด หอมแดง (สำหรับเมนูต้ม)",
+      "กระเทียมสับ / พริกขี้หนูสวน 2 ช้อนโต๊ะ",
+      "น้ำปลา / ซอสหอยนางรม / ซีอิ๊วขาว อย่างละ 1 ช้อนโต๊ะ",
+      "น้ำมะนาวสด / น้ำตาลทราย ตามชอบ",
+      "ผักชี / ต้นหอม สำหรับโรยหน้า",
+    ];
+
+    // 🍲 วิธีทำแบบสมจริง (แยกของสดกับเครื่องปรุงชัดเจน)
+    let dynamicInstructions: string[] = [];
+
+    if (rawTitle.includes("ต้ม") || rawTitle.includes("ยำ") || rawTitle.includes("ข่า") || rawTitle.includes("แกง")) {
+      dynamicInstructions = [
+        `เตรียมวัตถุดิบสด: ล้างทำความสะอาด ${mainFreshText} แล้วหั่นชิ้นพอดีคำเตรียมไว้`,
+        "ตั้งหม้อใช้ไฟปานกลาง ใส่กะทิหรือน้ำซุปต้มจนเริ่มเดือดปุดๆ",
+        "ใส่ ข่า ตะไคร้ ใบมะกรูด หอมแดง และพริกขี้หนูทุบลงไป ต้มจนส่งกลิ่นหอมสมุนไพร",
+        `ใส่ ${mainFreshText} ลงไปต้มในหม้อจนสุกนุ่ม (ใช้ไฟปานกลาง ไม่คนบ่อยเพื่อไม่ให้มีกลิ่นคาว)`,
+        "ปรุงรสด้วยซีอิ๊วขาว ซอสหอยนางรม น้ำปลา น้ำมะนาว และพริกไทยดำ ชิมรสให้ได้ความกลมกล่อมตามชอบ",
+        `ตัก ${cleanMenuName} ใส่ชาม โรยหน้าด้วยผักชี พร้อมเสิร์ฟขณะร้อนๆ`
+      ];
+    } else if (rawTitle.includes("ผัด") || rawTitle.includes("กระเพรา") || rawTitle.includes("กะเพรา")) {
+      dynamicInstructions = [
+        `เตรียมวัตถุดิบสด: ล้างทำความสะอาด ${mainFreshText} แล้วหั่นชิ้นพอดีคำ`,
+        "ตั้งกระทะใส่น้ำมันพืชใช้ไฟปานกลางค่อนไปทางแรง รอจนน้ำมันเริ่มร้อน",
+        "ใส่กระเทียมและพริกขี้หนูสับลงไปผัดจนส่งกลิ่นหอมฉุน",
+        `ใส่ ${mainFreshText} ลงไปผัดเร่งไฟแรงให้สุกทั่วกัน`,
+        "ปรุงรสด้วยซอสหอยนางรม ซีอิ๊วขาว น้ำปลา และน้ำตาลทราย ผัดคลุกเคล้าให้เข้าเนื้อ",
+        `ตัก ${cleanMenuName} ราดข้าวสวยร้อนๆ พร้อมเสิร์ฟ`
+      ];
+    } else {
+      dynamicInstructions = [
+        `เตรียมวัตถุดิบสด: ล้างทำความสะอาด ${mainFreshText} แล้วหั่นชิ้นพอดีคำ`,
+        "ตั้งกระทะหรือหม้อ ใส่น้ำมันพืชใช้ไฟปานกลางจนร้อนได้ที่",
+        "ใส่กระเทียมสับลงไปผัดจนมีกลิ่นหอม",
+        `ใส่ ${mainFreshText} ลงไปผัดและต้มจนสุกดี`,
+        "ปรุงรสด้วยน้ำปลา ซอสหอยนางรม ซีอิ๊วขาว และพริกไทยดำ ชิมรสตามชอบ",
+        `ตัก ${cleanMenuName} ใส่จาน พร้อมรับประทาน`
+      ];
+    }
+
+    setRecipeData({
+      title: rawTitle,
+      author: "Ratatouille_Cook",
+      authorAvatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+      images: defaultGallery,
+      videoUrl: dynamicVideoUrl,
+      rating: 4.8,
+      ingredients: dynamicIngredients,
+      instructions: dynamicInstructions,
+    });
   }, []);
+
+  useEffect(() => {
+    if (recipeData.images.length <= 1) return;
+    const timer = setInterval(() => {
+      setSelectedImageIndex((prev) => (prev + 1) % recipeData.images.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [recipeData.images.length]);
 
   const handlePrevImage = () => {
     setSelectedImageIndex((prev) =>
-      prev === 0 ? mockRecipeData.images.length - 1 : prev - 1
+      prev === 0 ? recipeData.images.length - 1 : prev - 1
     );
   };
 
   const handleNextImage = () => {
     setSelectedImageIndex((prev) =>
-      prev === mockRecipeData.images.length - 1 ? 0 : prev + 1
+      prev === recipeData.images.length - 1 ? 0 : prev + 1
     );
   };
 
@@ -158,9 +252,7 @@ export default function ViewRecipePage() {
   };
 
   return (
-    <div
-      className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}
-    >
+    <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
       <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-6">
@@ -169,115 +261,82 @@ export default function ViewRecipePage() {
             onClick={() => router.back()}
             className="absolute top-4 left-6 w-8 h-8 bg-[#71B254] text-white rounded-full flex items-center justify-center hover:bg-[#5b9642] transition z-10 shadow-sm"
           >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              viewBox="0 0 24 24"
-            >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
           </button>
 
           <div className="flex flex-col md:flex-row gap-10 mt-14 md:mt-6">
-            {/* 🖼️ ส่วนแสดงผล Gallery รูปภาพ + จุดไข่ปลา + ปุ่มเลื่อนรูป */}
+            {/* Gallery รูปภาพ 4 รูป */}
             <div className="w-full md:w-[350px] flex-shrink-0 flex flex-col gap-3">
-              {/* รูปภาพหลัก */}
-              <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md">
+              <div className="w-full h-[320px] relative overflow-hidden rounded-3xl group shadow-md bg-gray-100 flex items-center justify-center">
                 <img
-                  src={mockRecipeData.images[selectedImageIndex]}
-                  alt={mockRecipeData.title}
+                  src={recipeData.images[selectedImageIndex] || FOOD_GALLERY_POOL[0]}
+                  alt={recipeData.title}
                   className="w-full h-full object-cover transition-all duration-500 ease-in-out"
+                  onError={(e) => {
+                    e.currentTarget.src = FOOD_GALLERY_POOL[0];
+                  }}
                 />
 
-                {/* ปุ่มลูกศรซ้าย */}
-                {mockRecipeData.images.length > 1 && (
+                {recipeData.images.length > 1 && (
                   <button
                     onClick={handlePrevImage}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
-                    aria-label="Previous Image"
                   >
-                    <svg
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                       <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                   </button>
                 )}
 
-                {/* ปุ่มลูกศรขวา */}
-                {mockRecipeData.images.length > 1 && (
+                {recipeData.images.length > 1 && (
                   <button
                     onClick={handleNextImage}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition backdrop-blur-sm shadow-md z-10"
-                    aria-label="Next Image"
                   >
-                    <svg
-                      width="18"
-                      height="18"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                       <polyline points="9 18 15 12 9 6"></polyline>
                     </svg>
                   </button>
                 )}
 
-                {/* จุดไข่ปลา (Pagination Dots) */}
-                {mockRecipeData.images.length > 1 && (
+                {recipeData.images.length > 1 && (
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm z-10">
-                    {mockRecipeData.images.map((_, idx) => (
+                    {recipeData.images.map((_, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSelectedImageIndex(idx)}
                         className={`h-2 transition-all rounded-full ${
-                          idx === selectedImageIndex
-                            ? "w-6 bg-[#71B254]"
-                            : "w-2 bg-white/70 hover:bg-white"
+                          idx === selectedImageIndex ? "w-6 bg-[#71B254]" : "w-2 bg-white/70 hover:bg-white"
                         }`}
-                        aria-label={`Go to slide ${idx + 1}`}
                       />
                     ))}
                   </div>
                 )}
 
-                {/* Badge แสดงจำนวนรูป เช่น 1 / 4 */}
                 <span className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm z-10">
-                  {selectedImageIndex + 1} / {mockRecipeData.images.length}
+                  {selectedImageIndex + 1} / {recipeData.images.length}
                 </span>
               </div>
 
-              {/* Thumbnails ตัวเลือกดูรูปทั้ง 4 รูป */}
+              {/* Thumbnails */}
               <div className="grid grid-cols-4 gap-2">
-                {mockRecipeData.images.map((img, idx) => (
+                {recipeData.images.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
-                    className={`h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                      selectedImageIndex === idx
-                        ? "border-[#71B254] scale-95 shadow-sm"
-                        : "border-transparent opacity-60 hover:opacity-100"
+                    className={`h-16 rounded-xl overflow-hidden border-2 transition-all bg-gray-100 ${
+                      selectedImageIndex === idx ? "border-[#71B254] scale-95 shadow-sm" : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
                     <img
-                      src={img}
+                      src={img || FOOD_GALLERY_POOL[0]}
                       alt={`รูปที่ ${idx + 1}`}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = FOOD_GALLERY_POOL[0];
+                      }}
                     />
                   </button>
                 ))}
@@ -287,59 +346,27 @@ export default function ViewRecipePage() {
             {/* รายละเอียดบทความ */}
             <div className="flex flex-col justify-center gap-6">
               <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
-                {mockRecipeData.title}
+                {recipeData.title}
               </h1>
 
               <div className="flex items-center gap-3">
-                <img
-                  src={mockRecipeData.authorAvatar}
-                  alt="ผู้เขียน"
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
-                <span className="font-bold text-gray-800 text-lg">
-                  {mockRecipeData.author}
-                </span>
+                <img src={recipeData.authorAvatar} alt="ผู้เขียน" width={32} height={32} className="rounded-full object-cover" />
+                <span className="font-bold text-gray-800 text-lg">{recipeData.author}</span>
               </div>
 
               <div className="flex items-center gap-8 mt-4">
                 <div className="flex gap-4">
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="#FF0000"
-                    stroke="#FF0000"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="cursor-pointer hover:scale-110 transition"
-                  >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#FF0000" stroke="#FF0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:scale-110 transition">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                   </svg>
-
-                  <svg
-                    onClick={() => setIsCommentOpen(!isCommentOpen)}
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill={isCommentOpen ? "#71B254" : "none"}
-                    stroke="#71B254"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="cursor-pointer hover:scale-110 transition active:scale-95"
-                  >
+                  <svg onClick={() => setIsCommentOpen(!isCommentOpen)} width="28" height="28" viewBox="0 0 24 24" fill={isCommentOpen ? "#71B254" : "none"} stroke="#71B254" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cursor-pointer hover:scale-110 transition active:scale-95">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                   </svg>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {renderStars(mockRecipeData.rating)}
-                  <span className="font-bold text-gray-800 text-lg ml-2">
-                    {mockRecipeData.rating.toFixed(1)}
-                  </span>
+                  {renderStars(recipeData.rating)}
+                  <span className="font-bold text-gray-800 text-lg ml-2">{recipeData.rating.toFixed(1)}</span>
                 </div>
               </div>
             </div>
@@ -348,15 +375,10 @@ export default function ViewRecipePage() {
           {/* ส่วนผสม และ วิธีทำ */}
           <div className="mt-12 space-y-8">
             <div>
-              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-                🥕 ส่วนผสม
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">🥕 ส่วนผสม</h3>
               <div className="flex flex-wrap gap-3">
-                {mockRecipeData.ingredients.map((ing, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 border border-[#71B254] rounded-md text-sm text-gray-800 bg-white shadow-sm"
-                  >
+                {recipeData.ingredients.map((ing, idx) => (
+                  <span key={idx} className="px-3 py-1.5 border border-[#71B254] rounded-md text-sm text-gray-800 bg-[#EAF5E4]/40 font-medium shadow-sm">
                     {ing}
                   </span>
                 ))}
@@ -364,12 +386,10 @@ export default function ViewRecipePage() {
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-                🍲 วิธีทำ
-              </h3>
-              <div className="border border-[#71B254] rounded-md p-6 bg-white">
-                <ol className="list-decimal pl-5 space-y-2 text-gray-800 text-base leading-relaxed">
-                  {mockRecipeData.instructions.map((step, idx) => (
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">🍲 วิธีทำ</h3>
+              <div className="border border-[#71B254] rounded-md p-6 bg-white shadow-sm">
+                <ol className="list-decimal pl-5 space-y-3 text-gray-800 text-base leading-relaxed">
+                  {recipeData.instructions.map((step, idx) => (
                     <li key={idx}>{step}</li>
                   ))}
                 </ol>
@@ -377,93 +397,50 @@ export default function ViewRecipePage() {
             </div>
           </div>
 
-          {/* 🎬 ส่วนแสดงผล Video Player (ย้ายมาไว้ข้างล่างสุด) */}
-          {mockRecipeData.videoUrl && (
+          {/* วิดีโอ */}
+          {recipeData.videoUrl && (
             <div className="mt-10">
-              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-                📹 วิดีโอสอนทำอาหาร
-              </h3>
-              <div className="border border-[#71B254] rounded-md p-4 bg-white">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">📹 วิดีโอสอนทำอาหาร</h3>
+              <div className="border border-[#71B254] rounded-md p-4 bg-white shadow-sm">
                 <div className="relative w-full aspect-video rounded-md overflow-hidden bg-black">
-                  <iframe
-                    src={mockRecipeData.videoUrl}
-                    title="Recipe Video"
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  <iframe src={recipeData.videoUrl} title="Recipe Video" className="w-full h-full border-0" allowFullScreen />
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* ส่วนความคิดเห็น */}
+        {/* ความคิดเห็น */}
         {isCommentOpen && (
           <div className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top">
-            <h2 className="text-2xl font-bold text-[#71B254] mb-8">
-              ความคิดเห็น
-            </h2>
-
+            <h2 className="text-2xl font-bold text-[#71B254] mb-8">ความคิดเห็น</h2>
             <div className="flex flex-col gap-6 mb-8">
               {mockComments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}
-                >
-                  <img
-                    src={comment.avatar}
-                    alt={comment.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover shrink-0"
-                  />
+                <div key={comment.id} className={`flex gap-4 ${comment.isReply ? "ml-12" : ""}`}>
+                  <img src={comment.avatar} alt={comment.name} width={40} height={40} className="rounded-full object-cover shrink-0" />
                   <div className="flex flex-col w-full">
                     <div className="flex items-center gap-4">
-                      <span className="font-bold text-gray-900">
-                        {comment.name}
-                      </span>
+                      <span className="font-bold text-gray-900">{comment.name}</span>
                       {comment.rating > 0 && renderStars(comment.rating)}
                     </div>
                     <p className="text-gray-700 mt-1">{comment.text}</p>
-                    <button className="text-gray-400 text-sm mt-2 hover:text-gray-600 transition w-fit text-left">
-                      ตอบกลับ
-                    </button>
+                    <button className="text-gray-400 text-sm mt-2 hover:text-gray-600 transition w-fit text-left">ตอบกลับ</button>
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
-              <img
-                src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80"
-                alt="โปรไฟล์ของฉัน"
-                width={40}
-                height={40}
-                className="rounded-full object-cover shrink-0 mt-1"
-              />
-
+              <img src="https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80" alt="โปรไฟล์ของฉัน" width={40} height={40} className="rounded-full object-cover shrink-0 mt-1" />
               <div className="flex flex-col w-full gap-3">
                 <div className="flex items-center gap-4">
                   <span className="font-bold text-gray-900">John</span>
                   {renderEmptyStars()}
                 </div>
-
                 <div className="relative w-full">
-                  <input
-                    type="text"
-                    placeholder="เขียนความคิดเห็น..."
-                    className="w-full py-3 pl-4 pr-12 rounded-md bg-[#EAF5E4] border border-[#d2e8c5] text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#71B254] shadow-inner"
-                  />
+                  <input type="text" placeholder="เขียนความคิดเห็น..." className="w-full py-3 pl-4 pr-12 rounded-md bg-[#EAF5E4] border border-[#d2e8c5] text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#71B254] shadow-inner" />
                   <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71B254] hover:text-[#5b9642] transition p-1">
-                    <svg
-                      width="20"
-                      height="20"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
-                    </svg>
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                   </button>
                 </div>
               </div>

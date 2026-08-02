@@ -274,7 +274,7 @@ function IngredientFilterPanel({
 
   const filteredIngredients = currentCategoryData.ingredients.filter((ing) =>
     ing.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-  );
+  )
 
   return (
     <div className="flex flex-col h-full">
