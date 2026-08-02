@@ -121,13 +121,13 @@ export default function PostsFeedPage() {
         )}
 
         <div className="flex flex-col gap-8">
-          {posts.map((post, idx) => {
-            // ดึงข้อมูลจาก StorePost หากมีอยู่ใน post หรือใช้ mock data StorePost
+          {posts.map((post) => {
+            // ดึงข้อมูลจาก StorePost จริงในฐานข้อมูล
             const storePost = post.storePosts && post.storePosts.length > 0 ? post.storePosts[0] : null;
-            const isStoreSet = Boolean(storePost) || idx % 2 === 1;
+            const isStoreSet = Boolean(storePost);
             
-            const storeName = storePost?.storeName ?? "ร้านกินยาร์คโภชนา";
-            const sellingPrice = storePost?.sellingPrice ?? (199 + idx * 30);
+            const storeName = storePost?.storeName ?? "";
+            const sellingPrice = storePost?.sellingPrice ?? 0;
 
             if (isStoreSet) {
               return (
@@ -180,6 +180,18 @@ export default function PostsFeedPage() {
                           </p>
                           <p className="text-sm text-gray-700 bg-white/80 border border-[#BBF7D0] p-3 rounded-xl line-clamp-3 leading-relaxed">
                             {storePost?.storeDescription ?? "เซ็ทอาหารพิเศษจากทางร้าน คัดสรรวัตถุดิบสดใหม่พร้อมปรุง สะอาด ถูกหลักอนามัย พร้อมเสิร์ฟความอร่อยส่งตรงถึงบ้านคุณ"}
+                          </p>
+                        </div>
+
+                        {/* 📞 ช่องทางการติดต่อร้านค้า */}
+                        <div className="mt-1">
+                          <p className="text-xs font-bold text-[#16A34A] mb-1 flex items-center gap-1">
+                            <span>📞 ช่องทางการติดต่อ:</span>
+                            <span className="text-[#15803D] font-semibold bg-[#DCFCE7] px-2.5 py-0.5 rounded-md border border-[#86EFAC]">
+                              {storePost?.contactInfo && storePost.contactInfo.trim() !== "" 
+                                ? storePost.contactInfo 
+                                : "ติดต่อทางร้านโดยตรง / โทร 081-234-5678"}
+                            </span>
                           </p>
                         </div>
                       </div>

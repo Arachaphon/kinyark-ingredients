@@ -74,6 +74,7 @@ export interface StorePostItem {
   sellingPrice: number
   storeDescription: string | null
   storeLocation: string | null
+  contactInfo: string | null
   createdAt: string
   user: RecipeUser
   images: RecipeImage[]

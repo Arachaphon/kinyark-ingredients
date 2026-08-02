@@ -46,5 +46,14 @@ export function recipeListItemSelect(
           },
         }
       : {}),
+    storePosts: {
+      include: {
+        images: true,
+        videos: true,
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+      },
+    },
   }
 }

@@ -169,6 +169,7 @@ export default function CreateRecipePage() {
   const [sellingPrice, setSellingPrice] = useState("");
   const [shopDescription, setShopDescription] = useState("");
   const [shopLocation, setShopLocation] = useState("");
+  const [contactInfo, setContactInfo] = useState("");
   
   const [pinCoord, setPinCoord] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -672,6 +673,7 @@ export default function CreateRecipePage() {
           sellingPrice: parseFloat(sellingPrice) || 0,
           storeDescription: shopDescription.trim(),
           storeLocation: shopLocation.trim(),
+          contactInfo: contactInfo.trim(),
           storeImages,
           storeVideos,
         };
@@ -819,6 +821,20 @@ export default function CreateRecipePage() {
                         ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
                         : "border-[#71B254] focus:ring-[#71B254]"
                     }`}
+                  />
+                </div>
+
+                <div id="form-field-contactInfo">
+                  <label htmlFor="contact-info-input" className="block text-gray-700 text-lg mb-2 font-semibold">
+                    ช่องทางการติดต่อร้านค้า
+                  </label>
+                  <input
+                    id="contact-info-input"
+                    type="text"
+                    placeholder="เช่น โทร 081-234-5678, Line: @myshop, Facebook: ครัวคุณยาย"
+                    value={contactInfo}
+                    onChange={(e) => setContactInfo(e.target.value)}
+                    className="w-full py-3 px-4 border border-[#71B254] focus:ring-[#71B254] focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white rounded-md"
                   />
                 </div>
 

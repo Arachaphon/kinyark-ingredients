@@ -16,6 +16,7 @@ export const storeSchema = z.object({
   sellingPrice: z.coerce.number().min(0, "Selling price must be >= 0"),
   storeDescription: z.string().optional(),
   storeLocation: z.string().optional(),
+  contactInfo: z.string().optional(),
   storeImages: z.array(z.string().url("Invalid store image URL")).optional(),
   storeVideos: z.array(z.string().url("Invalid store video URL")).optional(),
 })

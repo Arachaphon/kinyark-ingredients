@@ -192,6 +192,7 @@ export async function POST(request: Request) {
                 sellingPrice: store.sellingPrice,
                 storeDescription: store.storeDescription,
                 storeLocation: store.storeLocation,
+                contactInfo: store.contactInfo,
                 ...(store.storeImages && store.storeImages.length > 0 && {
                   images: {
                     create: store.storeImages.map((url) => ({ imageUrl: url })),
