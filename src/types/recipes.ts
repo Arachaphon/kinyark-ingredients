@@ -31,6 +31,7 @@ export interface RecipeListItem {
   images: RecipeImage[]
   user: RecipeUser
   recipeIngredients: RecipeIngredientItem[]
+  storePosts?: StorePostItem[]
 }
 
 export interface RecipeListMeta {
