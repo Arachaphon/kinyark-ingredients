@@ -133,76 +133,91 @@ export default function PostsFeedPage() {
               return (
                 <div
                   key={`store-${post.id}`}
-                  className="bg-[#F0FDF4] border-2 border-[#16A34A] rounded-sm p-8 shadow-md mb-4 animate-fade-in relative"
+                  className="bg-white border border-[#71B254] rounded-sm p-8 shadow-md mb-4 animate-fade-in relative"
                 >
-                  {/* 🏷️ Tag Badge ขวามือบนสุดของการ์ด */}
-                  <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5">
-                    <span>🏪</span>
-                    <span>เซ็ทอาหารร้านค้า</span>
-                  </div>
+
 
                   <div className="flex flex-col md:flex-row gap-10">
-                    <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
+                    <div className="w-full md:w-[380px] h-[350px] flex-shrink-0 relative">
                       <Image
                         src={storePost?.images[0]?.imageUrl ?? post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                         alt={post.recipeName}
                         fill
-                        className="object-cover rounded-3xl shadow-md border border-[#16A34A]/20"
-                        sizes="350px"
+                        className="object-cover rounded-3xl shadow-md border border-[#71B254]/20"
+                        sizes="(max-width: 768px) 100vw, 380px"
                       />
                     </div>
 
-                    <div className="flex flex-col justify-between flex-1 pr-4">
-                      <div className="flex flex-col gap-3">
-                        {/* 🏪 ชื่อร้านเด่นชัดขึ้น */}
-                        <div className="flex items-center gap-2 pr-32">
-                          <span className="bg-[#16A34A] text-white text-sm font-extrabold px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5">
-                            <span>{storeName}</span>
-                          </span>
+                    <div className="flex flex-col justify-center gap-6 flex-1 pr-4">
+                      <div className="flex flex-col gap-4">
+                        {/* 🏷️ Tag Badge ร้านค้า */}
+                        <div className="w-fit bg-[#71B254] text-white text-sm font-extrabold px-4 py-1.5 rounded-full shadow-sm">
+                          <span>ร้าน {storeName}</span>
                         </div>
 
-                        {/* 🍱 ชื่อเมนู / ชื่อเซ็ทอาหาร */}
-                        <h1 className="text-3xl md:text-4xl font-bold text-[#15803D] leading-tight">
+                        {/* ชื่อเมนู / ชื่อเซ็ทอาหาร */}
+                        <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
                           เซ็ท {post.recipeName}
                         </h1>
+                      </div>
 
-                        {/* 💰 ราคาวางใต้ชื่อเมนู */}
-                        <div className="flex items-center gap-2">
-                          <span className="bg-[#DCFCE7] border border-[#86EFAC] text-[#16A34A] text-lg font-extrabold px-4 py-1 rounded-xl shadow-sm">
+                      {/* ส่วนผสมของสูตรอาหาร */}
+                      {post.recipeIngredients && post.recipeIngredients.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {post.recipeIngredients.slice(0, 5).map((ri) => (
+                            <span
+                              key={ri.id}
+                              className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
+                            >
+                              {ri.ingredient.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 💰 ราคา และ 📞 ช่องทางการติดต่อร้านค้า (แถวเดียวกัน) */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-bold text-gray-500 shrink-0">
+                            ราคาขาย:
+                          </span>
+                          <span className="text-[#71B254] text-xl font-extrabold">
                             ฿ {sellingPrice} .-
                           </span>
                         </div>
 
-                        {/* 📝 รายละเอียดเซ็ทอาหาร (ดึงมาจาก storeDescription ของ StorePost) */}
-                        <div className="mt-1">
-                          <p className="text-s font-bold text-[#16A34A] mb-1 flex items-center gap-1">
-                            <span>รายละเอียดเซ็ทอาหาร:</span>
-                          </p>
-                          <p className="text-sm text-gray-700 bg-white/80 border border-[#BBF7D0] p-3 rounded-xl line-clamp-3 leading-relaxed">
-                            {storePost?.storeDescription ?? "เซ็ทอาหารพิเศษจากทางร้าน คัดสรรวัตถุดิบสดใหม่พร้อมปรุง สะอาด ถูกหลักอนามัย พร้อมเสิร์ฟความอร่อยส่งตรงถึงบ้านคุณ"}
-                          </p>
-                        </div>
-
-                        {/* 📞 ช่องทางการติดต่อร้านค้า */}
-                        <div className="mt-1">
-                          <p className="text-xs font-bold text-[#16A34A] mb-1 flex items-center gap-1">
-                            <span>📞 ช่องทางการติดต่อ:</span>
-                            <span className="text-[#15803D] font-semibold bg-[#DCFCE7] px-2.5 py-0.5 rounded-md border border-[#86EFAC]">
-                              {storePost?.contactInfo && storePost.contactInfo.trim() !== "" 
-                                ? storePost.contactInfo 
-                                : "ติดต่อทางร้านโดยตรง / โทร 081-234-5678"}
-                            </span>
-                          </p>
+                        <div className="flex items-baseline gap-2 overflow-hidden">
+                          <span className="text-sm font-bold text-gray-500 shrink-0">
+                            ติดต่อร้านค้า:
+                          </span>
+                          <span className="text-sm font-bold text-gray-800 truncate">
+                            {storePost?.contactInfo && storePost.contactInfo.trim() !== "" 
+                              ? storePost.contactInfo 
+                              : "ติดต่อโดยตรง / โทร 081-234-5678"}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="mt-4">
+                      {/* ข้อมูลผู้โพสต์ */}
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={storePost?.user?.avatarUrl ?? post.user?.avatarUrl ?? FALLBACK_AVATAR}
+                          alt={storePost?.user?.username ?? post.user?.username ?? "ผู้เขียน"}
+                          width={32}
+                          height={32}
+                          className="rounded-full object-cover shrink-0 min-w-[32px] min-h-[32px]"
+                        />
+                        <span className="font-bold text-gray-800 text-lg">
+                          {storePost?.user?.username ?? post.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center mt-2">
                         <Link
                           href={`/recipe/${post.id}`}
-                          className="w-fit px-6 py-2.5 bg-[#16A34A] text-white rounded-full text-sm font-bold hover:bg-[#15803D] transition shadow-md flex items-center gap-2"
+                          className="w-fit px-6 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition shadow-md flex items-center gap-2"
                         >
-                          <span>ดูรายละเอียดเซ็ทอาหาร</span>
-                          <span>→</span>
+                          <span>ดูเซ็ทอาหาร</span>
                         </Link>
                       </div>
                     </div>
@@ -214,7 +229,7 @@ export default function PostsFeedPage() {
             return (
               <div
                 key={post.id}
-                className="bg-white border border-[#71B254] rounded-sm p-8 shadow-sm mb-4 animate-fade-in"
+                className="bg-white border-2 border-white rounded-sm p-8 shadow-sm mb-4 animate-fade-in"
               >
                 <div className="flex flex-col md:flex-row gap-10">
                   <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
@@ -251,7 +266,7 @@ export default function PostsFeedPage() {
                         alt="ผู้เขียน"
                         width={32}
                         height={32}
-                        className="rounded-full object-cover"
+                        className="rounded-full object-cover shrink-0"
                       />
                       <span className="font-bold text-gray-800 text-lg">
                         {post.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}

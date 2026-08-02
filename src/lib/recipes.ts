@@ -39,7 +39,12 @@ export function recipeListItemSelect(
               quantity: true,
               unit: true,
               ingredient: {
-                select: { id: true, name: true, categoryId: true },
+                select: { 
+                  id: true, 
+                  name: true, 
+                  categoryId: true,
+                  category: { select: { name: true } }
+                },
               },
             },
             orderBy: { ingredient: { name: "asc" } },

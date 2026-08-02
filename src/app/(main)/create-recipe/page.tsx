@@ -356,9 +356,31 @@ export default function CreateRecipePage() {
           const response = await fetch('/api/recipes'); 
           if (!response.ok) throw new Error("API endpoint not ready or not found");
           
-          const data = await response.json();
-          if (data && data.length > 0) {
-            setAvailableRecipes(data);
+          const body = await response.json();
+          if (body && body.data && body.data.length > 0) {
+            const mappedRecipes: SystemRecipe[] = body.data.map((r: any) => {
+              // Map categories to match the frontend selection if possible
+              return {
+                id: r.id,
+                title: r.recipeName,
+                ownerName: r.user?.username || "Unknown",
+                matchTags: r.recipeIngredients?.map((ri: any) => ri.ingredient?.name) || [],
+                ingredients: r.recipeIngredients?.map((ri: any) => {
+                  let mappedCategory = "Others";
+                  if (ri.ingredient?.category?.name) {
+                    mappedCategory = ri.ingredient.category.name;
+                  }
+                  return {
+                    category: mappedCategory,
+                    name: ri.ingredient?.name || "",
+                    quantity: String(ri.quantity || 1),
+                    unit: ri.unit || "g"
+                  };
+                }) || [],
+                instructions: r.instructions || "1. เตรียมวัตถุดิบทั้งหมด\n2. ปรุงตามสูตร\n3. จัดใส่จานพร้อมเสิร์ฟ"
+              };
+            });
+            setAvailableRecipes(mappedRecipes);
           }
         } catch (error) {
           console.warn("Failed to fetch real recipes, falling back to mock data.", error);
@@ -411,21 +433,39 @@ export default function CreateRecipePage() {
   const filteredSystemRecipes = (() => {
     const terms = ingredientSearch.toLowerCase().split(",").map(s => s.trim()).filter(Boolean);
     if (terms.length === 0) return availableRecipes;
-    return availableRecipes.filter(r =>
-      (r.matchTags && r.matchTags.some(tag => terms.some(t => tag.toLowerCase().includes(t)))) ||
-      (r.ingredients && r.ingredients.some(ing => terms.some(t => ing.name.toLowerCase().includes(t))))
-    );
+
+    const isMatch = (text: string, term: string) => {
+      let matched = text.includes(term);
+      // Special case: Searching for "พริก" (Chili) should not match "พริกไทย" (Pepper)
+      if (matched && term === "พริก") {
+        const textWithoutPepper = text.replace(/พริกไทย/g, "");
+        matched = textWithoutPepper.includes("พริก");
+      }
+      return matched;
+    };
+
+    return availableRecipes.filter(r => {
+      return terms.every(term => {
+        const foundInTags = r.matchTags && r.matchTags.some(tag => isMatch(tag.toLowerCase(), term));
+        const foundInIngredients = r.ingredients && r.ingredients.some(ing => isMatch(ing.name.toLowerCase(), term));
+        const foundInTitle = r.title && isMatch(r.title.toLowerCase(), term);
+        return foundInTags || foundInIngredients || foundInTitle;
+      });
+    });
   })();
 
   const handlePickRecipe = (recipe: SystemRecipe) => {
     setPickedRecipe(recipe);
     setIngredients(recipe.ingredients.map((ing, idx) => ({ id: idx + 100, ...ing })));
     setInstructions(recipe.instructions);
-    if (!title) setTitle(recipe.title);
+    setTitle(recipe.title);
   };
 
   const handleUndoPickRecipe = () => {
     setPickedRecipe(null);
+    setIngredients([{ id: 1, category: "", name: "", quantity: "", unit: "" }]);
+    setInstructions("");
+    setTitle("");
   };
 
   useEffect(() => {
@@ -534,33 +574,28 @@ export default function CreateRecipePage() {
 
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
-  const handleSubmitRecipe = async () => {
+  const validateForm = (): boolean => {
     setSubmitError(null);
     setMissingFields([]);
 
     const missing: string[] = [];
 
-    // 1. ตรวจสอบข้อมูลหลักของสูตรอาหาร
     if (!title.trim()) missing.push("title");
     if (!description.trim()) missing.push("description");
     if (!instructions.trim()) missing.push("instructions");
     if (coverImages.length === 0) missing.push("coverImages");
 
-    // ตรวจสอบวัตถุดิบ (ต้องมีอย่างน้อย 1 รายการ และกรอกครบทุกช่อง)
     const validIngredients = ingredients.filter(i => i.name.trim() !== "");
     if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
       missing.push("ingredients");
     }
 
-    // อุปกรณ์ (ไม่บังคับ แต่กรองเอาเฉพาะที่มีชื่อ)
-    const validEquipments = equipments.filter(e => e.name.trim() !== "");
-
-    // 2. ถ้าเป็นโพสต์ร้านค้า ตรวจสอบข้อมูลร้านค้าเพิ่มเติม (ทุกช่องต้องระบุ)
     if (postAs === "store") {
       if (!shopName.trim()) missing.push("shopName");
       if (!sellingPrice || parseFloat(sellingPrice) <= 0) missing.push("sellingPrice");
       if (!shopDescription.trim()) missing.push("shopDescription");
       if (!shopLocation.trim()) missing.push("shopLocation");
+      if (!contactInfo.trim()) missing.push("contactInfo");
       if (shopIngredientImages.length === 0) missing.push("shopIngredientImages");
     }
 
@@ -568,14 +603,28 @@ export default function CreateRecipePage() {
       setMissingFields(missing);
       setSubmitError("กรุณากรอกข้อมูลให้ครบถ้วนทุกช่อง (รวมถึงรูปภาพอย่างน้อย 1 รูป)");
       
-      // Scroll ขึ้นไปยังจุดที่กรอกไม่ครบ
       const firstMissingId = missing[0];
       const element = document.getElementById(`form-field-${firstMissingId}`) || document.getElementById("publish-recipe-btn");
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      return;
+      return false;
     }
+
+    return true;
+  };
+
+  const handleSaveDraft = async () => {
+    if (!validateForm()) return;
+    // Mock save draft
+    alert("ตรวจสอบข้อมูลผ่าน! กำลังบันทึกฉบับร่าง... (กำลังเชื่อมต่อ API ในอนาคต)");
+  };
+
+  const handleSubmitRecipe = async () => {
+    if (!validateForm()) return;
+
+    const validIngredients = ingredients.filter(i => i.name.trim() !== "");
+    const validEquipments = equipments.filter(e => e.name.trim() !== "");
 
     setIsSubmitting(true);
 
@@ -781,7 +830,7 @@ export default function CreateRecipePage() {
                       onChange={(e) => setShopName(e.target.value)}
                       className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                         missingFields.includes("shopName")
-                          ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                          ? "border-red-500 bg-red-50/20"
                           : "border-[#71B254] focus:ring-[#71B254]"
                       }`}
                     />
@@ -798,7 +847,7 @@ export default function CreateRecipePage() {
                       onChange={(e) => setSellingPrice(e.target.value)}
                       className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                         missingFields.includes("sellingPrice")
-                          ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                          ? "border-red-500 bg-red-50/20"
                           : "border-[#71B254] focus:ring-[#71B254]"
                       }`}
                     />
@@ -818,7 +867,7 @@ export default function CreateRecipePage() {
                     maxLength={300}
                     className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed ${
                       missingFields.includes("shopDescription")
-                        ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                        ? "border-red-500 bg-red-50/20"
                         : "border-[#71B254] focus:ring-[#71B254]"
                     }`}
                   />
@@ -826,7 +875,7 @@ export default function CreateRecipePage() {
 
                 <div id="form-field-contactInfo">
                   <label htmlFor="contact-info-input" className="block text-gray-700 text-lg mb-2 font-semibold">
-                    ช่องทางการติดต่อร้านค้า
+                    ช่องทางการติดต่อร้านค้า <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="contact-info-input"
@@ -834,7 +883,11 @@ export default function CreateRecipePage() {
                     placeholder="เช่น โทร 081-234-5678, Line: @myshop, Facebook: ครัวคุณยาย"
                     value={contactInfo}
                     onChange={(e) => setContactInfo(e.target.value)}
-                    className="w-full py-3 px-4 border border-[#71B254] focus:ring-[#71B254] focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white rounded-md"
+                    className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
+                      missingFields.includes("contactInfo")
+                        ? "border-red-500 bg-red-50/20"
+                        : "border-[#71B254] focus:ring-[#71B254]"
+                    }`}
                   />
                 </div>
 
@@ -977,7 +1030,7 @@ export default function CreateRecipePage() {
                           }}
                           className={`w-full py-3 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                             missingFields.includes("shopLocation")
-                              ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                              ? "border-red-500 bg-red-50/20"
                               : "border-[#71B254] focus:ring-[#71B254]"
                           }`}
                         />
@@ -1036,7 +1089,7 @@ export default function CreateRecipePage() {
                         maxLength={100}
                         className={`w-full py-3 px-4 pr-20 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                           missingFields.includes("title") 
-                            ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" 
+                            ? "border-red-500 bg-red-50/20" 
                             : "border-[#71B254] focus:ring-[#71B254]"
                         }`}
                       />
@@ -1060,7 +1113,7 @@ export default function CreateRecipePage() {
                         maxLength={300}
                         className={`w-full py-3 px-4 pr-20 pb-8 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none bg-white leading-relaxed ${
                           missingFields.includes("description") 
-                            ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" 
+                            ? "border-red-500 bg-red-50/20" 
                             : "border-[#71B254] focus:ring-[#71B254]"
                         }`}
                       />
@@ -1127,7 +1180,7 @@ export default function CreateRecipePage() {
                                 className="w-full py-2.5 px-4 mb-4 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-400 bg-white"
                               />
 
-                              <div className="flex flex-col gap-2 min-h-[100px]">
+                              <div className="flex flex-col gap-2 min-h-[100px] max-h-[210px] overflow-y-auto pr-2">
                                 {isLoadingRecipes ? (
                                   <div className="flex items-center justify-center py-4 text-sm text-[#71B254] font-semibold gap-2">
                                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
@@ -1183,7 +1236,6 @@ export default function CreateRecipePage() {
                                   <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                                 สูตรต้นฉบับโดย <span className="font-bold text-gray-700">{pickedRecipe.ownerName}</span>
-                                <span className="ml-auto text-gray-400">ID: {pickedRecipe.id}</span>
                               </div>
                             </div>
                           )}
@@ -1221,7 +1273,7 @@ export default function CreateRecipePage() {
                                 value={ing.category}
                                 onChange={(e) => handleIngredientChange(ing.id, "category", e.target.value)}
                                 className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
-                                  isIngMissing ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                                  isIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
                                 }`}
                               >
                                 <option value="" disabled hidden>เลือกหมวดหมู่...</option>
@@ -1243,7 +1295,7 @@ export default function CreateRecipePage() {
                               value={ing.quantity} 
                               onChange={(e) => handleIngredientChange(ing.id, "quantity", e.target.value)}
                               className={`w-full sm:w-[80px] py-2 px-2 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-300 bg-white text-center shadow-inner text-sm ${
-                                isIngMissing ? "border-red-500 ring-1 ring-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                                isIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
                               }`}
                             />
 
@@ -1254,7 +1306,7 @@ export default function CreateRecipePage() {
                               onChange={(e) => handleIngredientChange(ing.id, "unit", e.target.value)}
                               className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
                                 isIngMissing && !ing.unit.trim()
-                                  ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                                  ? "border-red-500 bg-red-50/20"
                                   : "border-[#71B254] focus:ring-[#71B254]"
                               }`}
                             >
@@ -1295,7 +1347,7 @@ export default function CreateRecipePage() {
                               autoComplete="off"
                               className={`w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm ${
                                 isIngMissing && !ing.name.trim()
-                                  ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                                  ? "border-red-500 bg-red-50/20"
                                   : "border-[#71B254] focus:ring-[#71B254]"
                               }`}
                             />
@@ -1538,7 +1590,7 @@ export default function CreateRecipePage() {
                 onChange={(e) => setInstructions(e.target.value)}
                 className={`w-full py-4 px-4 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 resize-none leading-relaxed bg-white shadow-inner ${
                   missingFields.includes("instructions")
-                    ? "border-red-500 ring-1 ring-red-500 bg-red-50/20"
+                    ? "border-red-500 bg-red-50/20"
                     : "border-[#71B254] focus:ring-[#71B254]"
                 }`}
               />
@@ -1606,23 +1658,28 @@ export default function CreateRecipePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-gray-100 relative z-20">
-            <div className="lg:col-span-2">
-              <button type="button" id="save-draft-btn" className="w-full py-3.5 border-2 border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center bg-white text-lg">
+          <div className="flex flex-col gap-4 pt-8 border-t border-gray-100 relative z-20">
+            {submitError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium flex items-start gap-2 shadow-sm animate-fade-in w-full">
+                <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2"></line>
+                </svg>
+                <span>{submitError}</span>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button 
+                type="button" 
+                id="save-draft-btn" 
+                onClick={handleSaveDraft}
+                className="w-full py-3.5 border-2 border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center bg-white text-lg"
+              >
                 บันทึกฉบับร่าง
               </button>
-            </div>
-            <div className="lg:col-span-1 flex flex-col gap-2">
-              {submitError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm font-medium flex items-start gap-2 shadow-sm animate-fade-in">
-                  <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12" strokeWidth="2"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth="2"></line>
-                  </svg>
-                  <span>{submitError}</span>
-                </div>
-              )}
+              
               <button 
                 type="button" 
                 id="publish-recipe-btn" 
