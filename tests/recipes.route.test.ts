@@ -44,7 +44,7 @@ describe('GET /api/recipes', () => {
     expect(body.meta).toEqual({ page: 1, limit: 10, total: 3, totalPages: 1 })
 
     expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith({
-      where: { visibility: 'public' },
+      where: { visibility: { in: ['public', 'protected'] } },
       select: expect.objectContaining({
         id: true,
         recipeName: true,
@@ -105,10 +105,10 @@ describe('GET /api/recipes', () => {
 
     expect(res.status).toBe(200)
     expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'user-1' } })
+      expect.objectContaining({ where: { OR: [{ userId: 'user-1' }, { storePosts: { some: { userId: 'user-1' } } }] } })
     )
     expect(mockPrisma.recipe.count).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
+      where: { OR: [{ userId: 'user-1' }, { storePosts: { some: { userId: 'user-1' } } }] },
     })
     expect(body.meta.total).toBe(3)
   })

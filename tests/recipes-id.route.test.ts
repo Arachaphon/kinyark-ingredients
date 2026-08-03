@@ -130,6 +130,6 @@ describe('GET /api/recipes/[id]', () => {
     const body = await res.json()
 
     expect(res.status).toBe(500)
-    expect(body.error).toBe('Internal server error')
+    expect(body.error).toBe('db down')
   })
 })

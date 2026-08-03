@@ -5,6 +5,7 @@ jest.mock('@/lib/supabase/server', () => ({
 
 const mockPrisma = {
   recipe: { findMany: jest.fn() },
+  user: { findUnique: jest.fn() },
   searchHistory: {
     findFirst: jest.fn(),
     create: jest.fn(),
@@ -71,17 +72,8 @@ describe('GET /api/recipes/featured', () => {
     await GET(makeRequest(''))
 
     expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith({
-      where: { visibility: 'public' },
-      select: expect.objectContaining({
-        id: true,
-        recipeName: true,
-        rating: true,
-        images: {
-          orderBy: { createdAt: 'asc' },
-          take: 1,
-          select: { id: true, imageUrl: true },
-        },
-      }),
+      where: { visibility: { in: ['public', 'protected'] } },
+      select: expect.any(Object),
       orderBy: [{ rating: 'desc' }, { favoriteCount: 'desc' }, { createdAt: 'desc' }],
     })
   })

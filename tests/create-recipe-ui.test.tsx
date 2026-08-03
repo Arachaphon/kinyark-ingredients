@@ -12,6 +12,15 @@ jest.mock("leaflet", () => ({
   Icon: { Default: { prototype: {}, mergeOptions: jest.fn() } },
 }));
 
+// Mock next/navigation
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}));
+
 // Mock Navbar and Link
 jest.mock("@/components/Navbar", () => {
   const MockNavbar = () => <div data-testid="navbar" />;
@@ -33,10 +42,17 @@ describe("CreateRecipePage UI Authorization", () => {
     jest.resetAllMocks();
   });
 
+  const mockFetchWithRole = (role: string) => {
+    global.fetch = jest.fn((url) => {
+      if (url === "/api/auth/me") {
+        return Promise.resolve({ json: async () => ({ user: { role } }) });
+      }
+      return Promise.resolve({ json: async () => ({ data: [] }) });
+    }) as jest.Mock;
+  };
+
   test("USER cannot access Store Recipe toggle", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({ user: { role: "USER" } }),
-    });
+    mockFetchWithRole("USER");
 
     render(<CreateRecipePage />);
 
@@ -50,9 +66,7 @@ describe("CreateRecipePage UI Authorization", () => {
   });
 
   test("STORE can access Store Recipe toggle", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({ user: { role: "STORE" } }),
-    });
+    mockFetchWithRole("STORE");
 
     render(<CreateRecipePage />);
 
@@ -62,9 +76,7 @@ describe("CreateRecipePage UI Authorization", () => {
   });
 
   test("ADMIN can access Store Recipe toggle", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => ({ user: { role: "ADMIN" } }),
-    });
+    mockFetchWithRole("ADMIN");
 
     render(<CreateRecipePage />);
 
