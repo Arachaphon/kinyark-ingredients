@@ -71,28 +71,6 @@ export default function PostsFeedPage() {
     }));
   };
 
-  // เลื่อนรูปถอยหลังของโพสต์นั้นๆ
-  const handlePrevImage = (postId: string, totalImages: number) => {
-    setActiveImageIndex((prev) => {
-      const currentIdx = prev[postId] || 0;
-      return {
-        ...prev,
-        [postId]: currentIdx === 0 ? totalImages - 1 : currentIdx - 1,
-      };
-    });
-  };
-
-  // เลื่อนรูปไปข้างหน้าของโพสต์นั้นๆ
-  const handleNextImage = (postId: string, totalImages: number) => {
-    setActiveImageIndex((prev) => {
-      const currentIdx = prev[postId] || 0;
-      return {
-        ...prev,
-        [postId]: currentIdx === totalImages - 1 ? 0 : currentIdx + 1,
-      };
-    });
-  };
-
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-1">
@@ -197,7 +175,7 @@ export default function PostsFeedPage() {
                         let ingredientsToDisplay: string[] = [];
                         
                         if (storePost?.setIngredients && Array.isArray(storePost.setIngredients) && storePost.setIngredients.length > 0) {
-                          ingredientsToDisplay = storePost.setIngredients.map((i: any) => i.name).filter(Boolean);
+                          ingredientsToDisplay = storePost.setIngredients.map((i: { name: string }) => i.name).filter(Boolean);
                         } else if (post.recipeIngredients && post.recipeIngredients.length > 0) {
                           ingredientsToDisplay = post.recipeIngredients.map((ri) => ri.ingredient.name);
                         }

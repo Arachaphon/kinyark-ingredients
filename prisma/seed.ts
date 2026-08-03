@@ -87,7 +87,7 @@ async function seed() {
   console.log('🌱 Seeding categories...')
   try {
     await client.query(`ALTER TABLE "categories" ADD CONSTRAINT "categories_name_key" UNIQUE ("name")`)
-  } catch (e) {
+  } catch {
     // constraint already exists, ignore
   }
 

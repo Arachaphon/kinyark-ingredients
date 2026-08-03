@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element, @typescript-eslint/no-unused-vars */
 "use client";
 
 import Image from "next/image";
@@ -451,7 +450,7 @@ export default function ViewRecipePage() {
                               </h4>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {storePost.setIngredients.map(
-                                  (ing: any, idx: number) => (
+                                  (ing: { name: string; quantity: string | number; unit: string }, idx: number) => (
                                     <div
                                       key={idx}
                                       className="flex items-center gap-2 text-sm text-gray-700 bg-white/50 p-2 rounded-md border border-[#16A34A]/10"
@@ -732,7 +731,7 @@ export default function ViewRecipePage() {
                         Array.isArray(sp.setIngredients) &&
                         sp.setIngredients.length > 0
                       ) {
-                        return sp.setIngredients.map((ri: any, idx: number) => (
+                        return sp.setIngredients.map((ri: { name: string }, idx: number) => (
                           <span
                             key={idx}
                             className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white"

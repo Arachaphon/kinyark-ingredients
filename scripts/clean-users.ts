@@ -47,21 +47,7 @@ async function cleanupUser(userId: string, email: string) {
     }
     console.log(`  └─ Deleted user from Supabase Auth!`)
 
-    // 1. Fetch user avatar & recipes media files
-    const userData = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { avatarUrl: true },
-    })
 
-    const recipeImages = await prisma.recipeImage.findMany({
-      where: { recipe: { userId } },
-      select: { imageUrl: true },
-    })
-
-    const recipeVideos = await prisma.recipeVideo.findMany({
-      where: { recipe: { userId } },
-      select: { videoUrl: true },
-    })
 
     // 2. Clean up Prisma Database records
     await prisma.reviewLike.deleteMany({ where: { userId } })

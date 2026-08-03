@@ -67,6 +67,12 @@ export interface ReviewItem {
   user: RecipeUser
 }
 
+export interface StoreSetIngredient {
+  name: string;
+  quantity: string | number;
+  unit: string;
+}
+
 export interface StorePostItem {
   id: string
   userId: string
@@ -76,7 +82,7 @@ export interface StorePostItem {
   storeDescription: string | null
   storeLocation: string | null
   contactInfo: string | null
-  setIngredients: any[] | null
+  setIngredients: StoreSetIngredient[] | null
   createdAt: string
   user: RecipeUser
   images: RecipeImage[]

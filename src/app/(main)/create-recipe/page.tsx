@@ -390,7 +390,7 @@ export default function CreateRecipePage() {
                     unit: ri.unit || "g"
                   };
                 }) || [],
-                instructions: (r as any).instructions || "1. เตรียมวัตถุดิบทั้งหมด\n2. ปรุงตามสูตร\n3. จัดใส่จานพร้อมเสิร์ฟ"
+                instructions: (r as { instructions?: string }).instructions || "1. เตรียมวัตถุดิบทั้งหมด\n2. ปรุงตามสูตร\n3. จัดใส่จานพร้อมเสิร์ฟ"
               };
             });
             setAvailableRecipes(mappedRecipes);
@@ -480,13 +480,13 @@ export default function CreateRecipePage() {
         if (fullRecipe.description) setDescription(fullRecipe.description);
         
         if (fullRecipe.images && fullRecipe.images.length > 0) {
-          setCoverImages(fullRecipe.images.map((img: any) => ({ previewUrl: img.imageUrl })));
+          setCoverImages(fullRecipe.images.map((img: { imageUrl: string }) => ({ previewUrl: img.imageUrl })));
         }
         if (fullRecipe.videos && fullRecipe.videos.length > 0) {
           setVideoFile({ previewUrl: fullRecipe.videos[0].videoUrl });
         }
         if (fullRecipe.equipmentItems && fullRecipe.equipmentItems.length > 0) {
-          setEquipments(fullRecipe.equipmentItems.map((eq: any, idx: number) => ({ id: idx + 200, name: eq.name })));
+          setEquipments(fullRecipe.equipmentItems.map((eq: { name: string }, idx: number) => ({ id: idx + 200, name: eq.name })));
         }
       }
     } catch (err) {
