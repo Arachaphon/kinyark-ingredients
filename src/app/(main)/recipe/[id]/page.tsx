@@ -731,14 +731,14 @@ export default function ViewRecipePage() {
                         Array.isArray(sp.setIngredients) &&
                         sp.setIngredients.length > 0
                       ) {
-                        return sp.setIngredients.map((ri: { name: string }, idx: number) => (
+                        return sp.setIngredients.map((ri: { name: string; quantity?: number | string; unit?: string }, idx: number) => (
                           <span
                             key={idx}
                             className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white"
                           >
                             {ri.name}
-                            {ri.quantity && ri.quantity > 0
-                              ? ` ${ri.quantity}${translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
+                            {ri.quantity && Number(ri.quantity) > 0
+                              ? ` ${ri.quantity}${ri.unit && translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
                               : ""}
                           </span>
                         ));
