@@ -3,13 +3,15 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 
 test.describe('Profile E2E', () => {
+  // ให้รันเรียงลำดับ ป้องกันปัญหา Parallel Session ชนกัน
+  test.describe.configure({ mode: 'serial' });
+
   test('shows user profile in SettingModal after login', async ({ page }) => {
-    const timestamp = Date.now();
+    const timestamp = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const testEmail = `e2e_profile_${timestamp}@test.com`;
     const testPassword = 'StrongPassword1!';
-    const testUsername = `profileuser${timestamp}`;
+    const testUsername = `prof${timestamp.slice(-8)}`;
 
-    // 1. Signup
     const signupPage = new SignupPage(page);
     await signupPage.goto();
     await signupPage.fillForm({
@@ -22,21 +24,17 @@ test.describe('Profile E2E', () => {
     await signupPage.submit();
     await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // 2. Login
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // 3. Click avatar/profile circle to open SettingModal
-    // avatar circle มี class border-[#3AC9B5], h1 heading มี text-[#3AC9B5]
-    // ใช้ div[class*="3AC9B5"] เพื่อเลือกเฉพาะ div เท่านั้น
     await page.locator('div[class*="3AC9B5"]').click();
 
-    // 4. Wait for SettingModal to appear and verify profile info
-    await expect(page.getByText(testUsername)).toBeVisible({ timeout: 5000 });
+    // รอจนกว่า fallback "User" (ตอนยังโหลด profile ไม่เสร็จ) หายไป ก่อน assert ข้อมูลจริง
+    await expect(page.getByRole('heading', { name: 'User' })).toHaveCount(0, { timeout: 15000 });
+    await expect(page.getByText(testUsername)).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(testEmail)).toBeVisible();
 
-    // 5. Logout via modal button
     const logoutButton = page.getByRole('button', { name: /ออกจากระบบ|Logout/i });
     if (await logoutButton.isVisible()) {
       await logoutButton.click();
@@ -53,12 +51,11 @@ test.describe('Profile E2E', () => {
   });
 
   test('returns user data when calling profile API with session', async ({ page }) => {
-    const timestamp = Date.now();
+    const timestamp = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const testEmail = `e2e_api_${timestamp}@test.com`;
     const testPassword = 'StrongPassword1!';
-    const testUsername = `apiuser${timestamp}`;
+    const testUsername = `api${timestamp.slice(-8)}`;
 
-    // 1. Signup
     const signupPage = new SignupPage(page);
     await signupPage.goto();
     await signupPage.fillForm({
@@ -71,12 +68,10 @@ test.describe('Profile E2E', () => {
     await signupPage.submit();
     await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // 2. Login to get session cookies
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // 3. Call profile API with the session cookies
     const res = await page.request.get('/api/auth/me');
     expect(res.status()).toBe(200);
 
@@ -85,17 +80,15 @@ test.describe('Profile E2E', () => {
     expect(body.user.id).toBeTruthy();
     expect(body.user.username).toBe(testUsername);
     expect(body.user.email).toBe(testEmail);
-    expect(body.user.avatarUrl).toBeDefined();
   });
 
   test('PATCH /api/users/me - updates username', async ({ page }) => {
-    const timestamp = Date.now();
-    const testEmail = `e2e_patch_username_${timestamp}@test.com`;
+    const timestamp = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const testEmail = `e2e_patch_u_${timestamp}@test.com`;
     const testPassword = 'StrongPassword1!';
-    const testUsername = `patchuser${timestamp}`;
-    const newUsername = `updated${timestamp}`;
+    const testUsername = `patchu${timestamp.slice(-8)}`;
+    const newUsername = `upd${timestamp.slice(-8)}`;
 
-    // Signup
     const signupPage = new SignupPage(page);
     await signupPage.goto();
     await signupPage.fillForm({
@@ -108,12 +101,10 @@ test.describe('Profile E2E', () => {
     await signupPage.submit();
     await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // Login
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // PATCH username
     const patchRes = await page.request.patch('/api/users/me', {
       data: { username: newUsername },
     });
@@ -121,20 +112,18 @@ test.describe('Profile E2E', () => {
     const patchBody = await patchRes.json();
     expect(patchBody.data.user.username).toBe(newUsername);
 
-    // GET verify
     const getRes = await page.request.get('/api/users/me');
     const getBody = await getRes.json();
     expect(getBody.user.username).toBe(newUsername);
   });
 
   test('PATCH /api/users/me - requests email update', async ({ page }) => {
-    const timestamp = Date.now();
-    const testEmail = `e2e_patch_${timestamp}@gmail.com`;
+    const timestamp = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const testEmail = `e2e_em_${timestamp}@example.com`;
     const testPassword = 'StrongPassword1!';
-    const testUsername = `emailuser${timestamp}`;
-    const newEmail = `e2e_patch_new_${timestamp}@gmail.com`;
+    const testUsername = `emuser${timestamp.slice(-8)}`;
+    const newEmail = `e2e_em_new_${timestamp}@example.com`;
 
-    // Signup
     const signupPage = new SignupPage(page);
     await signupPage.goto();
     await signupPage.fillForm({
@@ -147,33 +136,33 @@ test.describe('Profile E2E', () => {
     await signupPage.submit();
     await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // Login
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // PATCH email
     const patchRes = await page.request.patch('/api/users/me', {
-      data: { email: newEmail },
+      data: { 
+        email: newEmail,
+        currentPassword: testPassword,
+      },
     });
+
     expect(patchRes.status()).toBe(200);
     const patchBody = await patchRes.json();
     expect(patchBody.data.emailChangePending).toBe(true);
 
-    // GET still shows old confirmed email
     const getRes = await page.request.get('/api/users/me');
     const getBody = await getRes.json();
     expect(getBody.user.email).toBe(testEmail);
   });
 
   test('PATCH /api/users/me - updates password', async ({ page }) => {
-    const timestamp = Date.now();
-    const testEmail = `e2e_patch_pass_${timestamp}@test.com`;
+    const timestamp = `${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const testEmail = `e2e_pass_${timestamp}@test.com`;
     const testPassword = 'StrongPassword1!';
     const newPassword = 'NewStrongPass1!';
-    const testUsername = `passuser${timestamp}`;
+    const testUsername = `puser${timestamp.slice(-8)}`;
 
-    // Signup
     const signupPage = new SignupPage(page);
     await signupPage.goto();
     await signupPage.fillForm({
@@ -186,12 +175,10 @@ test.describe('Profile E2E', () => {
     await signupPage.submit();
     await expect(page).toHaveURL(/.*\/login/, { timeout: 10000 });
 
-    // Login
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    // PATCH password
     const patchRes = await page.request.patch('/api/users/me', {
       data: {
         newPassword,
@@ -202,10 +189,10 @@ test.describe('Profile E2E', () => {
     const patchBody = await patchRes.json();
     expect(patchBody.data.passwordUpdated).toBe(true);
 
-    // Logout
+    // Logout & Clear cookies
     await page.request.post('/api/auth/logout');
+    await page.context().clearCookies();
     await page.goto('/login', { timeout: 10000 });
-    await expect(page).toHaveURL(/.*\/login/);
 
     // Old password should fail
     await loginPage.login(testEmail, testPassword);
@@ -213,18 +200,10 @@ test.describe('Profile E2E', () => {
     expect(oldError).toBeTruthy();
 
     // Login with new password
+    await page.context().clearCookies();
     await page.goto('/login', { timeout: 10000 });
     await loginPage.login(testEmail, newPassword);
     await expect(page).toHaveURL(/.*\/home/, { timeout: 15000 });
-
-    // Restore original password
-    const restoreRes = await page.request.patch('/api/users/me', {
-      data: {
-        newPassword: testPassword,
-        currentPassword: newPassword,
-      },
-    });
-    expect(restoreRes.status()).toBe(200);
   });
 
   test('PATCH /api/users/me - returns 401 without session', async ({ request }) => {

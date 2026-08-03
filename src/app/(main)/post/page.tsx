@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Image from "next/image";
@@ -61,6 +62,35 @@ export default function PostsFeedPage() {
   useEffect(() => {
     fetchPosts(1);
   }, [fetchPosts]);
+
+  const handleSelectImage = (postId: number, index: number) => {
+    setActiveImageIndex((prev) => ({
+      ...prev,
+      [postId]: index,
+    }));
+  };
+
+  // เลื่อนรูปถอยหลังของโพสต์นั้นๆ
+  const handlePrevImage = (postId: number, totalImages: number) => {
+    setActiveImageIndex((prev) => {
+      const currentIdx = prev[postId] || 0;
+      return {
+        ...prev,
+        [postId]: currentIdx === 0 ? totalImages - 1 : currentIdx - 1,
+      };
+    });
+  };
+
+  // เลื่อนรูปไปข้างหน้าของโพสต์นั้นๆ
+  const handleNextImage = (postId: number, totalImages: number) => {
+    setActiveImageIndex((prev) => {
+      const currentIdx = prev[postId] || 0;
+      return {
+        ...prev,
+        [postId]: currentIdx === totalImages - 1 ? 0 : currentIdx + 1,
+      };
+    });
+  };
 
   const renderStars = (rating: number) => {
     return (
@@ -232,6 +262,27 @@ export default function PostsFeedPage() {
                           <span>ดูเซ็ทอาหาร</span>
                         </Link>
                       </div>
+                    </div>
+
+                    {/* Thumbnail เลือกดูรูปภาพทั้งหมด 4 รูป */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {post.images.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSelectImage(post.id, idx)}
+                          className={`h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                            currentImgIdx === idx
+                              ? "border-[#71B254] scale-95 shadow-sm"
+                              : "border-transparent opacity-60 hover:opacity-100"
+                          }`}
+                        >
+                          <img  
+                            src={img}
+                            alt={`รูปที่ ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
