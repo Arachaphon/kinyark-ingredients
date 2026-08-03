@@ -20,6 +20,8 @@ export const storeSchema = z.object({
   storeImages: z.array(z.string().url("Invalid store image URL")).optional(),
   storeVideos: z.array(z.string().url("Invalid store video URL")).optional(),
   setIngredients: z.array(ingredientItemSchema).optional(),
+  recipeId: z.string().uuid("Invalid recipe ID").optional(),
+  visibility: z.enum(["public", "protected", "private", "draft"]).optional(),
 })
 
 export const createRecipeSchema = z.object({
@@ -44,10 +46,15 @@ export const createRecipeSchema = z.object({
   aiProvider: z.string().optional(),
   visibility: z.enum(["public", "protected", "private", "draft"]).default("public").optional(),
   systemRecipeId: z.string().uuid("Invalid system recipe ID").optional(),
-  referenceRecipeId: z.string().uuid("Invalid reference recipe ID").optional(),
+  referenceRecipeId: z.string().uuid("Invalid reference recipe ID").nullish(),
 })
 
-export const updateRecipeSchema = createRecipeSchema.partial()
+export const updateRecipeSchema = createRecipeSchema
+  .partial()
+  .omit({ visibility: true })
+  .extend({
+    visibility: z.enum(["public", "protected", "private", "draft"]).optional(),
+  })
 
 // Validates query params for GET /api/recipes
 // ?mine=true (owner feed, all visibility) vs public feed (visibility = "public")

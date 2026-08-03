@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { deleteFileByUrl } from "@/lib/storage"
 import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
+import { Prisma } from "@prisma/client"
+
+class HttpError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
 
 export const dynamic = "force-dynamic"
 
@@ -32,7 +41,7 @@ export async function GET(
           select: { id: true, username: true, avatarUrl: true },
         },
         recipeIngredients: {
-          include: { ingredient: true },
+          include: { ingredient: { include: { category: true } } },
           orderBy: { ingredient: { name: "asc" } },
         },
         equipmentItems: { orderBy: { createdAt: "asc" } },
@@ -59,13 +68,18 @@ export async function GET(
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // Private and Draft recipes are only visible to their owner
-    if ((recipe.visibility === "private" || recipe.visibility === "draft") && recipe.userId !== user?.id) {
+    const isStorePostOwner = user
+      ? recipe.storePosts.some((sp) => sp.userId === user.id)
+      : false
+
+    // Private and Draft recipes are only visible to their owner (or store post owner)
+    if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
+        recipe.userId !== user?.id && !isStorePostOwner) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // Protected recipes are hidden from STORE role users
-    if (recipe.visibility === "protected" && user) {
+    // Protected recipes are hidden from STORE role users (except the recipe/store post owner)
+    if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
       const profile = await prisma.user.findUnique({
         where: { id: user.id },
         select: { role: true },
@@ -186,16 +200,19 @@ export async function PATCH(
 
     const recipeId = parsedId.data.id
 
-    // Check if recipe exists and user is owner
+    // Check if recipe exists and user is owner (recipe or its store posts)
     const existingRecipe = await prisma.recipe.findUnique({
-      where: { id: recipeId }
+      where: { id: recipeId },
+      include: { storePosts: { select: { userId: true } } },
     })
 
     if (!existingRecipe) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    if (existingRecipe.userId !== user.id) {
+    const isRecipeOwner = existingRecipe.userId === user.id
+    const isStorePostOwner = existingRecipe.storePosts.some((sp) => sp.userId === user.id)
+    if (!isRecipeOwner && !isStorePostOwner) {
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -203,7 +220,10 @@ export async function PATCH(
     const result = updateRecipeSchema.safeParse(body)
 
     if (!result.success) {
-      return Response.json({ error: result.error.flatten() }, { status: 400 })
+      return Response.json(
+        { error: result.error.issues.map((issue) => issue.message).join("; ") },
+        { status: 400 }
+      )
     }
 
     const {
@@ -218,8 +238,32 @@ export async function PATCH(
       bgColor,
       aiProvider,
       visibility,
-      referenceRecipeId
+      referenceRecipeId,
+      store
     } = result.data
+
+    // Store post owners who do NOT own the recipe may only update their store post
+    if (!isRecipeOwner && isStorePostOwner) {
+      const hasContentFields =
+        recipeName !== undefined ||
+        description !== undefined ||
+        instructions !== undefined ||
+        ingredients !== undefined ||
+        equipmentItems !== undefined ||
+        featuredImageUrl !== undefined ||
+        images !== undefined ||
+        videos !== undefined ||
+        bgColor !== undefined ||
+        aiProvider !== undefined ||
+        visibility !== undefined ||
+        referenceRecipeId !== undefined
+      if (hasContentFields) {
+        return Response.json(
+          { error: "Forbidden: you can only edit your store post fields" },
+          { status: 403 }
+        )
+      }
+    }
 
     // 1. Process images and videos
     let uniqueImageUrls: string[] | undefined;
@@ -230,6 +274,19 @@ export async function PATCH(
       ].filter((url): url is string => !!url)
       uniqueImageUrls = Array.from(new Set(allImageUrls))
     }
+
+    const hasContentChanges =
+      recipeName !== undefined ||
+      description !== undefined ||
+      instructions !== undefined ||
+      ingredients !== undefined ||
+      equipmentItems !== undefined ||
+      bgColor !== undefined ||
+      aiProvider !== undefined ||
+      visibility !== undefined ||
+      referenceRecipeId !== undefined ||
+      uniqueImageUrls !== undefined ||
+      videos !== undefined
 
     const updatedRecipe = await prisma.$transaction(async (tx) => {
       // Upsert ingredients if provided
@@ -282,7 +339,98 @@ export async function PATCH(
         await tx.recipeVideo.deleteMany({ where: { recipeId } })
       }
 
-      // Update recipe record
+      // Handle store post (create if not exists, otherwise update)
+      if (store) {
+        // Allow switching the base recipe this store post is linked to
+        let effectiveRecipeId = recipeId
+        if (store.recipeId && store.recipeId !== recipeId) {
+          const targetRecipe = await tx.recipe.findUnique({
+            where: { id: store.recipeId },
+            select: { id: true, visibility: true, userId: true },
+          })
+          if (!targetRecipe) {
+            throw new HttpError(404, "Target recipe not found")
+          }
+          const targetIsUsable =
+            targetRecipe.visibility === "public" ||
+            targetRecipe.userId === user.id
+          if (!targetIsUsable) {
+            throw new HttpError(400, "Cannot link the store post to this recipe")
+          }
+          effectiveRecipeId = store.recipeId
+        }
+
+        const existingStorePost = await tx.storePost.findFirst({
+          where: { recipeId, userId: user.id },
+        })
+
+        const commonFields = {
+          storeName: store.storeName,
+          sellingPrice: store.sellingPrice,
+          storeDescription: store.storeDescription ?? null,
+          storeLocation: store.storeLocation ?? null,
+          contactInfo: store.contactInfo ?? null,
+          visibility: store.visibility ?? visibility ?? existingStorePost?.visibility ?? "public",
+        }
+
+        if (existingStorePost) {
+          await tx.storePostImage.deleteMany({ where: { storePostId: existingStorePost.id } })
+          await tx.storePostVideo.deleteMany({ where: { storePostId: existingStorePost.id } })
+          await tx.storePost.update({
+            where: { id: existingStorePost.id },
+            data: {
+              recipeId: effectiveRecipeId,
+              ...commonFields,
+              setIngredients: store.setIngredients ?? Prisma.DbNull,
+              ...(store.storeImages && {
+                images: {
+                  create: store.storeImages.map((url) => ({ imageUrl: url })),
+                },
+              }),
+              ...(store.storeVideos && {
+                videos: {
+                  create: store.storeVideos.map((url) => ({ videoUrl: url })),
+                },
+              }),
+            },
+          })
+        } else {
+          await tx.storePost.create({
+            data: {
+              userId: user.id,
+              recipeId: effectiveRecipeId,
+              ...commonFields,
+              setIngredients: store.setIngredients ?? undefined,
+              ...(store.storeImages && {
+                images: {
+                  create: store.storeImages.map((url) => ({ imageUrl: url })),
+                },
+              }),
+              ...(store.storeVideos && {
+                videos: {
+                  create: store.storeVideos.map((url) => ({ videoUrl: url })),
+                },
+              }),
+            },
+          })
+        }
+      }
+
+      // Update recipe record (skip if there are no content changes, e.g. store-only edit)
+      if (!hasContentChanges) {
+        return tx.recipe.findUnique({
+          where: { id: recipeId },
+          include: {
+            recipeIngredients: {
+              include: { ingredient: { include: { category: true } } },
+            },
+            images: true,
+            videos: true,
+            equipmentItems: true,
+          },
+        });
+      }
+
       return tx.recipe.update({
         where: { id: recipeId },
         data: {
@@ -327,11 +475,17 @@ export async function PATCH(
           equipmentItems: true,
         }
       })
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
     })
 
     return Response.json({ data: updatedRecipe })
   } catch (error) {
     console.error("PATCH /api/recipes/[id] error:", error)
+    if (error instanceof HttpError) {
+      return Response.json({ error: error.message }, { status: error.status })
+    }
     return Response.json(
       { error: "Internal server error" },
       { status: 500 }

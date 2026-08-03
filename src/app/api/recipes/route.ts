@@ -18,7 +18,10 @@ export async function GET(request: Request) {
     })
 
     if (!parsed.success) {
-      return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+      return Response.json(
+        { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+        { status: 400 }
+      )
     }
 
     const { page, limit, mine, publicOnly } = parsed.data
@@ -77,10 +80,20 @@ export async function GET(request: Request) {
         });
 
         if (profile?.role === "STORE") {
-          // Store users cannot see protected recipes
-          visibilityFilter = { visibility: "public" };
+          // Store users cannot see protected recipes, unless they own them
+          visibilityFilter = {
+            OR: [
+              { visibility: "public" },
+              { userId: user.id }
+            ]
+          };
         } else {
-          visibilityFilter = { visibility: { in: ["public", "protected"] } };
+          visibilityFilter = {
+            OR: [
+              { visibility: { in: ["public", "protected"] } },
+              { userId: user.id }
+            ]
+          };
         }
       } else {
         // Not logged in — show both public and protected
@@ -134,7 +147,7 @@ export async function POST(request: Request) {
   if (!result.success) {
     return Response.json(
       {
-        error: result.error.flatten(),
+        error: result.error.issues.map((issue) => issue.message).join("; "),
       },
       {
         status: 400,
@@ -192,7 +205,7 @@ export async function POST(request: Request) {
             storeDescription: store.storeDescription,
             storeLocation: store.storeLocation,
             contactInfo: store.contactInfo,
-            visibility: visibility,
+            visibility: store.visibility ?? visibility,
             setIngredients: store.setIngredients ? store.setIngredients : undefined,
             ...(store.storeImages && store.storeImages.length > 0 && {
               images: {
@@ -274,7 +287,7 @@ export async function POST(request: Request) {
                 storeDescription: store.storeDescription,
                 storeLocation: store.storeLocation,
                 contactInfo: store.contactInfo,
-                visibility: visibility,
+                visibility: store.visibility ?? visibility,
                 setIngredients: store.setIngredients ? store.setIngredients : undefined,
                 ...(store.storeImages && store.storeImages.length > 0 && {
                   images: {

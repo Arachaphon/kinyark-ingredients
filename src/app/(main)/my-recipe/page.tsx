@@ -223,6 +223,9 @@ export default function MyRecipePage() {
                               <h3 className="text-xl font-bold text-gray-900">
                                 {recipe.recipeName}
                               </h3>
+                              <span className="text-xs font-extrabold bg-[#EAF5E4] text-[#5A9240] px-2.5 py-0.5 rounded-full">
+                                สูตรอาหาร
+                              </span>
                               {isStoreSet && (
                                 <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">
                                   มีเซ็ทอาหารร้านค้า
@@ -230,9 +233,13 @@ export default function MyRecipePage() {
                               )}
                               <span
                                 className={`text-xs font-semibold px-2.5 py-1 rounded-sm ${
-                                  recipe.visibility === "public" || recipe.visibility === "protected"
+                                  recipe.visibility === "public"
                                     ? "bg-[#EAF5E4] text-[#5A9240]"
-                                    : "bg-gray-100 text-gray-500"
+                                    : recipe.visibility === "protected"
+                                      ? "bg-[#FEF9C3] text-[#A16207]"
+                                      : recipe.visibility === "private"
+                                        ? "bg-[#FDE8E8] text-[#C0392B]"
+                                        : "bg-gray-100 text-gray-500"
                                 }`}
                               >
                                 {recipe.visibility === "public" ? "สาธารณะ" : (recipe.visibility === "protected" ? "สาธารณะจำกัดสิทธิ์" : (recipe.visibility === "private" ? "ส่วนตัว" : "ฉบับร่าง"))}
@@ -318,12 +325,16 @@ export default function MyRecipePage() {
                                   </span>
                                   <span
                                     className={`text-xs font-semibold px-2.5 py-1 rounded-sm ${
-                                      recipe.visibility === "public" || recipe.visibility === "protected"
+                                      sp.visibility === "public"
                                         ? "bg-[#EAF5E4] text-[#5A9240]"
-                                        : "bg-gray-100 text-gray-500"
+                                        : sp.visibility === "protected"
+                                          ? "bg-[#FEF9C3] text-[#A16207]"
+                                          : sp.visibility === "private"
+                                            ? "bg-[#FDE8E8] text-[#C0392B]"
+                                            : "bg-gray-100 text-gray-500"
                                     }`}
                                   >
-                                    {recipe.visibility === "public" ? "สาธารณะ" : (recipe.visibility === "protected" ? "สาธารณะจำกัดสิทธิ์" : (recipe.visibility === "private" ? "ส่วนตัว" : "ฉบับร่าง"))}
+                                    {sp.visibility === "public" ? "สาธารณะ" : (sp.visibility === "protected" ? "สาธารณะจำกัดสิทธิ์" : (sp.visibility === "private" ? "ส่วนตัว" : "ฉบับร่าง"))}
                                   </span>
                                 </div>
                                 <div className="flex items-center flex-wrap gap-3 mt-1">
@@ -347,6 +358,7 @@ export default function MyRecipePage() {
                                 {sp.storeDescription && (
                                   <p className="text-sm text-gray-500 mt-2 line-clamp-2">{sp.storeDescription}</p>
                                 )}
+                                <div className="text-gray-400 mt-2">เผยแพร่เมื่อ {formatThaiDate(sp.createdAt)}</div>
                               </div>
                             </div>
 

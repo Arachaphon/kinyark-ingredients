@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -52,9 +53,9 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
     ownerName: "user_นุช88",
     matchTags: ["อกไก่", "มะนาว", "พริก"],
     ingredients: [
-      { category: "Meat", name: "อกไก่", quantity: "300", unit: "g" },
-      { category: "Fruits", name: "มะนาว", quantity: "2", unit: "piece" },
-      { category: "Vegetables", name: "พริกขี้หนู", quantity: "5", unit: "piece" },
+      { category: "Meat", name: "อกไก่", quantity: "300", unit: "กรัม" },
+      { category: "Fruits", name: "มะนาว", quantity: "2", unit: "ชิ้น/ตัว/ฟอง" },
+      { category: "Vegetables", name: "พริกขี้หนู", quantity: "5", unit: "ชิ้น/ตัว/ฟอง" },
     ],
     instructions: "1. ต้มน้ำให้เดือด ใส่ตะไคร้ ข่า ใบมะกรูด\n2. ใส่อกไก่หั่นพอดีคำ ต้มจนสุก\n3. ปรุงรสด้วยน้ำปลา น้ำมะนาว พริกขี้หนูทุบ",
   },
@@ -64,8 +65,8 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
     ownerName: "chef_ple",
     matchTags: ["อกไก่", "ผักกาด"],
     ingredients: [
-      { category: "Meat", name: "อกไก่", quantity: "250", unit: "g" },
-      { category: "Vegetables", name: "ผักกาดแก้ว", quantity: "1", unit: "piece" },
+      { category: "Meat", name: "อกไก่", quantity: "250", unit: "กรัม" },
+      { category: "Vegetables", name: "ผักกาดแก้ว", quantity: "1", unit: "ชิ้น/ตัว/ฟอง" },
     ],
     instructions: "1. ย่างอกไก่จนสุก พักให้เย็นแล้วหั่นเป็นเส้น\n2. จัดผักกาดใส่จาน วางอกไก่ด้านบน\n3. ราดซอสงาก่อนเสิร์ฟ",
   },
@@ -75,9 +76,9 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
     ownerName: "user_ต้น",
     matchTags: ["อกไก่", "พริก", "กะทิ"],
     ingredients: [
-      { category: "Meat", name: "อกไก่", quantity: "300", unit: "g" },
-      { category: "Spices and Herbs", name: "พริกแกงเขียวหวาน", quantity: "3", unit: "tablespoon" },
-      { category: "Others", name: "กะทิ", quantity: "400", unit: "ml" },
+      { category: "Meat", name: "อกไก่", quantity: "300", unit: "กรัม" },
+      { category: "Spices and Herbs", name: "พริกแกงเขียวหวาน", quantity: "3", unit: "ช้อนโต๊ะ" },
+      { category: "Others", name: "กะทิ", quantity: "400", unit: "มิลลิลิตร" },
     ],
     instructions: "1. ผัดพริกแกงกับกะทิหัวจนแตกมัน\n2. ใส่อกไก่ ผัดให้สุก\n3. เติมกะทิที่เหลือ ปรุงรส ใส่ใบโหระพา",
   },
@@ -98,16 +99,17 @@ export default function CreateRecipePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const [visibility, setVisibility] = useState<"public" | "protected" | "private">("public");
+  const [storeVisibility, setStoreVisibility] = useState<"public" | "protected" | "private">("public");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [ingredients, setIngredients] = useState([
-    { id: 1, category: "", name: "", quantity: "", unit: "" }
+    { id: 1, category: "", name: "", quantity: "", unit: "กรัม" }
   ]);
 
   const [setIngredientsList, setSetIngredientsList] = useState([
-    { id: 1, category: "", name: "", quantity: "", unit: "" }
+    { id: 1, category: "", name: "", quantity: "", unit: "กรัม" }
   ]);
 
   const [equipments, setEquipments] = useState([
@@ -458,7 +460,7 @@ export default function CreateRecipePage() {
     };
 
     return availableRecipes.filter(r => {
-      return terms.every(term => {
+      return terms.some(term => {
         const foundInTags = r.matchTags && r.matchTags.some(tag => isMatch(tag.toLowerCase(), term));
         const foundInIngredients = r.ingredients && r.ingredients.some(ing => isMatch(ing.name.toLowerCase(), term));
         const foundInTitle = r.title && isMatch(r.title.toLowerCase(), term);
@@ -478,7 +480,16 @@ export default function CreateRecipePage() {
       if (res.ok) {
         const fullRecipe = (await res.json()).data;
         if (fullRecipe.description) setDescription(fullRecipe.description);
-        
+        if (fullRecipe.instructions) setInstructions(fullRecipe.instructions);
+        if (fullRecipe.recipeIngredients && fullRecipe.recipeIngredients.length > 0) {
+          setIngredients(fullRecipe.recipeIngredients.map((ri: { ingredient?: { name: string; category?: { name: string } }; quantity?: number | string | null; unit?: string | null }, idx: number) => ({
+            id: idx + 100,
+            category: ri.ingredient?.category?.name || "Others",
+            name: ri.ingredient?.name || "",
+            quantity: String(ri.quantity ?? ""),
+            unit: ri.unit || "กรัม",
+          })));
+        }
         if (fullRecipe.images && fullRecipe.images.length > 0) {
           setCoverImages(fullRecipe.images.map((img: { imageUrl: string }) => ({ previewUrl: img.imageUrl })));
         }
@@ -496,7 +507,7 @@ export default function CreateRecipePage() {
 
   const handleUndoPickRecipe = () => {
     setPickedRecipe(null);
-    setIngredients([{ id: 1, category: "", name: "", quantity: "", unit: "" }]);
+    setIngredients([{ id: 1, category: "", name: "", quantity: "", unit: "กรัม" }]);
     setInstructions("");
     setTitle("");
     setDescription("");
@@ -545,7 +556,7 @@ export default function CreateRecipePage() {
   };
 
   const addIngredient = () => {
-    setIngredients([...ingredients, { id: Date.now(), category: "", name: "", quantity: "", unit: "" }]);
+    setIngredients([...ingredients, { id: Date.now(), category: "", name: "", quantity: "", unit: "กรัม" }]);
   };
 
   const removeIngredient = (idToRemove: number) => {
@@ -561,7 +572,7 @@ export default function CreateRecipePage() {
   };
 
   const addSetIngredient = () => {
-    setSetIngredientsList([...setIngredientsList, { id: Date.now(), category: "", name: "", quantity: "", unit: "" }]);
+    setSetIngredientsList([...setIngredientsList, { id: Date.now(), category: "", name: "", quantity: "", unit: "กรัม" }]);
   };
 
   const removeSetIngredient = (idToRemove: number) => {
@@ -831,6 +842,7 @@ export default function CreateRecipePage() {
           storeImages,
           storeVideos,
           setIngredients: validSetIngredients.length > 0 ? validSetIngredients : undefined,
+          visibility: storeVisibility,
         };
       }
 
@@ -842,9 +854,22 @@ export default function CreateRecipePage() {
       });
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        console.error("API Error Response:", data);
-        setSubmitError(data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาตรวจสอบและลองใหม่อีกครั้ง");
+        const rawBody = await response.text();
+        let data: Record<string, unknown> = {};
+        try {
+          data = rawBody ? JSON.parse(rawBody) : {};
+        } catch {
+          data = { error: rawBody || `HTTP ${response.status}` };
+        }
+        console.error("API Error Response:", data, `Status: ${response.status}`);
+        const apiError = data.error;
+        const errorMessage =
+          typeof apiError === "string"
+            ? apiError
+            : apiError
+              ? JSON.stringify(apiError)
+              : rawBody || `เกิดข้อผิดพลาด (HTTP ${response.status})`;
+        setSubmitError(errorMessage || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาตรวจสอบและลองใหม่อีกครั้ง");
         setIsSubmitting(false);
         return;
       }
@@ -1046,21 +1071,21 @@ export default function CreateRecipePage() {
                               }`}
                             >
                               <option value="" disabled hidden>เลือกหน่วย...</option>
-                              <option value="g">กรัม (g)</option>
-                              <option value="kg">กิโลกรัม (kg)</option>
-                              <option value="ml">มิลลิลิตร (ml)</option>
-                              <option value="l">ลิตร (l)</option>
-                              <option value="piece">ตัว / ชิ้น / ฟอง</option>
-                              <option value="head">หัว / ลูก / ผล</option>
-                              <option value="slice">แว่น</option>
-                              <option value="tablespoon">ช้อนโต๊ะ</option>
-                              <option value="teaspoon">ช้อนชา</option>
-                              <option value="cup">ถ้วยตวง</option>
-                              <option value="pinch">หยิบมือ / เล็กน้อย</option>
-                              <option value="leaf">ใบ / กลีบ / ฝัก / ต้น</option>
-                              <option value="seed">เม็ด / เมล็ด</option>
-                              <option value="pack">ห่อ / ถุง / ซอง</option>
-                              <option value="bunch">กำ / มัด / พวง</option>
+                              <option value="กรัม">กรัม (g)</option>
+                              <option value="กิโลกรัม">กิโลกรัม (kg)</option>
+                              <option value="มิลลิลิตร">มิลลิลิตร (ml)</option>
+                              <option value="ลิตร">ลิตร (l)</option>
+                              <option value="ชิ้น/ตัว/ฟอง">ตัว / ชิ้น / ฟอง</option>
+                              <option value="หัว/ลูก/ผล">หัว / ลูก / ผล</option>
+                              <option value="แว่น">แว่น</option>
+                              <option value="ช้อนโต๊ะ">ช้อนโต๊ะ</option>
+                              <option value="ช้อนชา">ช้อนชา</option>
+                              <option value="ถ้วยตวง">ถ้วยตวง</option>
+                              <option value="หยิบมือ/เล็กน้อย">หยิบมือ / เล็กน้อย</option>
+                              <option value="ใบ/กลีบ/ฝัก/ต้น">ใบ / กลีบ / ฝัก / ต้น</option>
+                              <option value="เม็ด/เมล็ด">เม็ด / เมล็ด</option>
+                              <option value="ห่อ/ถุง/ซอง">ห่อ / ถุง / ซอง</option>
+                              <option value="กำ/มัด/พวง">กำ / มัด / พวง</option>
                             </select>
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
@@ -1287,6 +1312,65 @@ export default function CreateRecipePage() {
                       )}
                     </div>
                   </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <h3 className="text-lg font-bold text-gray-800">การมองเห็นเซ็ทอาหาร</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <label
+                        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          storeVisibility === 'public'
+                            ? 'border-[#71B254] bg-[#F4FAF1]'
+                            : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="pt-0.5 shrink-0">
+                          <input id="store-visibility-public-radio" type="radio" name="store-visibility" value="public" checked={storeVisibility === 'public'} onChange={() => setStoreVisibility('public')} className="w-5 h-5 accent-[#71B254] cursor-pointer" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800 text-base mb-1">สาธารณะ</div>
+                          <div className="text-xs text-gray-500 leading-snug">ทุกคนเห็นเซ็ทอาหารนี้ได้ และสามารถสั่งซื้อได้</div>
+                        </div>
+                      </label>
+
+                      <label
+                        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          storeVisibility === 'protected'
+                            ? 'border-[#71B254] bg-[#F4FAF1]'
+                            : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="pt-0.5 shrink-0">
+                          <input id="store-visibility-protected-radio" type="radio" name="store-visibility" value="protected" checked={storeVisibility === 'protected'} onChange={() => setStoreVisibility('protected')} className="w-5 h-5 accent-[#71B254] cursor-pointer" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800 text-base mb-1 flex items-center gap-2">
+                            สาธารณะ (จำกัดสิทธิ์)
+                          </div>
+                          <div className="text-xs text-gray-500 leading-snug">ร้านค้าไม่สามารถเห็นเซ็ทอาหารนี้ได้</div>
+                        </div>
+                      </label>
+
+                      <label
+                        className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          storeVisibility === 'private'
+                            ? 'border-[#71B254] bg-[#F4FAF1]'
+                            : 'border-gray-200 bg-white hover:border-[#71B254] hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="pt-0.5 shrink-0">
+                          <input id="store-visibility-private-radio" type="radio" name="store-visibility" value="private" checked={storeVisibility === 'private'} onChange={() => setStoreVisibility('private')} className="w-5 h-5 accent-[#71B254] cursor-pointer" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800 text-base mb-1 flex items-center gap-2">
+                            ส่วนตัว
+                          </div>
+                          <div className="text-xs text-gray-500 leading-snug">มีเพียงคุณเท่านั้นที่เห็นเซ็ทอาหารนี้ เก็บไว้ดูและจัดการเองได้</div>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1572,21 +1656,21 @@ export default function CreateRecipePage() {
                               }`}
                             >
                               <option value="" disabled hidden>เลือกหน่วย...</option>
-                              <option value="g">กรัม (g)</option>
-                              <option value="kg">กิโลกรัม (kg)</option>
-                              <option value="ml">มิลลิลิตร (ml)</option>
-                              <option value="l">ลิตร (l)</option>
-                              <option value="piece">ตัว / ชิ้น / ฟอง</option>
-                              <option value="head">หัว / ลูก / ผล</option>
-                              <option value="slice">แว่น</option>
-                              <option value="tablespoon">ช้อนโต๊ะ</option>
-                              <option value="teaspoon">ช้อนชา</option>
-                              <option value="cup">ถ้วยตวง</option>
-                              <option value="pinch">หยิบมือ / เล็กน้อย</option>
-                              <option value="leaf">ใบ / กลีบ / ฝัก / ต้น</option>
-                              <option value="seed">เม็ด / เมล็ด</option>
-                              <option value="pack">ห่อ / ถุง / ซอง</option>
-                              <option value="bunch">กำ / มัด / พวง</option>
+                              <option value="กรัม">กรัม (g)</option>
+                              <option value="กิโลกรัม">กิโลกรัม (kg)</option>
+                              <option value="มิลลิลิตร">มิลลิลิตร (ml)</option>
+                              <option value="ลิตร">ลิตร (l)</option>
+                              <option value="ชิ้น/ตัว/ฟอง">ตัว / ชิ้น / ฟอง</option>
+                              <option value="หัว/ลูก/ผล">หัว / ลูก / ผล</option>
+                              <option value="แว่น">แว่น</option>
+                              <option value="ช้อนโต๊ะ">ช้อนโต๊ะ</option>
+                              <option value="ช้อนชา">ช้อนชา</option>
+                              <option value="ถ้วยตวง">ถ้วยตวง</option>
+                              <option value="หยิบมือ/เล็กน้อย">หยิบมือ / เล็กน้อย</option>
+                              <option value="ใบ/กลีบ/ฝัก/ต้น">ใบ / กลีบ / ฝัก / ต้น</option>
+                              <option value="เม็ด/เมล็ด">เม็ด / เมล็ด</option>
+                              <option value="ห่อ/ถุง/ซอง">ห่อ / ถุง / ซอง</option>
+                              <option value="กำ/มัด/พวง">กำ / มัด / พวง</option>
                             </select>
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
