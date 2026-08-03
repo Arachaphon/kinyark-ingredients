@@ -61,18 +61,37 @@ export async function GET(request: Request) {
 
     const limit = parsed.data.limit
 
+    // Determine visibility filter based on user role
+    // STORE role users cannot see protected recipes
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    let visibilityFilter: { visibility: string | { in: string[] } };
+    if (user) {
+      const profile = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      });
+      if (profile?.role === "STORE") {
+        visibilityFilter = { visibility: "public" };
+      } else {
+        visibilityFilter = { visibility: { in: ["public", "protected"] } };
+      }
+    } else {
+      visibilityFilter = { visibility: { in: ["public", "protected"] } };
+    }
+
     const recipes = await prisma.recipe.findMany({
-      where: { visibility: "public" },
+      where: visibilityFilter,
       select: recipeListItemSelect(),
       orderBy: [{ rating: "desc" }, { favoriteCount: "desc" }, { createdAt: "desc" }],
     })
 
     const shuffled: FeaturedRecipe[] = seededShuffle(recipes, daySeed())
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+
 
     if (!user || shuffled.length === 0) {
       return Response.json({

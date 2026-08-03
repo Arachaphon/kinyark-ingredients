@@ -14,13 +14,14 @@ export async function GET(request: Request) {
       page: searchParams.get("page") ?? undefined,
       limit: searchParams.get("limit") ?? undefined,
       mine: searchParams.get("mine") ?? undefined,
+      publicOnly: searchParams.get("publicOnly") ?? undefined,
     })
 
     if (!parsed.success) {
       return Response.json({ error: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { page, limit, mine } = parsed.data
+    const { page, limit, mine, publicOnly } = parsed.data
 
     if (mine) {
       const supabase = await createClient()
@@ -32,11 +33,18 @@ export async function GET(request: Request) {
         return Response.json({ error: "Unauthorized" }, { status: 401 })
       }
 
+      const userRecipesWhere: Prisma.RecipeWhereInput = {
+        OR: [
+          { userId: user.id },
+          { storePosts: { some: { userId: user.id } } },
+        ],
+      }
+
       const [total, recipes] = await Promise.all([
-        prisma.recipe.count({ where: { userId: user.id } }),
+        prisma.recipe.count({ where: userRecipesWhere }),
         prisma.recipe.findMany({
-          where: { userId: user.id },
-          select: recipeListItemSelect({ withUser: true, withIngredients: true }),
+          where: userRecipesWhere,
+          select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * limit,
           take: limit,
@@ -47,11 +55,40 @@ export async function GET(request: Request) {
 
       return Response.json({
         data: recipes,
-        meta: { page, limit, total, totalPages },
+        meta: { page, limit, total, totalPages, userId: user.id },
       })
     }
 
-    const where: Prisma.RecipeWhereInput = { visibility: "public" }
+    // Determine visibility filter based on user role
+    // STORE role users cannot see protected recipes
+    let visibilityFilter: Prisma.RecipeWhereInput;
+
+    if (publicOnly) {
+      visibilityFilter = { visibility: "public" };
+    } else {
+      // Check if logged-in user has STORE role
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const profile = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
+
+        if (profile?.role === "STORE") {
+          // Store users cannot see protected recipes
+          visibilityFilter = { visibility: "public" };
+        } else {
+          visibilityFilter = { visibility: { in: ["public", "protected"] } };
+        }
+      } else {
+        // Not logged in — show both public and protected
+        visibilityFilter = { visibility: { in: ["public", "protected"] } };
+      }
+    }
+
+    const where: Prisma.RecipeWhereInput = visibilityFilter;
 
     const [total, recipes] = await Promise.all([
       prisma.recipe.count({ where }),
@@ -119,6 +156,8 @@ export async function POST(request: Request) {
       bgColor,
       aiProvider,
       visibility,
+      systemRecipeId,
+      referenceRecipeId,
     } = result.data;
 
     const allImageUrls = [featuredImageUrl, ...images].filter((url): url is string => !!url);
@@ -137,6 +176,47 @@ export async function POST(request: Request) {
     }));
 
     const recipe = await prisma.$transaction(async (tx) => {
+      if (systemRecipeId && store) {
+        const existingRecipe = await tx.recipe.findUnique({
+          where: { id: systemRecipeId }
+        });
+        if (!existingRecipe) {
+          throw new Error("System recipe not found");
+        }
+        await tx.storePost.create({
+          data: {
+            userId: user.id,
+            recipeId: systemRecipeId,
+            storeName: store.storeName,
+            sellingPrice: store.sellingPrice,
+            storeDescription: store.storeDescription,
+            storeLocation: store.storeLocation,
+            contactInfo: store.contactInfo,
+            visibility: visibility,
+            setIngredients: store.setIngredients ? store.setIngredients : undefined,
+            ...(store.storeImages && store.storeImages.length > 0 && {
+              images: {
+                create: store.storeImages.map((url) => ({ imageUrl: url })),
+              },
+            }),
+            ...(store.storeVideos && store.storeVideos.length > 0 && {
+              videos: {
+                create: store.storeVideos.map((url) => ({ videoUrl: url })),
+              },
+            }),
+          }
+        });
+        
+        return tx.recipe.findUnique({
+          where: { id: systemRecipeId },
+          include: {
+            storePosts: { include: { images: true, videos: true } },
+            images: true,
+            videos: true,
+          }
+        });
+      }
+
       const savedIngredients = await Promise.all(
         ingredients.map(async (ingredient) => {
           const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
@@ -176,6 +256,7 @@ export async function POST(request: Request) {
           bgColor,
           aiProvider,
           visibility,
+          referenceRecipeId,
           recipeIngredients: {
             create: recipeIngredientsToCreate,
           },
@@ -193,6 +274,8 @@ export async function POST(request: Request) {
                 storeDescription: store.storeDescription,
                 storeLocation: store.storeLocation,
                 contactInfo: store.contactInfo,
+                visibility: visibility,
+                setIngredients: store.setIngredients ? store.setIngredients : undefined,
                 ...(store.storeImages && store.storeImages.length > 0 && {
                   images: {
                     create: store.storeImages.map((url) => ({ imageUrl: url })),

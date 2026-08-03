@@ -145,7 +145,7 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [dbIngredients, setDbIngredients] = useState<any[]>([]);
+  const [dbIngredients, setDbIngredients] = useState<{name: string; category?: {name: string}}[]>([]);
   const [loadingIngredients, setLoadingIngredients] = useState(true);
 
   useEffect(() => {

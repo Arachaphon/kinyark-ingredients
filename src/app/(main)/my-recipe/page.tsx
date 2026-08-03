@@ -30,6 +30,8 @@ const formatThaiDate = (iso: string) => {
 
 export default function MyRecipePage() {
   const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("USER");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
@@ -52,6 +54,9 @@ export default function MyRecipePage() {
       }
       const body = (await res.json()) as RecipeListResponse;
       setRecipes(body.data);
+      if (body.meta.userId) {
+        setMyUserId(body.meta.userId);
+      }
     } catch {
       setError(true);
     } finally {
@@ -61,19 +66,34 @@ export default function MyRecipePage() {
 
   useEffect(() => {
     fetchRecipes();
+    // Fetch user role
+    fetch('/api/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.user?.role) setUserRole(data.user.role);
+      })
+      .catch(() => {});
   }, [fetchRecipes]);
 
-  const allCount = recipes.length;
-  const publishCount = recipes.filter((r) => r.visibility === "public").length;
-  const draftCount = recipes.filter((r) => r.visibility === "private").length;
-  const storeSetCount = recipes.filter(
-    (r) => r.storePosts && r.storePosts.length > 0
-  ).length;
+  const myRecipes = recipes.filter((r) => r.user?.id === myUserId);
+  const publishCount = myRecipes.filter((r) => r.visibility === "public" || r.visibility === "protected" || r.visibility === "private").length;
+  const draftCount = myRecipes.filter((r) => r.visibility === "draft").length;
+  const storeSetCount = recipes.reduce(
+    (acc, r) => acc + (r.storePosts?.length || 0), 0
+  );
+
+  // allCount shows unique items. Include store posts only for store/admin users.
+  const isStoreUser = userRole === "STORE" || userRole === "ADMIN";
+  const allCount = myRecipes.length + (isStoreUser ? storeSetCount : 0);
 
   const displayedRecipes = recipes.filter((recipe) => {
     if (activeTab === "All") return true;
-    if (activeTab === "Publish") return recipe.visibility === "public";
-    if (activeTab === "Draft") return recipe.visibility === "private";
+    
+    // For publish and draft, only show if it's MY recipe and has the right visibility
+    const isMyRecipe = recipe.user?.id === myUserId;
+    if (activeTab === "Publish") return isMyRecipe && (recipe.visibility === "public" || recipe.visibility === "protected" || recipe.visibility === "private");
+    if (activeTab === "Draft") return isMyRecipe && recipe.visibility === "draft";
+    
     if (activeTab === "StoreSet")
       return recipe.storePosts && recipe.storePosts.length > 0;
     return true;
@@ -148,6 +168,7 @@ export default function MyRecipePage() {
                   เผยแพร่แล้ว ({publishCount})
                 </button>
 
+
                 <button
                   onClick={() => setActiveTab("Draft")}
                   className={`px-5 py-2 rounded-md font-medium transition ${
@@ -159,6 +180,7 @@ export default function MyRecipePage() {
                   ฉบับร่าง ({draftCount})
                 </button>
 
+                {(userRole === "STORE" || userRole === "ADMIN") && (
                 <button
                   onClick={() => setActiveTab("StoreSet")}
                   className={`px-5 py-2 rounded-md font-medium transition ${
@@ -169,6 +191,7 @@ export default function MyRecipePage() {
                 >
                   เซ็ทอาหารร้านค้า ({storeSetCount})
                 </button>
+                )}
               </div>
 
               <div className="flex flex-col gap-4">
@@ -176,9 +199,10 @@ export default function MyRecipePage() {
                   displayedRecipes.flatMap((recipe) => {
                     const storePosts = recipe.storePosts ?? [];
                     const isStoreSet = storePosts.length > 0;
+                    const isMyRecipe = recipe.user?.id === myUserId;
 
-                    // การ์ดสูตรอาหาร (แสดงเสมอในทุก tab ยกเว้น StoreSet)
-                    const recipeCard = activeTab !== "StoreSet" ? (
+                    // การ์ดสูตรอาหาร (แสดงเสมอในทุก tab ยกเว้น StoreSet, และแสดงเฉพาะสูตรที่ตนเองเป็นเจ้าของ)
+                    const recipeCard = (activeTab !== "StoreSet" && isMyRecipe) ? (
                       <div
                         key={`recipe-${recipe.id}`}
                         className="flex flex-col md:flex-row items-center gap-6 p-4 rounded-xl bg-white border border-gray-200 transition-colors hover:border-[#71B254]"
@@ -206,12 +230,12 @@ export default function MyRecipePage() {
                               )}
                               <span
                                 className={`text-xs font-semibold px-2.5 py-1 rounded-sm ${
-                                  recipe.visibility === "public"
+                                  recipe.visibility === "public" || recipe.visibility === "protected"
                                     ? "bg-[#EAF5E4] text-[#5A9240]"
                                     : "bg-gray-100 text-gray-500"
                                 }`}
                               >
-                                {recipe.visibility === "public" ? "เผยแพร่แล้ว" : "ฉบับร่าง"}
+                                {recipe.visibility === "public" ? "สาธารณะ" : (recipe.visibility === "protected" ? "สาธารณะจำกัดสิทธิ์" : (recipe.visibility === "private" ? "ส่วนตัว" : "ฉบับร่าง"))}
                               </span>
                             </div>
 
@@ -294,12 +318,12 @@ export default function MyRecipePage() {
                                   </span>
                                   <span
                                     className={`text-xs font-semibold px-2.5 py-1 rounded-sm ${
-                                      recipe.visibility === "public"
+                                      recipe.visibility === "public" || recipe.visibility === "protected"
                                         ? "bg-[#EAF5E4] text-[#5A9240]"
                                         : "bg-gray-100 text-gray-500"
                                     }`}
                                   >
-                                    {recipe.visibility === "public" ? "เผยแพร่แล้ว" : "ฉบับร่าง"}
+                                    {recipe.visibility === "public" ? "สาธารณะ" : (recipe.visibility === "protected" ? "สาธารณะจำกัดสิทธิ์" : (recipe.visibility === "private" ? "ส่วนตัว" : "ฉบับร่าง"))}
                                   </span>
                                 </div>
                                 <div className="flex items-center flex-wrap gap-3 mt-1">

@@ -64,8 +64,12 @@ model Recipe {
   visibility     String   @default("public")
 
   createdAt      DateTime @default(now()) @db.Timestamptz
+  
+  referenceRecipeId String? @db.Uuid
 
   user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceRecipe    Recipe?            @relation("RecipeReference", fields: [referenceRecipeId], references: [id], onDelete: SetNull)
+  referencedBy       Recipe[]           @relation("RecipeReference")
   recipeIngredients  RecipeIngredient[]
   equipmentItems     RecipeEquipment[]
   reviews            Review[]
@@ -88,6 +92,8 @@ model StorePost {
   storeDescription String?
   storeLocation    String?
   contactInfo      String?
+  visibility       String   @default("public")
+  setIngredients   Json?
   createdAt        DateTime @default(now()) @db.Timestamptz
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)

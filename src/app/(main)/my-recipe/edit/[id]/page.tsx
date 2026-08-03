@@ -30,7 +30,7 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [videoFile, setVideoFile] = useState<{file?: File, previewUrl: string} | null>(null);
   
-  const [visibility, setVisibility] = useState<"public" | "protected" | "private">("public");
+  const [visibility, setVisibility] = useState<"public" | "protected" | "private" | "draft">("public");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +44,7 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
         setError("ไม่พบสูตรอาหารนี้");
         return;
       }
-      const body = (await res.json()) as { data: RecipeDetail & { visibility?: "public" | "protected" | "private" } };
+      const body = (await res.json()) as { data: RecipeDetail & { visibility?: "public" | "protected" | "private" | "draft" } };
       const r = body.data;
 
       setTitle(r.recipeName ?? "");
@@ -565,8 +565,8 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
           </div>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-gray-100 relative z-20">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 border-t border-gray-100 relative z-20">
+            <div>
               <Link
                 href="/my-recipe"
                 className="w-full py-3.5 border-2 border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center bg-white text-lg block"
@@ -574,12 +574,12 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
                 ยกเลิก
               </Link>
             </div>
-            <div className="lg:col-span-1 flex flex-col gap-2">
+            <div>
               <button
                 type="button"
                 className="w-full py-3.5 bg-[#71B254] text-white rounded-md font-bold hover:bg-[#5b9642] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center text-lg shadow-md"
               >
-                อัปเดตสูตรอาหาร
+                บันทึกการแก้ไข
               </button>
             </div>
           </div>

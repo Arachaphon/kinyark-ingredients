@@ -19,6 +19,7 @@ export const storeSchema = z.object({
   contactInfo: z.string().optional(),
   storeImages: z.array(z.string().url("Invalid store image URL")).optional(),
   storeVideos: z.array(z.string().url("Invalid store video URL")).optional(),
+  setIngredients: z.array(ingredientItemSchema).optional(),
 })
 
 export const createRecipeSchema = z.object({
@@ -41,7 +42,9 @@ export const createRecipeSchema = z.object({
 
   bgColor: z.string().optional(),
   aiProvider: z.string().optional(),
-  visibility: z.enum(["public", "private"]).default("public").optional(),
+  visibility: z.enum(["public", "protected", "private", "draft"]).default("public").optional(),
+  systemRecipeId: z.string().uuid("Invalid system recipe ID").optional(),
+  referenceRecipeId: z.string().uuid("Invalid reference recipe ID").optional(),
 })
 
 export const updateRecipeSchema = createRecipeSchema.partial()
@@ -52,6 +55,10 @@ export const recipeListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(10),
   mine: z
+    .string()
+    .optional()
+    .transform((v) => v === "true" || v === "1"),
+  publicOnly: z
     .string()
     .optional()
     .transform((v) => v === "true" || v === "1"),

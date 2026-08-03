@@ -13,8 +13,16 @@ jest.mock("leaflet", () => ({
 }));
 
 // Mock Navbar and Link
-jest.mock("@/components/Navbar", () => () => <div data-testid="navbar" />);
-jest.mock("next/link", () => ({ children }: { children: React.ReactNode }) => <a>{children}</a>);
+jest.mock("@/components/Navbar", () => {
+  const MockNavbar = () => <div data-testid="navbar" />;
+  MockNavbar.displayName = "MockNavbar";
+  return MockNavbar;
+});
+jest.mock("next/link", () => {
+  const MockLink = ({ children }: { children: React.ReactNode }) => <a>{children}</a>;
+  MockLink.displayName = "MockLink";
+  return MockLink;
+});
 
 describe("CreateRecipePage UI Authorization", () => {
   beforeEach(() => {

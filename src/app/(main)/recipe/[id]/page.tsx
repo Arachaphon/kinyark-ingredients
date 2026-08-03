@@ -19,7 +19,15 @@ const FALLBACK_IMAGE =
 const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80";
 
-function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Array<{ id: string; imageUrl: string }>; altText: string; themeColor?: string }) {
+function ImageCarousel({
+  images,
+  altText,
+  themeColor = "#71B254",
+}: {
+  images: Array<{ id: string; imageUrl: string }>;
+  altText: string;
+  themeColor?: string;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!images || images.length === 0) return null;
@@ -55,7 +63,16 @@ function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Ar
               className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center backdrop-blur-sm opacity-90 group-hover:opacity-100 hover:bg-black/70 hover:scale-110 transition z-10 shadow-md"
               aria-label="รูปก่อนหน้า"
             >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+              >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
             </button>
@@ -64,7 +81,16 @@ function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Ar
               className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center backdrop-blur-sm opacity-90 group-hover:opacity-100 hover:bg-black/70 hover:scale-110 transition z-10 shadow-md"
               aria-label="รูปถัดไป"
             >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+              <svg
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+              >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
@@ -84,8 +110,8 @@ function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Ar
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 className={`transition-all rounded-full ${
-                  idx === currentIndex 
-                    ? "w-5 h-2 bg-white shadow-sm" 
+                  idx === currentIndex
+                    ? "w-5 h-2 bg-white shadow-sm"
                     : "w-2 h-2 bg-white/50 hover:bg-white/80"
                 }`}
                 aria-label={`ไปที่รูปที่ ${idx + 1}`}
@@ -103,11 +129,13 @@ function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Ar
               key={img.id || idx}
               onClick={() => setCurrentIndex(idx)}
               className={`relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                idx === currentIndex 
-                  ? "border-[#16A34A] scale-105 shadow-sm" 
+                idx === currentIndex
+                  ? "border-[#16A34A] scale-105 shadow-sm"
                   : "border-transparent opacity-60 hover:opacity-100"
               }`}
-              style={{ borderColor: idx === currentIndex ? themeColor : "transparent" }}
+              style={{
+                borderColor: idx === currentIndex ? themeColor : "transparent",
+              }}
             >
               <Image
                 src={img.imageUrl}
@@ -198,10 +226,10 @@ export default function ViewRecipePage() {
               isFavorite: favorited,
               favoriteCount: Math.max(
                 0,
-                prev.favoriteCount + (favorited ? 1 : -1)
+                prev.favoriteCount + (favorited ? 1 : -1),
               ),
             }
-          : prev
+          : prev,
       );
     } catch {
       // network error — keep current state
@@ -257,10 +285,6 @@ export default function ViewRecipePage() {
 
   const coverImage = recipe?.images[0]?.imageUrl ?? FALLBACK_IMAGE;
   const authorAvatar = recipe?.user?.avatarUrl ?? FALLBACK_AVATAR;
-  const instructions = (recipe?.instructions ?? "")
-    .split(/\r?\n/)
-    .map((step) => step.trim())
-    .filter(Boolean);
 
   return (
     <div
@@ -307,169 +331,236 @@ export default function ViewRecipePage() {
         {!loading && !error && !notFound && recipe && (
           <>
             {/* 🏪 หากสูตรนี้เป็นเซ็ทอาหารของร้านค้า ให้แสดงการ์ดรายละเอียดเซ็ทอาหารร้านค้าด้านบน */}
-            {recipe.storePosts && recipe.storePosts.length > 0 && (() => {
-              const storePost = recipe.storePosts[0];
-              const storeName = storePost.storeName || "ร้านค้า";
-              const sellingPrice = storePost.sellingPrice || 0;
-              const storeDescription = storePost.storeDescription || "เซ็ทอาหารพิเศษจากทางร้าน คัดสรรวัตถุดิบสดใหม่พร้อมปรุง";
-              const storeImages = storePost.images && storePost.images.length > 0
-                ? storePost.images
-                : recipe.images && recipe.images.length > 0
-                ? recipe.images
-                : [{ id: "fallback", imageUrl: coverImage }];
-              const storeVideos = storePost.videos && storePost.videos.length > 0
-                ? storePost.videos
-                : recipe.videos || [];
+            {recipe.storePosts &&
+              recipe.storePosts.length > 0 &&
+              (() => {
+                const storePost = recipe.storePosts[0];
+                const storeName = storePost.storeName || "ร้านค้า";
+                const sellingPrice = storePost.sellingPrice || 0;
+                const storeDescription =
+                  storePost.storeDescription ||
+                  "เซ็ทอาหารพิเศษจากทางร้าน คัดสรรวัตถุดิบสดใหม่พร้อมปรุง";
+                const storeImages =
+                  storePost.images && storePost.images.length > 0
+                    ? storePost.images
+                    : recipe.images && recipe.images.length > 0
+                      ? recipe.images
+                      : [{ id: "fallback", imageUrl: coverImage }];
+                const storeVideos =
+                  storePost.videos && storePost.videos.length > 0
+                    ? storePost.videos
+                    : recipe.videos || [];
+                const storeUserAvatar =
+                  storePost.user?.avatarUrl ?? FALLBACK_AVATAR;
+                const storeUsername = storePost.user?.username ?? "store";
 
-              return (
-                <div className="bg-white border-2 border-[#16A34A] rounded-sm p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
-                  <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
-                    <span>รายละเอียดเซ็ทอาหารร้านค้า</span>
-                  </div>
+                return (
+                  <div className="bg-white border-2 border-[#16A34A] rounded-sm p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
+                    <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
+                      <span>รายละเอียดเซ็ทอาหารร้านค้า</span>
+                    </div>
 
-                  {/* 1️⃣ ส่วนบนสุด: การ์ดโปรไฟล์ร้านค้า/ผู้ขายฝั่งซ้าย + รายละเอียดเซ็ทอาหารฝั่งขวา + รายละเอียดเพิ่มเติม */}
-                  <div className="flex flex-col gap-4 mt-12 md:mt-6 w-full">
-                    <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#16A34A]/30 w-full">
-                      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
-                        {/* 👈 คอลัมน์ซ้าย: การ์ดโปรไฟล์ร้านค้า/เจ้าของสูตร (ไม่มีกรอบและพื้นหลัง) */}
-                        <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-xl flex-shrink-0 min-w-[140px]">
-                          <div className="w-16 h-16 relative">
-                            <Image
-                              src={authorAvatar}
-                              alt={storeName}
-                              fill
-                              className="rounded-full object-cover border-2 border-[#16A34A]"
+                    {/* 1️⃣ ส่วนบนสุด: การ์ดโปรไฟล์ร้านค้า/ผู้ขายฝั่งซ้าย + รายละเอียดเซ็ทอาหารฝั่งขวา + รายละเอียดเพิ่มเติม */}
+                    <div className="flex flex-col gap-4 mt-12 md:mt-6 w-full">
+                      <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#16A34A]/30 w-full">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
+                          {/* 👈 คอลัมน์ซ้าย: การ์ดโปรไฟล์ร้านค้า/เจ้าของสูตร (ไม่มีกรอบและพื้นหลัง) */}
+                          <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-xl flex-shrink-0 min-w-[140px]">
+                            <div className="w-16 h-16 relative">
+                              <Image
+                                src={storeUserAvatar}
+                                alt={storeName}
+                                fill
+                                className="rounded-full object-cover border-2 border-[#16A34A]"
+                              />
+                            </div>
+                            <span className="text-xs font-extrabold text-white bg-[#16A34A] px-2.5 py-0.5 rounded-full">
+                              ร้านค้า
+                            </span>
+                            <span className="font-extrabold text-[#15803D] text-sm text-center leading-tight">
+                              {storeName}
+                            </span>
+                            <span className="text-xs text-gray-500 text-center font-medium">
+                              @{storeUsername}
+                            </span>
+                          </div>
+
+                          {/* 👉 คอลัมน์ขวา: ชื่อเซ็ทอาหาร ราคา ช่องทางติดต่อ และรายละเอียด */}
+                          <div className="flex flex-col justify-between flex-1 gap-4 w-full text-center sm:text-left py-1">
+                            <div>
+                              <span className="text-xs font-extrabold text-[#16A34A] tracking-wide uppercase bg-[#DCFCE7] px-3 py-1 rounded-md">
+                                เซ็ทอาหารพร้อมปรุง
+                              </span>
+                              <h1 className="text-3xl md:text-4xl font-bold text-[#15803D] leading-tight mt-2">
+                                เซ็ท {recipe.recipeName}
+                              </h1>
+                            </div>
+
+                            {/* ราคา และ ช่องทางการติดต่อร้านค้า */}
+                            <div className="flex flex-col gap-3 text-left pt-1">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-xs font-bold text-gray-500 shrink-0">
+                                  ราคาขาย:
+                                </span>
+                                <span className="text-[#16A34A] text-2xl font-extrabold">
+                                  ฿ {sellingPrice} .-
+                                </span>
+                              </div>
+
+                              <div className="flex flex-col gap-0.5 text-left w-full">
+                                <span className="text-xs font-bold text-gray-500">
+                                  ช่องทางการติดต่อร้านค้า:
+                                </span>
+                                <span className="text-sm font-bold text-gray-800 break-words whitespace-pre-wrap">
+                                  {storePost.contactInfo &&
+                                  storePost.contactInfo.trim() !== ""
+                                    ? storePost.contactInfo
+                                    : "ติดต่อทางร้านโดยตรง / โทร 081-234-5678"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {storeDescription && (
+                          <div className="border-t border-[#16A34A]/20 pt-4 w-full">
+                            <p className="text-sm text-gray-700 leading-relaxed text-left">
+                              {storeDescription}
+                            </p>
+                          </div>
+                        )}
+
+                        {storePost.setIngredients &&
+                          Array.isArray(storePost.setIngredients) &&
+                          storePost.setIngredients.length > 0 && (
+                            <div className="border-t border-[#16A34A]/20 pt-4 w-full">
+                              <h4 className="text-sm font-bold text-[#15803D] mb-3 flex items-center gap-2">
+                                <svg
+                                  width="18"
+                                  height="18"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path d="M9 11l3 3L22 4"></path>
+                                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                </svg>
+                                วัตถุดิบในเซ็ทอาหารนี้
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {storePost.setIngredients.map(
+                                  (ing: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-2 text-sm text-gray-700 bg-white/50 p-2 rounded-md border border-[#16A34A]/10"
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] shrink-0"></span>
+                                      <span className="font-semibold flex-1 truncate">
+                                        {ing.name}
+                                      </span>
+                                      <span className="text-gray-500 shrink-0 font-medium">
+                                        {ing.quantity}{" "}
+                                        {translateUnit(ing.unit)
+                                          ? translateUnit(ing.unit)
+                                          : ""}
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+
+                    {/* 2️⃣ แถวรูปภาพและวิดีโอ (จัดวางเคียงข้างกัน 50/50 สไลด์รูปภาพสไลเดอร์) */}
+                    {((storeImages && storeImages.length > 0) ||
+                      (storeVideos && storeVideos.length > 0)) && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full">
+                        {/* 🖼️ ฝั่งซ้าย: สไลเดอร์รูปภาพเซ็ทอาหาร */}
+                        {storeImages && storeImages.length > 0 ? (
+                          <div className="flex flex-col gap-3 w-full">
+                            <p className="text-xs font-bold text-[#16A34A]">
+                              รูปภาพเซ็ทอาหาร:
+                            </p>
+                            <ImageCarousel
+                              images={storeImages}
+                              altText={storeName}
+                              themeColor="#16A34A"
                             />
                           </div>
-                          <span className="text-xs font-extrabold text-white bg-[#16A34A] px-2.5 py-0.5 rounded-full">
-                            ร้านค้า
-                          </span>
-                          <span className="font-extrabold text-[#15803D] text-sm text-center leading-tight">
-                            {storeName}
-                          </span>
-                          <span className="text-xs text-gray-500 text-center font-medium">
-                            @{recipe.user?.username ?? "store"}
-                          </span>
-                        </div>
+                        ) : (
+                          <div className="hidden lg:block" />
+                        )}
 
-                        {/* 👉 คอลัมน์ขวา: ชื่อเซ็ทอาหาร ราคา ช่องทางติดต่อ และรายละเอียด */}
-                        <div className="flex flex-col justify-between flex-1 gap-4 w-full text-center sm:text-left py-1">
-                          <div>
-                            <span className="text-xs font-extrabold text-[#16A34A] tracking-wide uppercase bg-[#DCFCE7] px-3 py-1 rounded-md">
-                              เซ็ทอาหารพร้อมปรุง
-                            </span>
-                            <h1 className="text-3xl md:text-4xl font-bold text-[#15803D] leading-tight mt-2">
-                              เซ็ท {recipe.recipeName}
-                            </h1>
-                          </div>
-
-                          {/* ราคา และ ช่องทางการติดต่อร้านค้า */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center text-left pt-1">
-                            <div className="flex flex-col gap-0.5 text-left">
-                              <span className="text-xs font-bold text-gray-500">
-                                ราคาขาย:
-                              </span>
-                              <span className="text-[#16A34A] text-2xl font-extrabold">
-                                ฿ {sellingPrice} .-
-                              </span>
-                            </div>
-
-                            <div className="flex flex-col gap-0.5 text-left">
-                              <span className="text-xs font-bold text-gray-500">
-                                ช่องทางการติดต่อร้านค้า:
-                              </span>
-                              <span className="text-sm font-bold text-gray-800 truncate">
-                                {storePost.contactInfo && storePost.contactInfo.trim() !== ""
-                                  ? storePost.contactInfo
-                                  : "ติดต่อทางร้านโดยตรง / โทร 081-234-5678"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {storeDescription && (
-                        <div className="border-t border-[#16A34A]/20 pt-4 w-full">
-                          <p className="text-sm text-gray-700 leading-relaxed text-left">
-                            {storeDescription}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 2️⃣ แถวรูปภาพและวิดีโอ (จัดวางเคียงข้างกัน 50/50 สไลด์รูปภาพสไลเดอร์) */}
-                  {((storeImages && storeImages.length > 0) || (storeVideos && storeVideos.length > 0)) && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full">
-                      {/* 🖼️ ฝั่งซ้าย: สไลเดอร์รูปภาพเซ็ทอาหาร */}
-                      {storeImages && storeImages.length > 0 ? (
-                        <div className="flex flex-col gap-3 w-full">
-                          <p className="text-xs font-bold text-[#16A34A]">
-                            รูปภาพเซ็ทอาหาร:
-                          </p>
-                          <ImageCarousel 
-                            images={storeImages} 
-                            altText={storeName} 
-                            themeColor="#16A34A" 
-                          />
-                        </div>
-                      ) : (
-                        <div className="hidden lg:block" />
-                      )}
-
-                      {/* 🎥 ฝั่งขวา: วิดีโอแนะนำเซ็ทอาหาร */}
-                      {storeVideos && storeVideos.length > 0 && (
-                        <div className="flex flex-col gap-3 w-full">
-                          <p className="text-xs font-bold text-[#16A34A]">
-                            วิดีโอแนะนำเซ็ทอาหาร:
-                          </p>
+                        {/* 🎥 ฝั่งขวา: วิดีโอแนะนำเซ็ทอาหาร */}
+                        {storeVideos && storeVideos.length > 0 && (
                           <div className="flex flex-col gap-3 w-full">
-                            {storeVideos.map((vid, idx) => (
-                              <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center">
-                                <video src={vid.videoUrl} controls className="w-full h-full object-cover" />
-                              </div>
-                            ))}
+                            <p className="text-xs font-bold text-[#16A34A]">
+                              วิดีโอแนะนำเซ็ทอาหาร:
+                            </p>
+                            <div className="flex flex-col gap-3 w-full">
+                              {storeVideos.map((vid, idx) => (
+                                <div
+                                  key={vid.id || idx}
+                                  className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"
+                                >
+                                  <video
+                                    src={vid.videoUrl}
+                                    controls
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
 
-                  {/* 3️⃣ แผนที่พิกัดร้านค้าอยู่ล่างสุดเต็มแถว (ขนาดสี่เหลี่ยมผืนผ้าแนวนอน) */}
-                  <div className="flex flex-col gap-2 bg-white p-5 rounded-2xl border border-[#BBF7D0] w-full">
-                    <p className="text-xs font-bold text-[#16A34A] flex items-center justify-between">
-                      <span>พิกัดและแผนที่ร้านค้า: {storePost.storeLocation ? `(${storePost.storeLocation})` : ""}</span>
-                      {storePost.storeLocation && (
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                            storePost.storeLocation
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-bold text-[#16A34A] hover:underline"
-                        >
-                          <span>เปิดนำทางใน Google Maps</span>
-                          <span>↗</span>
-                        </a>
-                      )}
-                    </p>
-                    <div className="w-full h-64 md:h-72 rounded-xl overflow-hidden border border-[#BBF7D0] relative bg-white mt-1">
-                      <iframe
-                        title="Store Location Map"
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        loading="lazy"
-                        allowFullScreen
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                          storePost.storeLocation || storeName || "มหาวิทยาลัยพะเยา"
-                        )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                      />
+                    {/* 3️⃣ แผนที่พิกัดร้านค้าอยู่ล่างสุดเต็มแถว (ขนาดสี่เหลี่ยมผืนผ้าแนวนอน) */}
+                    <div className="flex flex-col gap-2 bg-white p-5 rounded-2xl border border-[#BBF7D0] w-full">
+                      <p className="text-xs font-bold text-[#16A34A] flex items-center justify-between">
+                        <span>
+                          พิกัดและแผนที่ร้านค้า:{" "}
+                          {storePost.storeLocation
+                            ? `(${storePost.storeLocation})`
+                            : ""}
+                        </span>
+                        {storePost.storeLocation && (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                              storePost.storeLocation,
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#16A34A] hover:underline"
+                          >
+                            <span>เปิดนำทางใน Google Maps</span>
+                            <span>↗</span>
+                          </a>
+                        )}
+                      </p>
+                      <div className="w-full h-64 md:h-72 rounded-xl overflow-hidden border border-[#BBF7D0] relative bg-white mt-1">
+                        <iframe
+                          title="Store Location Map"
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          allowFullScreen
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                            storePost.storeLocation ||
+                              storeName ||
+                              "มหาวิทยาลัยพะเยา",
+                          )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
             {/* 📖 รายละเอียดสูตรอาหาร */}
             <div className="bg-white border border-[#71B254] rounded-sm p-8 relative mb-6 flex flex-col gap-8">
@@ -533,7 +624,7 @@ export default function ViewRecipePage() {
                           </span>
                         </div>
 
-                        <div 
+                        <div
                           onClick={() => setIsCommentOpen(!isCommentOpen)}
                           className="flex items-center gap-2 bg-white border border-[#71B254]/30 px-3.5 py-1.5 rounded-xl cursor-pointer hover:bg-[#EAF5E4]/50 transition"
                         >
@@ -549,7 +640,9 @@ export default function ViewRecipePage() {
                           >
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                           </svg>
-                          <span className="font-bold text-[#5A9240] text-xs">ความคิดเห็น</span>
+                          <span className="font-bold text-[#5A9240] text-xs">
+                            ความคิดเห็น
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-1.5 bg-white border border-[#71B254]/30 px-3.5 py-1.5 rounded-xl">
@@ -573,7 +666,8 @@ export default function ViewRecipePage() {
               </div>
 
               {/* 2️⃣ แถวรูปภาพและวิดีโอ (สไลด์รูปภาพสไลเดอร์) */}
-              {((recipe.images && recipe.images.length > 0) || (recipe.videos && recipe.videos.length > 0)) && (
+              {((recipe.images && recipe.images.length > 0) ||
+                (recipe.videos && recipe.videos.length > 0)) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full">
                   {/* 🖼️ ฝั่งซ้าย: สไลเดอร์รูปภาพสูตรอาหาร */}
                   {recipe.images && recipe.images.length > 0 ? (
@@ -581,10 +675,10 @@ export default function ViewRecipePage() {
                       <p className="text-xs font-bold text-[#71B254]">
                         รูปภาพสูตรอาหาร:
                       </p>
-                      <ImageCarousel 
-                        images={recipe.images} 
-                        altText={recipe.recipeName} 
-                        themeColor="#71B254" 
+                      <ImageCarousel
+                        images={recipe.images}
+                        altText={recipe.recipeName}
+                        themeColor="#71B254"
                       />
                     </div>
                   ) : (
@@ -599,8 +693,15 @@ export default function ViewRecipePage() {
                       </p>
                       <div className="flex flex-col gap-3 w-full">
                         {recipe.videos.map((vid, idx) => (
-                          <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center">
-                            <video src={vid.videoUrl} controls className="w-full h-full object-cover" />
+                          <div
+                            key={vid.id || idx}
+                            className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"
+                          >
+                            <video
+                              src={vid.videoUrl}
+                              controls
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         ))}
                       </div>
@@ -611,24 +712,50 @@ export default function ViewRecipePage() {
 
               {/* 3️⃣ ส่วนผสม และวิธีทำ (กว้างเต็ม 100%) */}
               <div className="space-y-6 mt-2 flex flex-col w-full">
-
                 {/* ส่วนผสม (กว้างเต็ม 100%) */}
                 <div className="w-full p-6 rounded-2xl border border-[#71B254]/30">
                   <h3 className="text-xl font-bold text-[#5A9240] mb-4">
-                    ส่วนผสม
+                    {recipe.storePosts && recipe.storePosts.length > 0
+                      ? "ส่วนผสมในเซ็ทขาย"
+                      : "ส่วนผสม"}
                   </h3>
                   <div className="flex flex-wrap gap-2.5">
-                    {recipe.recipeIngredients.map((ri) => (
-                      <span
-                        key={ri.id}
-                        className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white"
-                      >
-                        {ri.ingredient.name}
-                        {ri.quantity > 0
-                          ? ` ${ri.quantity}${translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
-                          : ""}
-                      </span>
-                    ))}
+                    {(() => {
+                      const sp =
+                        recipe.storePosts && recipe.storePosts.length > 0
+                          ? recipe.storePosts[0]
+                          : null;
+                      if (
+                        sp &&
+                        sp.setIngredients &&
+                        Array.isArray(sp.setIngredients) &&
+                        sp.setIngredients.length > 0
+                      ) {
+                        return sp.setIngredients.map((ri: any, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white"
+                          >
+                            {ri.name}
+                            {ri.quantity && ri.quantity > 0
+                              ? ` ${ri.quantity}${translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
+                              : ""}
+                          </span>
+                        ));
+                      } else {
+                        return recipe.recipeIngredients.map((ri) => (
+                          <span
+                            key={ri.id}
+                            className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white"
+                          >
+                            {ri.ingredient.name}
+                            {ri.quantity > 0
+                              ? ` ${ri.quantity}${translateUnit(ri.unit) ? ` ${translateUnit(ri.unit)}` : ""}`
+                              : ""}
+                          </span>
+                        ));
+                      }
+                    })()}
                   </div>
                 </div>
 
@@ -638,7 +765,8 @@ export default function ViewRecipePage() {
                     วิธีทำ
                   </h3>
                   <div className="border border-[#71B254]/30 rounded-xl p-6 bg-white w-full">
-                    {recipe.instructions && recipe.instructions.trim() !== "" ? (
+                    {recipe.instructions &&
+                    recipe.instructions.trim() !== "" ? (
                       <div className="text-gray-800 text-base leading-relaxed whitespace-pre-line w-full">
                         {recipe.instructions}
                       </div>

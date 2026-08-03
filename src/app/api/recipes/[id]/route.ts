@@ -59,9 +59,20 @@ export async function GET(
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // Private recipes are only visible to their owner
-    if (recipe.visibility !== "public" && recipe.userId !== user?.id) {
+    // Private and Draft recipes are only visible to their owner
+    if ((recipe.visibility === "private" || recipe.visibility === "draft") && recipe.userId !== user?.id) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
+    }
+
+    // Protected recipes are hidden from STORE role users
+    if (recipe.visibility === "protected" && user) {
+      const profile = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      });
+      if (profile?.role === "STORE") {
+        return Response.json({ error: "Recipe not found" }, { status: 404 })
+      }
     }
 
     const favorite = user
@@ -76,7 +87,7 @@ export async function GET(
     )
   } catch (error) {
     console.error("GET /api/recipes/[id] error:", error)
-    return Response.json({ error: "Internal server error" }, { status: 500 })
+    return Response.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 })
   }
 }
 

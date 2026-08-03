@@ -19,7 +19,7 @@ const recipeListFields = {
 
 // Standard select for recipe list items: core fields + cover image (+ optional author/ingredients)
 export function recipeListItemSelect(
-  opts: { withUser?: boolean; withIngredients?: boolean } = {}
+  opts: { withUser?: boolean; withIngredients?: boolean; storePostUserId?: string } = {}
 ): Prisma.RecipeSelect {
   return {
     ...recipeListFields,
@@ -51,7 +51,16 @@ export function recipeListItemSelect(
           },
         }
       : {}),
-    storePosts: {
+    storePosts: opts.storePostUserId ? {
+      where: { userId: opts.storePostUserId },
+      include: {
+        images: true,
+        videos: true,
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+      },
+    } : {
       include: {
         images: true,
         videos: true,

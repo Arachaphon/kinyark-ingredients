@@ -27,7 +27,7 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
   'Others':                 { name: 'อื่นๆ',                  emoji: '📦' },
 };
 
-const categoriesData: any[] = [];
+
 
 
 
@@ -41,7 +41,7 @@ type SystemRecipe = {
 };
 
 type UploadedMedia = {
-  file: File;
+  file?: File;
   previewUrl: string;
 };
 
@@ -103,6 +103,10 @@ export default function CreateRecipePage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [ingredients, setIngredients] = useState([
+    { id: 1, category: "", name: "", quantity: "", unit: "" }
+  ]);
+
+  const [setIngredientsList, setSetIngredientsList] = useState([
     { id: 1, category: "", name: "", quantity: "", unit: "" }
   ]);
 
@@ -346,26 +350,35 @@ export default function CreateRecipePage() {
         markerRef.current = null;
       }
     };
-  }, [postAs, isMounted]);
+  }, [postAs, isMounted, pinCoord]);
 
   useEffect(() => {
     if (recipeSourceMode === "system" && availableRecipes === SAMPLE_SYSTEM_RECIPES) {
       const fetchRealRecipes = async () => {
         setIsLoadingRecipes(true);
         try {
-          const response = await fetch('/api/recipes'); 
+          const response = await fetch('/api/recipes?publicOnly=true'); 
           if (!response.ok) throw new Error("API endpoint not ready or not found");
           
           const body = await response.json();
           if (body && body.data && body.data.length > 0) {
-            const mappedRecipes: SystemRecipe[] = body.data.map((r: any) => {
+            const mappedRecipes: SystemRecipe[] = body.data.map((r: {
+              id: string;
+              recipeName: string;
+              user?: { username: string };
+              recipeIngredients?: Array<{
+                quantity?: number | string;
+                unit?: string;
+                ingredient?: { name: string; category?: { name: string } };
+              }>;
+            }) => {
               // Map categories to match the frontend selection if possible
               return {
                 id: r.id,
                 title: r.recipeName,
                 ownerName: r.user?.username || "Unknown",
-                matchTags: r.recipeIngredients?.map((ri: any) => ri.ingredient?.name) || [],
-                ingredients: r.recipeIngredients?.map((ri: any) => {
+                matchTags: r.recipeIngredients?.map((ri) => ri.ingredient?.name || "") || [],
+                ingredients: r.recipeIngredients?.map((ri) => {
                   let mappedCategory = "Others";
                   if (ri.ingredient?.category?.name) {
                     mappedCategory = ri.ingredient.category.name;
@@ -377,7 +390,7 @@ export default function CreateRecipePage() {
                     unit: ri.unit || "g"
                   };
                 }) || [],
-                instructions: r.instructions || "1. เตรียมวัตถุดิบทั้งหมด\n2. ปรุงตามสูตร\n3. จัดใส่จานพร้อมเสิร์ฟ"
+                instructions: (r as any).instructions || "1. เตรียมวัตถุดิบทั้งหมด\n2. ปรุงตามสูตร\n3. จัดใส่จานพร้อมเสิร์ฟ"
               };
             });
             setAvailableRecipes(mappedRecipes);
@@ -454,11 +467,31 @@ export default function CreateRecipePage() {
     });
   })();
 
-  const handlePickRecipe = (recipe: SystemRecipe) => {
+  const handlePickRecipe = async (recipe: SystemRecipe) => {
     setPickedRecipe(recipe);
     setIngredients(recipe.ingredients.map((ing, idx) => ({ id: idx + 100, ...ing })));
     setInstructions(recipe.instructions);
     setTitle(recipe.title);
+
+    try {
+      const res = await fetch(`/api/recipes/${recipe.id}`);
+      if (res.ok) {
+        const fullRecipe = (await res.json()).data;
+        if (fullRecipe.description) setDescription(fullRecipe.description);
+        
+        if (fullRecipe.images && fullRecipe.images.length > 0) {
+          setCoverImages(fullRecipe.images.map((img: any) => ({ previewUrl: img.imageUrl })));
+        }
+        if (fullRecipe.videos && fullRecipe.videos.length > 0) {
+          setVideoFile({ previewUrl: fullRecipe.videos[0].videoUrl });
+        }
+        if (fullRecipe.equipmentItems && fullRecipe.equipmentItems.length > 0) {
+          setEquipments(fullRecipe.equipmentItems.map((eq: any, idx: number) => ({ id: idx + 200, name: eq.name })));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleUndoPickRecipe = () => {
@@ -466,6 +499,10 @@ export default function CreateRecipePage() {
     setIngredients([{ id: 1, category: "", name: "", quantity: "", unit: "" }]);
     setInstructions("");
     setTitle("");
+    setDescription("");
+    setCoverImages([]);
+    setVideoFile(null);
+    setEquipments([{ id: 1, name: "" }]);
   };
 
   useEffect(() => {
@@ -514,6 +551,38 @@ export default function CreateRecipePage() {
   const removeIngredient = (idToRemove: number) => {
     if (ingredients.length > 1) {
       setIngredients(ingredients.filter((item) => item.id !== idToRemove));
+    }
+  };
+
+  const handleSetIngredientChange = (id: number, field: "category" | "name" | "quantity" | "unit", value: string) => {
+    setSetIngredientsList(
+      setIngredientsList.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addSetIngredient = () => {
+    setSetIngredientsList([...setIngredientsList, { id: Date.now(), category: "", name: "", quantity: "", unit: "" }]);
+  };
+
+  const removeSetIngredient = (idToRemove: number) => {
+    if (setIngredientsList.length > 1) {
+      setSetIngredientsList(setIngredientsList.filter((item) => item.id !== idToRemove));
+    }
+  };
+
+  const copyRecipeIngredientsToSet = () => {
+    if (ingredients.length > 0 && ingredients.some(i => i.name.trim() !== "")) {
+      const copied = ingredients.map(i => ({ ...i, id: Date.now() + Math.random() }));
+      setSetIngredientsList(copied);
+    } else if (pickedRecipe && pickedRecipe.ingredients.length > 0) {
+      const copied = pickedRecipe.ingredients.map(i => ({
+        id: Date.now() + Math.random(),
+        category: i.category || "",
+        name: i.name,
+        quantity: i.quantity,
+        unit: i.unit
+      }));
+      setSetIngredientsList(copied);
     }
   };
 
@@ -574,16 +643,16 @@ export default function CreateRecipePage() {
 
   const [missingFields, setMissingFields] = useState<string[]>([]);
 
-  const validateForm = (): boolean => {
+  const validateForm = (isDraft: boolean): boolean => {
     setSubmitError(null);
     setMissingFields([]);
 
     const missing: string[] = [];
 
     if (!title.trim()) missing.push("title");
-    if (!description.trim()) missing.push("description");
-    if (!instructions.trim()) missing.push("instructions");
-    if (coverImages.length === 0) missing.push("coverImages");
+    if (!isDraft && !description.trim()) missing.push("description");
+    if (!isDraft && !instructions.trim()) missing.push("instructions");
+    if (!isDraft && coverImages.length === 0) missing.push("coverImages");
 
     const validIngredients = ingredients.filter(i => i.name.trim() !== "");
     if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
@@ -593,10 +662,21 @@ export default function CreateRecipePage() {
     if (postAs === "store") {
       if (!shopName.trim()) missing.push("shopName");
       if (!sellingPrice || parseFloat(sellingPrice) <= 0) missing.push("sellingPrice");
-      if (!shopDescription.trim()) missing.push("shopDescription");
-      if (!shopLocation.trim()) missing.push("shopLocation");
-      if (!contactInfo.trim()) missing.push("contactInfo");
-      if (shopIngredientImages.length === 0) missing.push("shopIngredientImages");
+      if (!isDraft && !shopDescription.trim()) missing.push("shopDescription");
+      if (!isDraft && !shopLocation.trim()) missing.push("shopLocation");
+      if (!isDraft && !contactInfo.trim()) missing.push("contactInfo");
+      if (!isDraft && shopIngredientImages.length === 0) missing.push("shopIngredientImages");
+
+      const validSetIngredients = setIngredientsList.filter(i => i.name.trim() !== "");
+      if (!isDraft) {
+        if (validSetIngredients.length === 0 || setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+          missing.push("setIngredients");
+        }
+      } else {
+        if (validSetIngredients.length > 0 && setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+          missing.push("setIngredients");
+        }
+      }
     }
 
     if (missing.length > 0) {
@@ -615,13 +695,15 @@ export default function CreateRecipePage() {
   };
 
   const handleSaveDraft = async () => {
-    if (!validateForm()) return;
-    // Mock save draft
-    alert("ตรวจสอบข้อมูลผ่าน! กำลังบันทึกฉบับร่าง... (กำลังเชื่อมต่อ API ในอนาคต)");
+    submitForm(true);
   };
 
   const handleSubmitRecipe = async () => {
-    if (!validateForm()) return;
+    submitForm(false);
+  };
+
+  const submitForm = async (isDraft: boolean = false) => {
+    if (!validateForm(isDraft)) return;
 
     const validIngredients = ingredients.filter(i => i.name.trim() !== "");
     const validEquipments = equipments.filter(e => e.name.trim() !== "");
@@ -629,11 +711,11 @@ export default function CreateRecipePage() {
     setIsSubmitting(true);
 
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         recipeName: title.trim(),
         description: description.trim(),
         instructions: instructions.trim(),
-        visibility: visibility === "public" || visibility === "private" ? visibility : "public",
+        visibility: isDraft ? "draft" : visibility,
         postAs,
         ingredients: validIngredients.map(i => ({
           name: i.name.trim(),
@@ -664,6 +746,10 @@ export default function CreateRecipePage() {
 
       const uploadedRecipeImages: string[] = [];
       for (const media of coverImages) {
+        if (!media.file) {
+          uploadedRecipeImages.push(media.previewUrl);
+          continue;
+        }
         const result = await uploadFile(media.file);
         if (result.error) {
           setSubmitError(`อัปโหลดรูปภาพสูตรล้มเหลว: ${result.error}`);
@@ -680,13 +766,17 @@ export default function CreateRecipePage() {
 
       const uploadedRecipeVideos: string[] = [];
       if (videoFile) {
-        const result = await uploadFile(videoFile.file);
-        if (result.error) {
-          setSubmitError(`อัปโหลดวิดีโอสูตรล้มเหลว: ${result.error}`);
-          setIsSubmitting(false);
-          return;
+        if (!videoFile.file) {
+          uploadedRecipeVideos.push(videoFile.previewUrl);
+        } else {
+          const result = await uploadFile(videoFile.file);
+          if (result.error) {
+            setSubmitError(`อัปโหลดวิดีโอสูตรล้มเหลว: ${result.error}`);
+            setIsSubmitting(false);
+            return;
+          }
+          if (result.url) uploadedRecipeVideos.push(result.url);
         }
-        if (result.url) uploadedRecipeVideos.push(result.url);
       }
 
       if (uploadedRecipeVideos.length > 0) {
@@ -697,6 +787,10 @@ export default function CreateRecipePage() {
       if (postAs === "store") {
         const storeImages: string[] = [];
         for (const media of shopIngredientImages) {
+          if (!media.file) {
+            storeImages.push(media.previewUrl);
+            continue;
+          }
           const result = await uploadFile(media.file);
           if (result.error) {
             setSubmitError(`อัปโหลดรูปร้านค้าล้มเหลว: ${result.error}`);
@@ -708,14 +802,25 @@ export default function CreateRecipePage() {
 
         const storeVideos: string[] = [];
         if (shopIngredientVideo) {
-          const result = await uploadFile(shopIngredientVideo.file);
-          if (result.error) {
-            setSubmitError(`อัปโหลดวิดีโอร้านค้าล้มเหลว: ${result.error}`);
-            setIsSubmitting(false);
-            return;
+          if (!shopIngredientVideo.file) {
+            storeVideos.push(shopIngredientVideo.previewUrl);
+          } else {
+            const result = await uploadFile(shopIngredientVideo.file);
+            if (result.error) {
+              setSubmitError(`อัปโหลดวิดีโอร้านค้าล้มเหลว: ${result.error}`);
+              setIsSubmitting(false);
+              return;
+            }
+            if (result.url) storeVideos.push(result.url);
           }
-          if (result.url) storeVideos.push(result.url);
         }
+
+        const validSetIngredients = setIngredientsList.filter(i => i.name.trim() !== "").map(i => ({
+          name: i.name.trim(),
+          quantity: parseFloat(i.quantity) || 1,
+          unit: i.unit.trim(),
+          category: i.category || undefined
+        }));
 
         payload.store = {
           storeName: shopName.trim(),
@@ -725,6 +830,7 @@ export default function CreateRecipePage() {
           contactInfo: contactInfo.trim(),
           storeImages,
           storeVideos,
+          setIngredients: validSetIngredients.length > 0 ? validSetIngredients : undefined,
         };
       }
 
@@ -746,7 +852,9 @@ export default function CreateRecipePage() {
       const result = await response.json();
       console.log("Success:", result);
       
-      if (result.data?.id) {
+      if (isDraft) {
+        router.push("/my-recipe");
+      } else if (result.data?.id) {
         router.push(`/recipe/${result.data.id}`);
       } else {
         router.push("/home");
@@ -871,6 +979,128 @@ export default function CreateRecipePage() {
                         : "border-[#71B254] focus:ring-[#71B254]"
                     }`}
                   />
+                </div>
+
+<div className="pt-4" id="form-field-setIngredients">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-700">
+                      วัตถุดิบในเซ็ทอาหาร <span className="text-red-500">*</span> <span className="text-gray-400 font-normal text-sm">(ที่รวมในราคาขายจริง)</span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={copyRecipeIngredientsToSet}
+                      className="px-3 py-1.5 text-xs font-bold bg-[#F4FAF1] text-[#71B254] border border-[#71B254] rounded-md hover:bg-[#71B254] hover:text-white transition flex items-center gap-1"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                      คัดลอกวัตถุดิบจากสูตร
+                    </button>
+                  </div>
+
+                  <div className="hidden sm:flex gap-2 mb-2 text-sm font-bold text-gray-500 tracking-wider pl-1">
+                    <div className="w-[150px]">หมวดหมู่</div>
+                    <div className="w-[80px] text-center">ปริมาณ</div>
+                    <div className="w-[160px]">หน่วย</div>
+                    <div className="w-[190px]">ชื่อวัตถุดิบ</div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {setIngredientsList.map((ing) => {
+                      const isSetIngMissing = missingFields.includes("setIngredients") && (!ing.name.trim() || !ing.quantity || !ing.unit.trim());
+
+                      return (
+                        <div key={ing.id} className="flex flex-wrap items-center gap-2">
+                          <div className="relative w-full sm:w-[150px]">
+                            <select
+                              value={ing.category}
+                              onChange={(e) => handleSetIngredientChange(ing.id, "category", e.target.value)}
+                              className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
+                                isSetIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                              }`}
+                            >
+                              <option value="" disabled hidden>เลือกหมวดหมู่...</option>
+                              {dbCategoriesData.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</option>
+                              ))}
+                            </select>
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
+                            </div>
+                          </div>
+
+                          <input 
+                            type="text" 
+                            placeholder="เช่น 2, 0.5" 
+                            value={ing.quantity} 
+                            onChange={(e) => handleSetIngredientChange(ing.id, "quantity", e.target.value)}
+                            className={`w-full sm:w-[80px] py-2 px-2 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-300 bg-white text-center shadow-inner text-sm ${
+                              isSetIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                            }`}
+                          />
+
+                          <div className="relative w-full sm:w-[160px]">
+                            <select
+                              value={ing.unit}
+                              onChange={(e) => handleSetIngredientChange(ing.id, "unit", e.target.value)}
+                              className={`w-full py-2 pl-3 pr-8 border rounded-md appearance-none focus:outline-none focus:ring-1 text-gray-700 bg-white cursor-pointer shadow-inner text-sm ${
+                                isSetIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                              }`}
+                            >
+                              <option value="" disabled hidden>เลือกหน่วย...</option>
+                              <option value="g">กรัม (g)</option>
+                              <option value="kg">กิโลกรัม (kg)</option>
+                              <option value="ml">มิลลิลิตร (ml)</option>
+                              <option value="l">ลิตร (l)</option>
+                              <option value="piece">ตัว / ชิ้น / ฟอง</option>
+                              <option value="head">หัว / ลูก / ผล</option>
+                              <option value="slice">แว่น</option>
+                              <option value="tablespoon">ช้อนโต๊ะ</option>
+                              <option value="teaspoon">ช้อนชา</option>
+                              <option value="cup">ถ้วยตวง</option>
+                              <option value="pinch">หยิบมือ / เล็กน้อย</option>
+                              <option value="leaf">ใบ / กลีบ / ฝัก / ต้น</option>
+                              <option value="seed">เม็ด / เมล็ด</option>
+                              <option value="pack">ห่อ / ถุง / ซอง</option>
+                              <option value="bunch">กำ / มัด / พวง</option>
+                            </select>
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
+                            </div>
+                          </div>
+
+                          <input 
+                            type="text"
+                            placeholder="พิมพ์ชื่อวัตถุดิบ..."
+                            value={ing.name}
+                            onChange={(e) => handleSetIngredientChange(ing.id, "name", e.target.value)}
+                            className={`flex-1 min-w-[120px] w-full sm:w-[190px] py-2 px-3 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white shadow-inner text-sm ${
+                              isSetIngMissing ? "border-red-500 bg-red-50/20" : "border-[#71B254] focus:ring-[#71B254]"
+                            }`}
+                          />
+
+                        <button 
+                          type="button" 
+                          onClick={() => removeSetIngredient(ing.id)}
+                          disabled={setIngredientsList.length === 1}
+                          className={`w-full sm:w-auto mt-2 sm:mt-0 p-2 rounded-md font-bold transition flex items-center justify-center shrink-0 ${
+                            setIngredientsList.length === 1 ? "bg-gray-100 text-gray-300 cursor-not-allowed" : "bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600"
+                          }`}
+                        >
+                          <span className="sm:hidden mr-1">ลบ</span>
+                          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <button 
+                    type="button" 
+                    onClick={addSetIngredient}
+                    className="mt-3 w-full py-2 border border-dashed border-[#71B254] text-[#71B254] rounded-md text-xs font-bold hover:bg-[#F4FAF1] transition-colors flex items-center justify-center gap-1"
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+                    เพิ่มวัตถุดิบในเซ็ทอาหาร
+                  </button>
                 </div>
 
                 <div id="form-field-contactInfo">
@@ -1057,11 +1287,35 @@ export default function CreateRecipePage() {
                       )}
                     </div>
                   </div>
+                  </div>
                 </div>
+
+                
               </div>
-            </div>
           )}
           
+          {/* --- Recipe Edit Form Wrapper --- */}
+          <div className={`relative ${pickedRecipe ? 'pointer-events-none select-none bg-gray-50/30' : ''}`}>
+            {pickedRecipe && (
+              <div className="absolute top-[20%] left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+                <div className="bg-white/95 px-6 py-3 rounded-xl shadow-lg border-2 border-[#71B254] text-[#71B254] font-bold text-lg backdrop-blur-sm whitespace-nowrap flex items-center gap-2">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>
+                  <span>ข้อมูลสูตรต้นฉบับ (ไม่สามารถแก้ไขได้)</span>
+                  <button 
+                    type="button"
+                    onClick={handleUndoPickRecipe}
+                    className="ml-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-full p-1.5 transition-colors border border-red-200"
+                    title="ลบสูตรนี้และสร้างใหม่"
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+            
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-8 relative z-20">
             
             <div className="lg:col-span-2 flex flex-col gap-8">
@@ -1141,7 +1395,10 @@ export default function CreateRecipePage() {
                         <button
                           type="button"
                           id="mode-manual-btn"
-                          onClick={() => setRecipeSourceMode("manual")}
+                          onClick={() => {
+                            setRecipeSourceMode("manual");
+                            if (pickedRecipe) handleUndoPickRecipe();
+                          }}
                           className={`flex-1 py-2.5 rounded-md font-bold text-sm border transition-colors ${
                             recipeSourceMode === "manual"
                               ? "bg-[#71B254] text-white border-[#71B254]"
@@ -1160,7 +1417,7 @@ export default function CreateRecipePage() {
                               : "bg-white text-[#71B254] border-[#71B254] hover:bg-[#F4FAF1]"
                           }`}
                         >
-                          เลือกจากสูตรในระบบ
+                          เลือกจากสูตรอาหารต้นฉบับ
                         </button>
                       </div>
 
@@ -1169,7 +1426,7 @@ export default function CreateRecipePage() {
                           {!pickedRecipe ? (
                             <>
                               <label htmlFor="ingredient-search-input" className="block text-gray-700 text-sm font-semibold mb-2">
-                                ใส่วัตถุดิบที่ร้านมี (คั่นด้วยจุลภาค) ระบบจะค้นหาสูตรที่ตรงกัน
+                                ค้นหาสูตรอาหารต้นฉบับด้วยวัตถุดิบ (คั่นด้วยจุลภาค)
                               </label>
                               <input
                                 id="ingredient-search-input"
@@ -1225,9 +1482,13 @@ export default function CreateRecipePage() {
                                   type="button"
                                   id="undo-pick-recipe-btn"
                                   onClick={handleUndoPickRecipe}
-                                  className="text-red-500 hover:text-red-700 text-xs font-bold shrink-0"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-full transition-colors shrink-0"
+                                  title="ลบสูตรนี้และเลือกใหม่"
                                 >
-                                  ยกเลิก
+                                  <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                  </svg>
                                 </button>
                               </div>
                               <div className="mt-3 pt-3 border-t border-[#d6e8cd] flex items-center gap-2 text-xs text-gray-500">
@@ -1597,9 +1858,12 @@ export default function CreateRecipePage() {
             </div>
           </div>
 
+
           <div className="mb-10 relative z-20">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">5</div>
+              <div className="w-8 h-8 rounded-full bg-[#71B254] text-white flex items-center justify-center font-bold text-lg">
+                {postAs === "store" ? "5" : "4"}
+              </div>
               <h2 className="text-2xl font-bold text-gray-800">การมองเห็นโพสต์</h2>
             </div>
             
@@ -1657,6 +1921,8 @@ export default function CreateRecipePage() {
               </label>
             </div>
           </div>
+          </div>
+          {/* --- End Recipe Edit Form Wrapper --- */}
 
           <div className="flex flex-col gap-4 pt-8 border-t border-gray-100 relative z-20">
             {submitError && (
@@ -1700,7 +1966,7 @@ export default function CreateRecipePage() {
                     กำลังอัปโหลดข้อมูล...
                   </span>
                 ) : (
-                  "เผยแพร่เมนูอาหาร"
+                  postAs === "store" ? "เผยแพร่เซ็ทอาหาร" : "เผยแพร่เมนูอาหาร"
                 )}
               </button>
             </div>

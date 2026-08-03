@@ -39,6 +39,7 @@ export interface RecipeListMeta {
   limit: number
   total: number
   totalPages: number
+  userId?: string
 }
 
 export interface RecipeListResponse {
@@ -75,6 +76,7 @@ export interface StorePostItem {
   storeDescription: string | null
   storeLocation: string | null
   contactInfo: string | null
+  setIngredients: any[] | null
   createdAt: string
   user: RecipeUser
   images: RecipeImage[]
@@ -102,6 +104,13 @@ export interface RecipeDetail {
   videos: RecipeVideo[]
   reviews: ReviewItem[]
   storePosts: StorePostItem[]
+  referenceRecipe?: {
+    id: string
+    recipeName: string
+    user: {
+      username: string
+    }
+  } | null
 }
 
 export interface RecipeDetailResponse {

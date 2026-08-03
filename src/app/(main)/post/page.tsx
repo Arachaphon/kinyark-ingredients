@@ -161,22 +161,34 @@ export default function PostsFeedPage() {
                         </h1>
                       </div>
 
-                      {/* ส่วนผสมของสูตรอาหาร */}
-                      {post.recipeIngredients && post.recipeIngredients.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {post.recipeIngredients.slice(0, 5).map((ri) => (
-                            <span
-                              key={ri.id}
-                              className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
-                            >
-                              {ri.ingredient.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      {/* ส่วนผสมของสูตรอาหาร หรือ เซ็ทขาย */}
+                      {(() => {
+                        let ingredientsToDisplay: string[] = [];
+                        
+                        if (storePost?.setIngredients && Array.isArray(storePost.setIngredients) && storePost.setIngredients.length > 0) {
+                          ingredientsToDisplay = storePost.setIngredients.map((i: any) => i.name).filter(Boolean);
+                        } else if (post.recipeIngredients && post.recipeIngredients.length > 0) {
+                          ingredientsToDisplay = post.recipeIngredients.map((ri) => ri.ingredient.name);
+                        }
+                        
+                        if (ingredientsToDisplay.length === 0) return null;
+                        
+                        return (
+                          <div className="flex flex-wrap gap-2">
+                            {ingredientsToDisplay.slice(0, 5).map((name, idx) => (
+                              <span
+                                key={idx}
+                                className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
+                              >
+                                {name}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
 
                       {/* 💰 ราคา และ 📞 ช่องทางการติดต่อร้านค้า (แถวเดียวกัน) */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
+                      <div className="flex flex-col gap-3 text-left">
                         <div className="flex items-baseline gap-2">
                           <span className="text-sm font-bold text-gray-500 shrink-0">
                             ราคาขาย:
@@ -186,11 +198,11 @@ export default function PostsFeedPage() {
                           </span>
                         </div>
 
-                        <div className="flex items-baseline gap-2 overflow-hidden">
-                          <span className="text-sm font-bold text-gray-500 shrink-0">
+                        <div className="flex items-start gap-2 w-full">
+                          <span className="text-sm font-bold text-gray-500 shrink-0 pt-0.5">
                             ติดต่อร้านค้า:
                           </span>
-                          <span className="text-sm font-bold text-gray-800 truncate">
+                          <span className="text-sm font-bold text-gray-800 break-words whitespace-pre-wrap flex-1">
                             {storePost?.contactInfo && storePost.contactInfo.trim() !== "" 
                               ? storePost.contactInfo 
                               : "ติดต่อโดยตรง / โทร 081-234-5678"}
