@@ -28,6 +28,7 @@ export default function PostsFeedPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState<Record<string, number>>({});
 
   const fetchPosts = useCallback(async (targetPage: number, append = false) => {
     if (append) {
@@ -63,7 +64,7 @@ export default function PostsFeedPage() {
     fetchPosts(1);
   }, [fetchPosts]);
 
-  const handleSelectImage = (postId: number, index: number) => {
+  const handleSelectImage = (postId: string, index: number) => {
     setActiveImageIndex((prev) => ({
       ...prev,
       [postId]: index,
@@ -71,7 +72,7 @@ export default function PostsFeedPage() {
   };
 
   // เลื่อนรูปถอยหลังของโพสต์นั้นๆ
-  const handlePrevImage = (postId: number, totalImages: number) => {
+  const handlePrevImage = (postId: string, totalImages: number) => {
     setActiveImageIndex((prev) => {
       const currentIdx = prev[postId] || 0;
       return {
@@ -82,7 +83,7 @@ export default function PostsFeedPage() {
   };
 
   // เลื่อนรูปไปข้างหน้าของโพสต์นั้นๆ
-  const handleNextImage = (postId: number, totalImages: number) => {
+  const handleNextImage = (postId: string, totalImages: number) => {
     setActiveImageIndex((prev) => {
       const currentIdx = prev[postId] || 0;
       return {
@@ -266,7 +267,9 @@ export default function PostsFeedPage() {
 
                     {/* Thumbnail เลือกดูรูปภาพทั้งหมด 4 รูป */}
                     <div className="grid grid-cols-4 gap-2">
-                      {post.images.map((img, idx) => (
+                      {post.images.map((img, idx) => {
+                        const currentImgIdx = activeImageIndex[post.id] || 0;
+                        return (
                         <button
                           key={idx}
                           onClick={() => handleSelectImage(post.id, idx)}
@@ -277,12 +280,12 @@ export default function PostsFeedPage() {
                           }`}
                         >
                           <img  
-                            src={img}
+                            src={img.imageUrl}
                             alt={`รูปที่ ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
                         </button>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 </div>

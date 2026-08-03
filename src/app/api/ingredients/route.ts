@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { Prisma } from "@prisma/client"
 import { ingredientQuerySchema } from "@/lib/validations/ingredient.schema"
 
 export const dynamic = "force-dynamic";
