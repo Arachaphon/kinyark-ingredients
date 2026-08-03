@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
 import type { RecipeDetail } from "@/types/recipes";
 
@@ -18,6 +18,9 @@ type IngredientRow = { id: number; name: string; quantity: string; unit: string 
 function EditRecipeForm({ recipeId }: { recipeId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -139,6 +142,104 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
         file,
         previewUrl: URL.createObjectURL(file)
       });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+
+    if (!title.trim() || !description.trim()) {
+      setSubmitError("กรุณากรอกข้อมูลพื้นฐานให้ครบถ้วน");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Upload files
+      const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
+        const fd = new FormData();
+        fd.append("file", file);
+        try {
+          const res = await fetch("/api/recipes/upload", { method: "POST", body: fd });
+          const data = await res.json();
+          if (!res.ok) return { url: null, error: data.error || "เกิดข้อผิดพลาดในการอัปโหลดไฟล์" };
+          return { url: data.url };
+        } catch {
+          return { url: null, error: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่ออัปโหลดไฟล์ได้" };
+        }
+      };
+
+      const uploadedRecipeImages: string[] = [];
+      for (const media of coverImages) {
+        if (!media.file) {
+          uploadedRecipeImages.push(media.previewUrl);
+          continue;
+        }
+        const result = await uploadFile(media.file);
+        if (result.error) {
+          setSubmitError(`อัปโหลดรูปภาพล้มเหลว: ${result.error}`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (result.url) uploadedRecipeImages.push(result.url);
+      }
+
+      const uploadedRecipeVideos: string[] = [];
+      if (videoFile) {
+        if (!videoFile.file) {
+          uploadedRecipeVideos.push(videoFile.previewUrl);
+        } else {
+          const result = await uploadFile(videoFile.file);
+          if (result.error) {
+            setSubmitError(`อัปโหลดวิดีโอล้มเหลว: ${result.error}`);
+            setIsSubmitting(false);
+            return;
+          }
+          if (result.url) uploadedRecipeVideos.push(result.url);
+        }
+      }
+
+      const validIngredients = ingredients.filter(i => i.name.trim() !== "").map(i => ({
+        name: i.name.trim(),
+        quantity: parseFloat(i.quantity) || 1,
+        unit: i.unit.trim(),
+      }));
+
+      const payload: Record<string, unknown> = {
+        recipeName: title.trim(),
+        description: description.trim(),
+        instructions: instructions.trim(),
+        ingredients: validIngredients,
+        visibility,
+        images: uploadedRecipeImages.slice(1),
+        videos: uploadedRecipeVideos,
+      };
+
+      if (uploadedRecipeImages.length > 0) {
+        payload.featuredImageUrl = uploadedRecipeImages[0];
+      }
+
+      const response = await fetch(`/api/recipes/${recipeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload), 
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setSubmitError(data.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push("/my-recipe");
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      setSubmitError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      setIsSubmitting(false);
     }
   };
 
@@ -577,12 +678,19 @@ function EditRecipeForm({ recipeId }: { recipeId: string }) {
             <div>
               <button
                 type="button"
-                className="w-full py-3.5 bg-[#71B254] text-white rounded-md font-bold hover:bg-[#5b9642] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center text-lg shadow-md"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="w-full py-3.5 bg-[#71B254] text-white rounded-md font-bold hover:bg-[#5b9642] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center text-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                บันทึกการแก้ไข
+                {isSubmitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
               </button>
             </div>
           </div>
+          {submitError && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-md text-center">
+              {submitError}
+            </div>
+          )}
         </div>
       </main>
     </div>
