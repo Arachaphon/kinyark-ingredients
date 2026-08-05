@@ -59,7 +59,7 @@ export async function signup(
         id: userId,
         email,
         username,
-        role: role === "shop" ? "SHOP" : "USER",
+        role: role === "store" ? "STORE" : "USER",
       },
     });
   } catch (err) {

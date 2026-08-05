@@ -46,7 +46,7 @@ export async function updateProfile(
 }
 
 export const AUTH_PROFILE_SELECT = {
-  id: true, username: true, email: true, avatarUrl: true,
+  id: true, username: true, email: true, avatarUrl: true, role: true,
 } as const satisfies Prisma.UserSelect;
 
 export const FULL_PROFILE_SELECT = {

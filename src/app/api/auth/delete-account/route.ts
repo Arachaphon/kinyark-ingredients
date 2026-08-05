@@ -41,10 +41,43 @@ export async function DELETE(request: Request) {
       )
     }
 
+    // 1. Fetch user avatar & recipes media files before deletion
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { avatarUrl: true }
+    })
+
+    const recipeImages = await prisma.recipeImage.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { imageUrl: true }
+    })
+
+    const recipeVideos = await prisma.recipeVideo.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { videoUrl: true }
+    })
+
     // Delete from Prisma DB
     await prisma.user.delete({
       where: { id: user.id },
     })
+
+    // Delete files from Supabase Storage (User folder & individual URLs)
+    const { deleteFileByUrl, deleteUserFolder } = await import('@/lib/storage')
+    if (userData?.avatarUrl) {
+      await deleteFileByUrl(supabase, userData.avatarUrl)
+    }
+
+    for (const img of recipeImages) {
+      await deleteFileByUrl(supabase, img.imageUrl)
+    }
+
+    for (const vid of recipeVideos) {
+      await deleteFileByUrl(supabase, vid.videoUrl)
+    }
+
+    await deleteUserFolder(supabase, user.id, 'avatars')
+    await deleteUserFolder(supabase, user.id, 'recipes')
 
     // Delete from Supabase Auth using Service Role Key
     const supabaseAdmin = createSupabaseClient(

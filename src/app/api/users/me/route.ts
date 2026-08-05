@@ -154,6 +154,22 @@ export async function DELETE() {
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
+    // Collect file URLs to delete from storage
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { avatarUrl: true },
+    })
+
+    const recipeImages = await prisma.recipeImage.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { imageUrl: true },
+    })
+
+    const recipeVideos = await prisma.recipeVideo.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { videoUrl: true },
+    })
+
     await prisma.reviewLike.deleteMany({ where: { userId: user.id } })
     await prisma.favorite.deleteMany({ where: { userId: user.id } })
     await prisma.searchHistory.deleteMany({ where: { userId: user.id } })
@@ -189,6 +205,23 @@ export async function DELETE() {
 
     await prisma.review.deleteMany({ where: { userId: user.id } })
     await prisma.user.delete({ where: { id: user.id } })
+
+    // Clean up Supabase Storage Bucket Files
+    const { deleteFileByUrl, deleteUserFolder } = await import("@/lib/storage")
+    if (userData?.avatarUrl) {
+      await deleteFileByUrl(supabase, userData.avatarUrl)
+    }
+
+    for (const img of recipeImages) {
+      await deleteFileByUrl(supabase, img.imageUrl)
+    }
+
+    for (const vid of recipeVideos) {
+      await deleteFileByUrl(supabase, vid.videoUrl)
+    }
+
+    await deleteUserFolder(supabase, user.id, 'avatars')
+    await deleteUserFolder(supabase, user.id, 'recipes')
 
     const supabaseAdmin = await createClient()
     await supabaseAdmin.auth.admin.deleteUser(user.id)

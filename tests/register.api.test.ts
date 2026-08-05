@@ -109,7 +109,7 @@ describe("signup server action", () => {
     });
   });
 
-  test("creates user with SHOP role when role is shop", async () => {
+  test("creates user with STORE role when role is store", async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
     mockSupabaseAuth.signUp.mockResolvedValue({
       data: { user: { id: "new-uuid" } },
@@ -117,12 +117,12 @@ describe("signup server action", () => {
     });
     mockPrisma.user.create.mockResolvedValue({ id: "new-uuid" });
 
-    const fd = createFormData({ role: "shop" });
+    const fd = createFormData({ role: "store" });
     const result = await signup({ message: "" }, fd);
     expect(result.success).toBe(true);
     expect(mockPrisma.user.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ role: "SHOP" }),
+        data: expect.objectContaining({ role: "STORE" }),
       })
     );
   });

@@ -13,86 +13,135 @@
 
 ---
 
-## Team22 Sprint Backlog (from timeline.xlsx — Sheet Team22 KINYARK)
+## Team22 Sprint Backlog (from timeline v.2 — docs/timeline v.2 - [Team22].csv)
 
 ### Team Members — Role Rotation
 
 | StudentID | Name | Iteration 0 | Iteration 01 | Iteration 02 | Iteration 03 |
 |---|---|---|---|---|---|
-| 67022748 | พีรพัฒน์ แสวงรัมย์ | PM/Scrummaster | PM/Scrummaster | FrontEnd | QA/Tester |
-| 67022535 | การัญภาส กันทะเนตร | FrontEnd | FrontEnd | PM/Scrummaster | QA/Tester |
-| 67023031 | อรชพร กลิ่นชื่น | BackEnd | BackEnd | BackEnd | QA/Tester, PM, Devops |
+| 67022748 | พีรพัฒน์ แสวงรัมย์ | PM/Scrummaster | PM/Scrummaster | FrontEnd, QA/Tester | QA/Tester |
+| 67022535 | การัญภาส กันทะเนตร | FrontEnd, QA/Tester, BackEnd | FrontEnd, BackEnd, QA/Tester | PM/Scrummaster | QA/Tester |
+| 67023031 | อรชพร กลิ่นชื่น | BackEnd, Devops | BackEnd, Devops | BackEnd, Devops | PM/Scrummaster |
 
-### Phase 2 — Authentication & Profile (Sprint: Iteration 0 / Week 1–2)
+**Scrum Master:** Iteration 0 → พีรพัฒน์ · Iteration 01 → พีรพัฒน์ · Iteration 02 → การัญภาส · Iteration 03 → อรชพร
 
-| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+### Iteration 0 — Week 1 (Jul 14–17)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| W1-1 | Review UI Consistency | พีรพัฒน์ | Jul 14 | 20 | 20 | Complete |
-| W1-2 | Global Authentication State | การัญภาส | Jul 14 | 20 | 20 | Complete |
-| W1-3 | Review UI Text | พีรพัฒน์ | Jul 15 | 20 | 20 | Complete |
-| W1-4 | Register User | อรชพร | Jul 16 | 20 | 20 | Complete |
-| W1-5 | Integration Test | การัญภาส | Jul 16 | 20 | 20 | Complete |
-| W1-6 | Login Integration | อรชพร | Jul 17 | 20 | 20 | Complete |
-| W1-7 | Register Integration | พีรพัฒน์ | Jul 17 | 20 | 20 | Complete |
-| W1-8 | Login User | อรชพร | Jul 17 | 20 | 20 | Complete |
-| W2-1 | **Logout User** | **อรชพร** | **Jul 20** | **20** | **18** | **Done** |
-| W2-2 | Design AI Service | การัญภาส | Jul 20 | 20 | 0 | ToDO |
-| W2-3 | **Get Profile** | **อรชพร** | **Jul 21** | **20** | **18** | **Done** |
-| W2-4 | Register Integration (frontend) | พีรพัฒน์ | Jul 21 | 20 | 16 | Done |
-| W2-5 | Update Profile | อรชพร | Jul 22 | 20 | 2 | InProgress |
-| W2-6 | Build Prompt Generator | การัญภาส | Jul 22 | 20 | 0 | ToDO |
-| W2-7 | Bind Search input state & Debounce | พีรพัฒน์ | Jul 23 | 20 | 0 | ToDO |
-| W2-8 | Change Password | อรชพร | Jul 24 | 20 | 16 | Done |
-| W2-9 | Integrate API | การัญภาส | Jul 24 | 20 | 0 | ToDO |
-| W2-10 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W1-1 | Review UI Consistency | พีรพัฒน์ | Jul 14 | 20 | 0 | Complete |
+| W1-2 | Global Authentication State | การัญภาส | Jul 14 | 20 | 0 | Complete |
+| W1-3 | Review UI Text | พีรพัฒน์ | Jul 15 | 20 | 0 | Complete |
+| W1-4 | Register User | อรชพร | Jul 16 | 20 | 0 | Complete |
+| W1-5 | Integration Test | การัญภาส | Jul 16 | 20 | 0 | Complete |
+| W1-6 | Login Integration | อรชพร | Jul 17 | 20 | 0 | Complete |
+| W1-7 | Register Integration | พีรพัฒน์ | Jul 17 | 20 | 0 | Complete |
+| W1-8 | Login User | อรชพร | Jul 17 | 20 | 0 | Complete |
 
-### Phase 3 — Recipe CRUD & Engagement (Sprint: Iteration 02 / Week 3)
+### Iteration 0 — Week 2 (Jul 20–24)
 
-| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| W3-1 | Connect AI Search & Filter API | พีรพัฒน์ | Jul 27 | 20 | 0 | ToDO |
-| W3-2 | Upload Profile Image | อรชพร | Jul 28 | 20 | 18 | Done |
-| W3-3 | Handle Empty Search & Loading states | พีรพัฒน์ | Jul 28 | 20 | 0 | ToDO |
-| W3-4 | Implement AI Recipe Service | การัญภาส | Jul 29 | 20 | 0 | ToDO |
-| W3-5 | Delete Account | อรชพร | Jul 30 | 20 | 0 | ToDO |
-| W3-6 | Validate AI Response | การัญภาส | Jul 31 | 20 | 0 | ToDO |
-| W3-7 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W3-8 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W3-9 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W3-10 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W2-1 | Logout User | อรชพร | Jul 20 | 20 | 0 | Complete |
+| W2-2 | Design AI Service | การัญภาส | Jul 20 | 20 | 4 | Done |
+| W2-3 | Get Profile | อรชพร | Jul 21 | 20 | 0 | Complete |
+| W2-4 | Register Integration | พีรพัฒน์ | Jul 21 | 20 | 0 | Complete |
+| W2-5 | Update Profile | อรชพร | Jul 22 | 20 | 0 | Complete |
+| W2-6 | Build Prompt Generator | การัญภาส | Jul 22 | 20 | 4 | Done |
+| W2-7 | Bind Search input state & Implement Debounce | พีรพัฒน์ | Jul 23 | 20 | 0 | Complete |
+| W2-8 | Change Password | อรชพร | Jul 24 | 20 | 0 | Complete |
+| W2-9 | Integrate API | การัญภาส | Jul 24 | 20 | 4 | Done |
 
-### Phase 4 — AI + Social Features (Sprint: Iteration 02–03 / Week 3–4)
+### Iteration 0 — Week 3 (Jul 27–31)
 
-| ID | Feature | Assigned | Due | Est. | Burn | STATUS |
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| W2-11 | Bind Post input fields & Submit API | พีรพัฒน์ | Aug 31 | 20 | 0 | ToDO |
-| W2-12 | Integration Testing Recipe Engagement | การัญภาส | Aug 31 | 20 | 0 | ToDO |
-| W4-1 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-2 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-3 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-4 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-5 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-6 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-7 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-8 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-9 | (unassigned) | — | — | 20 | 0 | ToDO |
-| W4-10 | (unassigned) | — | — | 20 | 0 | ToDO |
+| W3-1 | Connect AI Search & Filter API | พีรพัฒน์ | Jul 27 | 20 | 0 | Complete |
+| W3-2 | Upload Profile Image | อรชพร | Jul 28 | 20 | 0 | Complete |
+| W3-3 | Handle Empty Search & Loading states | พีรพัฒน์ | Jul 28 | 20 | 0 | Complete |
+| W3-4 | Implement AI Recipe Service | การัญภาส | Jul 29 | 20 | 4 | Done |
+| W3-5 | Delete Account | อรชพร | Jul 30 | 20 | 0 | Complete |
+| W3-6 | Validate AI Response | การัญภาส | Jul 31 | 20 | 4 | Done |
 
-### General Tasks (Cross-Iteration)
+**Iteration 0:** Planned Score 460 · Actual Score 440
 
-| Task | Story Pts | Iteration 0 | Iteration 01 | Iteration 02 | Iteration 03 | Current Status |
+### Iteration 01 — Week 1 (Aug 3–7)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| Perform E2E Functional Testing | 20 | — | — | — | — | ToDO |
-| Cross-Browser & Responsive UI Testing | 15 | — | — | — | — | InProgress |
-| Performance & Error Handling Validation | 15 | — | — | — | — | Testing |
-| Final Bug Fixing & Code Refactoring | 20 | — | — | — | — | Done |
-| Production Deployment & CI/CD Setup | 20 | — | — | — | — | Complete |
-| Post-Deployment Smoke Testing | 5 | — | — | — | — | Reject |
+| W1-1 | Create Recipe | อรชพร | Aug 3 | 20 | 20 | ToDO |
+| W1-2 | Get Recipe | อรชพร | Aug 3 | 20 | 20 | ToDO |
+| W1-3 | Build Multi-step form state management | พีรพัฒน์ | Aug 3 | 20 | 0 | Complete |
+| W1-4 | Retrieve User Context | การัญภาส | Aug 4 | 20 | 20 | ToDO |
+| W1-5 | Update Recipe | อรชพร | Aug 5 | 20 | 20 | ToDO |
+| W1-6 | Implement Image Upload & Preview | พีรพัฒน์ | Aug 5 | 20 | 0 | Complete |
+| W1-7 | Delete Recipe | อรชพร | Aug 6 | 20 | 20 | ToDO |
+| W1-8 | Build Recommendation Prompt | การัญภาส | Aug 6 | 20 | 20 | ToDO |
+| W1-9 | Manage Recipe Ingredients | อรชพร | Aug 7 | 20 | 20 | ToDO |
+| W1-10 | Connect Create Recipe API | พีรพัฒน์ | Aug 7 | 20 | 2 | Done |
+
+### Iteration 01 — Week 2 (Aug 11–13)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
+|---|---|---|---|---|---|---|
+| W2-1 | Validate Recipe Data | อรชพร | Aug 11 | 20 | 20 | ToDO |
+| W2-2 | Implement Recommendation Service | การัญภาส | Aug 11 | 20 | 20 | ToDO |
+| W2-3 | Fetch and render user's recipes | พีรพัฒน์ | Aug 12 | 20 | 20 | ToDO |
+| W2-4 | Upload Recipe Image | อรชพร | Aug 13 | 20 | 20 | ToDO |
+| W2-5 | Connect Delete/Edit action triggers | พีรพัฒน์ | Aug 13 | 20 | 20 | ToDO |
+| W2-6 | Optimize Context Payload | การัญภาส | Aug 13 | 20 | 20 | ToDO |
+
+**Iteration 01:** Planned Score 320 · Actual Score 58
+
+### Iteration 02 — Week 1 (Aug 18–21)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
+|---|---|---|---|---|---|---|
+| W1-1 | Manage Recipe Video | อรชพร | Aug 18 | 20 | 20 | ToDO |
+| W1-2 | Fetch dynamic recipe feed & Pagination | พีรพัฒน์ | Aug 18 | 20 | 20 | ToDO |
+| W1-3 | Generate Weekly Recommendation | การัญภาส | Aug 18 | 20 | 20 | ToDO |
+| W1-4 | Add & Remove Favorite | อรชพร | Aug 19 | 20 | 20 | ToDO |
+| W1-5 | Cache Weekly Result | การัญภาส | Aug 20 | 20 | 20 | ToDO |
+| W1-6 | Get Favorite Recipes | อรชพร | Aug 21 | 20 | 20 | ToDO |
+| W1-7 | Fetch dynamic recipe data | พีรพัฒน์ | Aug 21 | 20 | 20 | ToDO |
+
+### Iteration 02 — Week 2 (Aug 24–31)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
+|---|---|---|---|---|---|---|
+| W2-1 | Connect Favorite toggle API | พีรพัฒน์ | Aug 24 | 20 | 20 | ToDO |
+| W2-2 | Create Review & Rating | อรชพร | Aug 25 | 20 | 20 | ToDO |
+| W2-3 | Integration Test (AI Backend) | การัญภาส | Aug 25 | 20 | 20 | ToDO |
+| W2-4 | Update & Delete Review | อรชพร | Aug 26 | 20 | 20 | ToDO |
+| W2-5 | Fetch and render user's recipes | พีรพัฒน์ | Aug 26 | 20 | 20 | ToDO |
+| W2-6 | Connect Fetch comments API | พีรพัฒน์ | Aug 27 | 20 | 20 | ToDO |
+| W2-7 | Calculate Recipe Rating | อรชพร | Aug 28 | 20 | 20 | ToDO |
+| W2-8 | Integration Testing Recipe Management | การัญภาส | Aug 28 | 20 | 20 | ToDO |
+| W2-9 | Save Search History | อรชพร | Aug 31 | 20 | 20 | ToDO |
+| W2-10 | Get & Delete Search History | อรชพร | Aug 31 | 20 | 20 | ToDO |
+| W2-11 | Bind Post input fields & Submit API | พีรพัฒน์ | Aug 31 | 20 | 20 | ToDO |
+| W2-12 | Integration Testing Recipe Engagement | การัญภาส | Aug 31 | 20 | 20 | ToDO |
+
+**Iteration 02:** Planned Score 340 · Actual Score 0
+
+### Iteration 03 — Week 1 (Sep 1–4)
+
+| ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
+|---|---|---|---|---|---|---|
+| W1-1 | Perform End-to-End (E2E) Functional Testing | อรชพร | Sep 1 | 20 | 20 | ToDO |
+| W1-2 | Cross-Browser & Responsive UI Testing | การัญภาส | Sep 2 | 20 | 20 | ToDO |
+| W1-3 | Performance & Error Handling Validation | พีรพัฒน์ | Sep 2 | 20 | 20 | ToDO |
+| W1-4 | Final Bug Fixing & Code Refactoring | การัญภาส | Sep 3 | 20 | 20 | ToDO |
+| W1-5 | Production Deployment & CI/CD Setup | อรชพร | Sep 4 | 20 | 20 | ToDO |
+| W1-6 | Post-Deployment Smoke Testing | พีรพัฒน์ | Sep 4 | 20 | 20 | ToDO |
+
+**Iteration 03:** Planned Score 120 · Actual Score 0
 
 **Notes:**
-- W4-1 to W4-10 have no feature names or assignments in source xlsx
-- Some tasks appear across multiple iteration columns — only the primary iteration logged
-- "Burn" column = total hours burned across 5 days
+- Source: `docs/timeline v.2 - [Team22].csv` (updated 2026-08-02)
+- Iteration 0 spans Weeks 1–3 (W1/W2/W3 tasks); Iteration 01–03 each span Weeks 1–2
+- W3-7 to W3-10 and W4-1 to W4-10 remain unassigned (no feature names in source xlsx)
+- Task names in Iteration 01 use the CRUD naming (Create/Get/Update/Delete Recipe) per timeline v.2
 
 ---
 
