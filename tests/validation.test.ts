@@ -7,6 +7,8 @@
 import { createRecipeSchema } from "@/lib/validations/recipe.schema";
 import {
   ingredientIdSchema,
+  createIngredientSchema,
+  updateIngredientSchema,
 } from "@/lib/validations/ingredient.schema";
 import { createReviewSchema } from "@/lib/validations/review.schema";
 import {
@@ -56,6 +58,70 @@ describe("recipe.schema.ts", () => {
       );
     }
   });
+
+  test("recipeName too long reject", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      recipeName: "x".repeat(151),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("featuredImageUrl invalid URL reject", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      featuredImageUrl: "not-a-url",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("featuredImageUrl valid URL pass", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      featuredImageUrl: "https://example.com/img.jpg",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  test("quantity must be positive", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      ingredients: [{ name: "Chicken", quantity: -5, unit: "g" }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("visibility enum invalid reject", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      visibility: "secret",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("store requires non-empty storeName", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      store: { storeName: "", sellingPrice: 10 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("store sellingPrice cannot be negative", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      store: { storeName: "Shop", sellingPrice: -5 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("systemRecipeId invalid uuid reject", () => {
+    const result = createRecipeSchema.safeParse({
+      ...validBase,
+      systemRecipeId: "nope",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -75,6 +141,30 @@ describe("ingredient.schema.ts", () => {
   test("ingredientId string reject — rejects string value", () => {
     const result = ingredientIdSchema.safeParse({ ingredientId: "abc" });
     expect(result.success).toBe(false);
+  });
+
+  test("createIngredient requires name", () => {
+    const result = createIngredientSchema.safeParse({ category: "Meat" });
+    expect(result.success).toBe(false);
+  });
+
+  test("createIngredient rejects both category and categoryId", () => {
+    const result = createIngredientSchema.safeParse({
+      name: "Chicken",
+      category: "Meat",
+      categoryId: 2,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  test("updateIngredient rejects empty body", () => {
+    const result = updateIngredientSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  test("updateIngredient accepts a single field", () => {
+    const result = updateIngredientSchema.safeParse({ name: "Chicken Breast" });
+    expect(result.success).toBe(true);
   });
 });
 
