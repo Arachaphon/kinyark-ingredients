@@ -64,8 +64,8 @@ export async function GET(
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // Protected recipes are hidden from STORE role users
-    if (recipe.visibility === "protected" && user) {
+    // Protected recipes are hidden from STORE role users, unless they are the owner
+    if (recipe.visibility === "protected" && user && recipe.userId !== user.id) {
       const profile = await prisma.user.findUnique({
         where: { id: user.id },
         select: { role: true },

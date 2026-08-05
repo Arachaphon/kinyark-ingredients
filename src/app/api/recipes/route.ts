@@ -60,7 +60,7 @@ export async function GET(request: Request) {
     }
 
     // Determine visibility filter based on user role
-    // STORE role users cannot see protected recipes
+    // STORE role users cannot see protected recipes, unless they own the recipe
     let visibilityFilter: Prisma.RecipeWhereInput;
 
     if (publicOnly) {
@@ -77,10 +77,20 @@ export async function GET(request: Request) {
         });
 
         if (profile?.role === "STORE") {
-          // Store users cannot see protected recipes
-          visibilityFilter = { visibility: "public" };
+          // Store users cannot see protected recipes, unless they own the recipe
+          visibilityFilter = {
+            OR: [
+              { visibility: "public" },
+              { userId: user.id },
+            ]
+          };
         } else {
-          visibilityFilter = { visibility: { in: ["public", "protected"] } };
+          visibilityFilter = {
+            OR: [
+              { visibility: { in: ["public", "protected"] } },
+              { userId: user.id },
+            ]
+          };
         }
       } else {
         // Not logged in — show both public and protected

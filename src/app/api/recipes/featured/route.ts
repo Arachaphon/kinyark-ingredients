@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { recipeListItemSelect } from "@/lib/recipes"
 import { z } from "zod"
+import { Prisma } from "@prisma/client"
 
 export const dynamic = "force-dynamic";
 
@@ -68,16 +69,26 @@ export async function GET(request: Request) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    let visibilityFilter: { visibility: string | { in: string[] } };
+    let visibilityFilter: Prisma.RecipeWhereInput;
     if (user) {
       const profile = await prisma.user.findUnique({
         where: { id: user.id },
         select: { role: true },
       });
       if (profile?.role === "STORE") {
-        visibilityFilter = { visibility: "public" };
+        visibilityFilter = {
+          OR: [
+            { visibility: "public" },
+            { userId: user.id },
+          ],
+        };
       } else {
-        visibilityFilter = { visibility: { in: ["public", "protected"] } };
+        visibilityFilter = {
+          OR: [
+            { visibility: { in: ["public", "protected"] } },
+            { userId: user.id },
+          ],
+        };
       }
     } else {
       visibilityFilter = { visibility: { in: ["public", "protected"] } };
