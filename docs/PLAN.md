@@ -75,7 +75,7 @@
 | W1-4 | Retrieve User Context | การัญภาส | Aug 4 | 20 | 20 | ToDO |
 | W1-5 | Update Recipe | อรชพร | Aug 5 | 20 | 8 | Testing |
 | W1-6 | Implement Image Upload & Preview | พีรพัฒน์ | Aug 5 | 20 | 0 | Complete |
-| W1-7 | Delete Recipe | อรชพร | Aug 6 | 20 | 20 | ToDO |
+| W1-7 | Delete Recipe | อรชพร | Aug 6 | 20 | 0 | Testing |
 | W1-8 | Build Recommendation Prompt | การัญภาส | Aug 6 | 20 | 20 | ToDO |
 | W1-9 | Manage Recipe Ingredients | อรชพร | Aug 7 | 20 | 20 | ToDO |
 | W1-10 | Connect Create Recipe API | พีรพัฒน์ | Aug 7 | 20 | 2 | Done |

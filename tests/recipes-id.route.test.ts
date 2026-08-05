@@ -8,12 +8,21 @@ jest.mock('@/lib/storage', () => ({
 }))
 
 const mockPrisma = {
-  recipe: { findUnique: jest.fn() },
-  favorite: { findUnique: jest.fn() },
+  recipe: { findUnique: jest.fn(), delete: jest.fn() },
+  favorite: { findUnique: jest.fn(), deleteMany: jest.fn() },
+  $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
+  reviewLike: { deleteMany: jest.fn() },
+  review: { deleteMany: jest.fn() },
+  recipeIngredient: { deleteMany: jest.fn() },
+  recipeEquipment: { deleteMany: jest.fn() },
+  recipeImage: { deleteMany: jest.fn() },
+  recipeVideo: { deleteMany: jest.fn() },
+  storePost: { deleteMany: jest.fn() },
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
-import { GET } from '@/app/api/recipes/[id]/route'
+import { GET, DELETE } from '@/app/api/recipes/[id]/route'
+import { deleteFileByUrl } from '@/lib/storage'
 
 const UUID = '9c1b1e2a-8f3a-4c7d-b5d1-3e2f9a0c6d4e'
 
@@ -131,5 +140,82 @@ describe('GET /api/recipes/[id]', () => {
 
     expect(res.status).toBe(500)
     expect(body.error).toBe('db down')
+  })
+})
+
+describe('DELETE /api/recipes/[id]', () => {
+  const deleteRecipe = {
+    id: UUID,
+    userId: 'user-owner',
+    images: [{ id: 'img-1', imageUrl: 'https://pub/recipes/a.jpg' }],
+    videos: [{ id: 'vid-1', videoUrl: 'https://pub/recipes/a.mp4' }],
+    storePosts: [
+      {
+        id: 'sp-1',
+        images: [{ id: 'simg-1', imageUrl: 'https://pub/recipes/s.jpg' }],
+        videos: [{ id: 'svid-1', videoUrl: 'https://pub/recipes/s.mp4' }],
+      },
+    ],
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockPrisma.recipe.findUnique.mockResolvedValue(deleteRecipe)
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-owner' } },
+      error: null,
+    })
+    jest.mocked(deleteFileByUrl).mockResolvedValue(true)
+  })
+
+  test('returns 401 when not authenticated', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(401)
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  test('returns 400 when id is not a valid uuid', async () => {
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: 'not-a-uuid' }) })
+    expect(res.status).toBe(400)
+    expect(mockPrisma.recipe.findUnique).not.toHaveBeenCalled()
+  })
+
+  test('returns 404 when recipe does not exist', async () => {
+    mockPrisma.recipe.findUnique.mockResolvedValue(null)
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(404)
+  })
+
+  test('returns 403 when user is not the recipe owner', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-other' } },
+      error: null,
+    })
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(403)
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+
+  test('deletes recipe, related relations and all store post media', async () => {
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(200)
+    expect(mockPrisma.$transaction).toHaveBeenCalledTimes(1)
+
+    const allUrls = [
+      'https://pub/recipes/a.jpg',
+      'https://pub/recipes/s.jpg',
+      'https://pub/recipes/a.mp4',
+      'https://pub/recipes/s.mp4',
+    ]
+    allUrls.forEach((url) => {
+      expect(deleteFileByUrl).toHaveBeenCalledWith(expect.anything(), url)
+    })
+  })
+
+  test('returns 500 on internal server error', async () => {
+    mockPrisma.recipe.findUnique.mockRejectedValue(new Error('db down'))
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(500)
   })
 })
