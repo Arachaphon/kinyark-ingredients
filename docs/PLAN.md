@@ -87,7 +87,7 @@
 | W2-1 | Validate Recipe Data | อรชพร | Aug 11 | 20 | 0 | Testing |
 | W2-2 | Implement Recommendation Service | การัญภาส | Aug 11 | 20 | 20 | ToDO |
 | W2-3 | Fetch and render user's recipes | พีรพัฒน์ | Aug 12 | 20 | 20 | ToDO |
-| W2-4 | Upload Recipe Image | อรชพร | Aug 13 | 20 | 20 | ToDO |
+| W2-4 | Upload Recipe Image | อรชพร | Aug 13 | 20 | 0 | Testing |
 | W2-5 | Connect Delete/Edit action triggers | พีรพัฒน์ | Aug 13 | 20 | 20 | ToDO |
 | W2-6 | Optimize Context Payload | การัญภาส | Aug 13 | 20 | 20 | ToDO |
 
