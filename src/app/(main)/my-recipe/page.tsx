@@ -364,7 +364,7 @@ export default function MyRecipePage() {
 
                             <div className="flex flex-col gap-2 w-full md:w-36 shrink-0 mt-4 md:mt-0">
                               <Link
-                                href={`/my-recipe/edit/${recipe.id}`}
+                                href={`/my-recipe/edit/${recipe.id}?type=set`}
                                 className="w-full text-center py-1.5 px-4 border border-[#F39C12] text-[#F39C12] rounded-full text-sm font-bold hover:bg-orange-50 transition block"
                               >
                                 แก้ไข

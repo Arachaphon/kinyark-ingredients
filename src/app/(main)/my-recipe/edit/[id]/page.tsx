@@ -84,11 +84,13 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
   },
 ];
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 export default function EditRecipePage() {
   const params = useParams();
   const recipeId = params.id as string;
+  const searchParams = useSearchParams();
+  const editMode = searchParams.get("type") === "set" ? "set" : "recipe";
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const router = useRouter();
@@ -185,32 +187,30 @@ export default function EditRecipePage() {
           currentUser &&
           Array.isArray(r.storePosts) &&
           r.storePosts.some((sp: any) => sp.userId === currentUser.id);
-        if (!currentUser || (!isRecipeOwner && !isStorePostOwner)) {
-          throw new Error("คุณไม่มีสิทธิ์แก้ไขโพสต์นี้ เนื่องจากไม่ใช่เจ้าของ");
-        }
-        const storeOnly = !!currentUser && !isRecipeOwner && !!isStorePostOwner;
-        setIsStoreOnlyEdit(storeOnly);
-
-        setTitle(r.recipeName || "");
-        setDescription(r.description || "");
-        setInstructions(r.instructions || "");
-        setVisibility(r.visibility || "public");
-
-        if (r.recipeIngredients && r.recipeIngredients.length > 0) {
-          setIngredients(r.recipeIngredients.map((ri: any, idx: number) => ({
-            id: idx + 1,
-            name: ri.ingredient?.name || "",
-            quantity: ri.quantity?.toString() || "",
-            unit: ri.unit || "กรัม",
-            category: ri.ingredient?.category?.name || "Others"
-          })));
-        }
 
         const myStorePost = currentUser && r.storePosts
           ? r.storePosts.find((sp: any) => sp.userId === currentUser.id)
           : null;
 
-        if (myStorePost) {
+        // Decide which editor to show based on how the user entered this page:
+        // - "set" (editing a เซ็ท/StoreSet from the list) → edit the store/set post
+        // - otherwise (editing a plain recipe) → edit the recipe ONLY (never the set)
+        const isSetEdit = editMode === "set";
+
+        if (!currentUser) {
+          throw new Error("คุณไม่มีสิทธิ์แก้ไขโพสต์นี้ เนื่องจากไม่ใช่เจ้าของ");
+        }
+        if (isSetEdit) {
+          if (!myStorePost) {
+            throw new Error("คุณไม่มีสิทธิ์แก้ไขเซ็ทอาหารนี้ เนื่องจากไม่ใช่เจ้าของ");
+          }
+        } else if (!isRecipeOwner) {
+          throw new Error("คุณไม่มีสิทธิ์แก้ไขโพสต์นี้ เนื่องจากไม่ใช่เจ้าของ");
+        }
+
+        setIsStoreOnlyEdit(isSetEdit);
+
+        if (isSetEdit && myStorePost) {
           setPostAs("store");
           const sp = myStorePost;
           setShopName(sp.storeName || "");
@@ -241,6 +241,21 @@ export default function EditRecipePage() {
           setPostAs("user");
         }
 
+        setTitle(r.recipeName || "");
+        setDescription(r.description || "");
+        setInstructions(r.instructions || "");
+        setVisibility(r.visibility || "public");
+
+        if (r.recipeIngredients && r.recipeIngredients.length > 0) {
+          setIngredients(r.recipeIngredients.map((ri: any, idx: number) => ({
+            id: idx + 1,
+            name: ri.ingredient?.name || "",
+            quantity: ri.quantity?.toString() || "",
+            unit: ri.unit || "กรัม",
+            category: ri.ingredient?.category?.name || "Others"
+          })));
+        }
+
         if (r.referenceRecipeId) {
           setRecipeSourceMode("system");
           setPickedRecipe({
@@ -253,8 +268,8 @@ export default function EditRecipePage() {
           });
         }
 
-        // Store-only editor: the base recipe is the recipe this store post is linked to
-        if (storeOnly) {
+        // Set editor: the base recipe is the recipe this store post is linked to
+        if (isSetEdit) {
           const baseRecipe: SystemRecipe = {
             id: r.id,
             title: r.recipeName || "สูตรอาหาร",
