@@ -90,13 +90,13 @@ export default function HomePage() {
             <CategoryCard emoji="🥗" text="ผลไม้" category="Fruits" />
             <CategoryCard emoji="🦞" text="อาหารทะเล" category="Seafood" />
             <CategoryCard emoji="🥦" text="ผัก" category="Vegetables" />
-            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" category="Carbs" />
-            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" category="Dairy and Eggs" />
-            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" category="Condiments and Sauces" />
-            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" category="Spices and Herbs" />
-            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" category="Nuts and Seeds" />
-            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" category="Oils and Fats" />
-            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" category="Beverages" />
+            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" category="Grains, Pasta & Baking" />
+            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" category="Dairy & Eggs" />
+            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" category="Condiments & Sauces" />
+            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" category="Spices & Herbs" />
+            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" category="Nuts & Seeds" />
+            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" category="Fats & Oils" />
+            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" category="Liquids & Beverages" />
             
             {/* 🛠️ จัดตำแหน่งกล่อง "อื่นๆ": จอมือถือเรียงเต็มแถวปกติ (col-span-1) พอจอใหญ่ขึ้นกลับไปกว้าง 210px ตรงกลางเหมือนเดิม */}
             <div className="sm:col-span-2 flex justify-center mt-2 w-full">

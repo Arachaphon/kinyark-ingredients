@@ -66,7 +66,7 @@ function getMappedImage(key: string): string {
   const localTargetPath = path.join(TARGET_UPLOAD_DIR, targetFilename)
 
   if (fs.existsSync(localTargetPath)) {
-    return `/uploads/${targetFilename}`
+    return `https://arfkqidacjseglvfuitj.supabase.co/storage/v1/object/public/recipes/uploads/${targetFilename}`
   }
 
   return mapping.fallback
