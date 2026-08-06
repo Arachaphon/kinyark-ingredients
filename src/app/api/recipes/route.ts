@@ -87,7 +87,7 @@ export async function GET(request: Request) {
           storeDescription: sp.storeDescription,
           storeLocation: sp.storeLocation,
           contactInfo: sp.contactInfo,
-          setIngredients: sp.setIngredients as any,
+          setIngredients: sp.setIngredients as unknown as Array<{ name: string; quantity: string | number; unit: string; }>,
           visibility: sp.visibility,
           createdAt: sp.createdAt.toISOString(),
           user: sp.user,
@@ -158,8 +158,7 @@ export async function GET(request: Request) {
       }),
     ])
 
-    // Find if the user is a STORE user to filter protected orphaned store posts
-    let storePostVisibilityConditions: Prisma.StorePostWhereInput = {
+    const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
     };
     
@@ -216,7 +215,7 @@ export async function GET(request: Request) {
         storeDescription: sp.storeDescription,
         storeLocation: sp.storeLocation,
         contactInfo: sp.contactInfo,
-        setIngredients: sp.setIngredients as any,
+        setIngredients: sp.setIngredients as unknown as Array<{ name: string; quantity: string | number; unit: string; }>,
         visibility: sp.visibility,
         createdAt: sp.createdAt.toISOString(),
         user: sp.user,

@@ -121,9 +121,6 @@ async function main() {
   // Fetch some ingredients for linkage
   const pork = await prisma.ingredient.findFirst({ where: { name: 'หมูสับ' } })
   const shrimp = await prisma.ingredient.findFirst({ where: { name: 'กุ้ง' } })
-  const chicken = await prisma.ingredient.findFirst({ where: { name: 'ไก่' } })
-  const garlic = await prisma.ingredient.findFirst({ where: { name: 'กระเทียม' } })
-  const basil = await prisma.ingredient.findFirst({ where: { name: 'ใบกะเพรา' } })
 
   // Define 20 recipes with pre-calculated distributions:
   // 1. Role (50/50): 10 USER recipes, 10 STORE recipes

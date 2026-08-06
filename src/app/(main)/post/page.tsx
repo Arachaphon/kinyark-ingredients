@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Image from "next/image";
@@ -28,7 +27,7 @@ export default function PostsFeedPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState<Record<string, number>>({});
+
 
   const fetchPosts = useCallback(async (targetPage: number, append = false) => {
     if (append) {
@@ -64,12 +63,7 @@ export default function PostsFeedPage() {
     fetchPosts(1);
   }, [fetchPosts]);
 
-  const handleSelectImage = (postId: string, index: number) => {
-    setActiveImageIndex((prev) => ({
-      ...prev,
-      [postId]: index,
-    }));
-  };
+
 
   const renderStars = (rating: number) => {
     return (
