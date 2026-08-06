@@ -54,11 +54,55 @@ export async function GET(request: Request) {
         }),
       ])
 
-      const totalPages = Math.max(1, Math.ceil(total / limit))
+      const orphanedStorePosts = await prisma.storePost.findMany({
+        where: {
+          userId: user.id,
+          recipeId: null,
+        },
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+          images: { orderBy: { createdAt: "asc" } },
+          videos: { orderBy: { createdAt: "asc" } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+
+      const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
+        id: `orphan-${sp.id}`,
+        recipeName: "",
+        rating: 0,
+        favoriteCount: 0,
+        createdAt: sp.createdAt.toISOString(),
+        bgColor: null,
+        visibility: sp.visibility,
+        images: [],
+        user: sp.user,
+        recipeIngredients: [],
+        storePosts: [{
+          id: sp.id,
+          userId: sp.userId,
+          recipeId: "",
+          storeName: sp.storeName,
+          sellingPrice: sp.sellingPrice,
+          storeDescription: sp.storeDescription,
+          storeLocation: sp.storeLocation,
+          contactInfo: sp.contactInfo,
+          setIngredients: sp.setIngredients as any,
+          visibility: sp.visibility,
+          createdAt: sp.createdAt.toISOString(),
+          user: sp.user,
+          images: sp.images,
+          videos: sp.videos,
+        }],
+      }))
+
+      const combinedData = [...recipes, ...dummyRecipesForOrphans]
+      const totalCount = total + orphanedStorePosts.length
+      const totalPages = Math.max(1, Math.ceil(totalCount / limit))
 
       return Response.json({
-        data: recipes,
-        meta: { page, limit, total, totalPages, userId: user.id },
+        data: combinedData,
+        meta: { page, limit, total: totalCount, totalPages, userId: user.id },
       })
     }
 
@@ -114,11 +158,80 @@ export async function GET(request: Request) {
       }),
     ])
 
-    const totalPages = Math.max(1, Math.ceil(total / limit))
+    // Find if the user is a STORE user to filter protected orphaned store posts
+    let storePostVisibilityConditions: Prisma.StorePostWhereInput = {
+      recipeId: null,
+    };
+    
+    // Check auth for visibility filtering of orphaned store posts
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const profile = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      });
+      if (profile?.role === "STORE") {
+        storePostVisibilityConditions.OR = [
+          { visibility: "public" },
+          { userId: user.id }
+        ];
+      } else {
+        storePostVisibilityConditions.OR = [
+          { visibility: { in: ["public", "protected"] } },
+          { userId: user.id }
+        ];
+      }
+    } else {
+      storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
+    }
+
+    const orphanedStorePosts = await prisma.storePost.findMany({
+      where: storePostVisibilityConditions,
+      include: {
+        user: { select: { id: true, username: true, avatarUrl: true } },
+        images: { orderBy: { createdAt: "asc" } },
+        videos: { orderBy: { createdAt: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+
+    const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
+      id: `orphan-${sp.id}`,
+      recipeName: "",
+      rating: 0,
+      favoriteCount: 0,
+      createdAt: sp.createdAt.toISOString(),
+      bgColor: null,
+      visibility: sp.visibility,
+      images: [],
+      user: sp.user,
+      recipeIngredients: [],
+      storePosts: [{
+        id: sp.id,
+        userId: sp.userId,
+        recipeId: "",
+        storeName: sp.storeName,
+        sellingPrice: sp.sellingPrice,
+        storeDescription: sp.storeDescription,
+        storeLocation: sp.storeLocation,
+        contactInfo: sp.contactInfo,
+        setIngredients: sp.setIngredients as any,
+        visibility: sp.visibility,
+        createdAt: sp.createdAt.toISOString(),
+        user: sp.user,
+        images: sp.images,
+        videos: sp.videos,
+      }],
+    }))
+
+    const combinedData = [...recipes, ...dummyRecipesForOrphans]
+    const totalWithOrphans = total + orphanedStorePosts.length
+    const totalPages = Math.max(1, Math.ceil(totalWithOrphans / limit))
 
     return Response.json({
-      data: recipes,
-      meta: { page, limit, total, totalPages },
+      data: combinedData,
+      meta: { page, limit, total: totalWithOrphans, totalPages },
     })
   } catch (error) {
     console.error("Error fetching recipes:", error)

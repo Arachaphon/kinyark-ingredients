@@ -36,6 +36,16 @@ export default function MyRecipePage() {
   const [error, setError] = useState(false);
   const [unauthorized, setUnauthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("All");
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    recipeId: string | null;
+    storePostId: string | null;
+  }>({
+    isOpen: false,
+    recipeId: null,
+    storePostId: null,
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchRecipes = useCallback(async () => {
     setLoading(true);
@@ -63,6 +73,38 @@ export default function MyRecipePage() {
       setLoading(false);
     }
   }, []);
+
+  const handleDeleteRecipeTrigger = (recipeId: string) => {
+    setDeleteModal({ isOpen: true, recipeId, storePostId: null });
+  };
+
+  const handleDeleteStorePostTrigger = (storePostId: string) => {
+    setDeleteModal({ isOpen: true, recipeId: null, storePostId });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { recipeId, storePostId } = deleteModal;
+    if (!recipeId && !storePostId) return;
+
+    setIsDeleting(true);
+    try {
+      const url = recipeId ? `/api/recipes/${recipeId}` : `/api/store-posts/${storePostId}`;
+      const res = await fetch(url, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeleteModal({ isOpen: false, recipeId: null, storePostId: null });
+        fetchRecipes();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "เกิดข้อผิดพลาดในการลบ");
+      }
+    } catch {
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับระบบ");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     fetchRecipes();
@@ -284,7 +326,10 @@ export default function MyRecipePage() {
                           >
                             แก้ไข
                           </Link>
-                          <button className="w-full py-1.5 px-4 border border-[#E74C3C] text-[#E74C3C] rounded-full text-sm font-bold hover:bg-red-50 transition">
+                          <button 
+                            onClick={() => handleDeleteRecipeTrigger(recipe.id)}
+                            className="w-full py-1.5 px-4 border border-[#E74C3C] text-[#E74C3C] rounded-full text-sm font-bold hover:bg-red-50 transition"
+                          >
                             ลบ
                           </button>
                           <Link
@@ -318,7 +363,7 @@ export default function MyRecipePage() {
                               <div>
                                 <div className="flex flex-wrap items-center gap-3">
                                   <h3 className="text-xl font-bold text-[#5A9240]">
-                                    เซ็ท {recipe.recipeName}
+                                    เซ็ท {recipe.recipeName || "(สูตรอาหารถูกลบแล้ว)"}
                                   </h3>
                                   <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">
                                     เซ็ทอาหารร้านค้า
@@ -363,21 +408,32 @@ export default function MyRecipePage() {
                             </div>
 
                             <div className="flex flex-col gap-2 w-full md:w-36 shrink-0 mt-4 md:mt-0">
-                              <Link
-                                href={`/my-recipe/edit/${recipe.id}?type=set`}
-                                className="w-full text-center py-1.5 px-4 border border-[#F39C12] text-[#F39C12] rounded-full text-sm font-bold hover:bg-orange-50 transition block"
+                              {!recipe.id.startsWith("orphan-") && (
+                                <Link
+                                  href={`/my-recipe/edit/${recipe.id}?type=set`}
+                                  className="w-full text-center py-1.5 px-4 border border-[#F39C12] text-[#F39C12] rounded-full text-sm font-bold hover:bg-orange-50 transition block"
+                                >
+                                  แก้ไข
+                                </Link>
+                              )}
+                              <button 
+                                onClick={() => handleDeleteStorePostTrigger(sp.id)}
+                                className="w-full py-1.5 px-4 border border-[#E74C3C] text-[#E74C3C] rounded-full text-sm font-bold hover:bg-red-50 transition"
                               >
-                                แก้ไข
-                              </Link>
-                              <button className="w-full py-1.5 px-4 border border-[#E74C3C] text-[#E74C3C] rounded-full text-sm font-bold hover:bg-red-50 transition">
                                 ลบ
                               </button>
-                              <Link
-                                href={`/recipe/${recipe.id}`}
-                                className="w-full text-center py-1.5 px-4 border border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#EAF5E4] transition block"
-                              >
-                                ดูเซ็ทอาหาร
-                              </Link>
+                              {recipe.id.startsWith("orphan-") ? (
+                                <span className="w-full text-center py-1.5 px-4 border border-gray-300 text-gray-400 rounded-full text-xs font-bold bg-gray-50 cursor-not-allowed block">
+                                  สูตรอาหารเดิมถูกลบแล้ว
+                                </span>
+                              ) : (
+                                <Link
+                                  href={`/recipe/${recipe.id}`}
+                                  className="w-full text-center py-1.5 px-4 border border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#EAF5E4] transition block"
+                                >
+                                  ดูเซ็ทอาหาร
+                                </Link>
+                              )}
                             </div>
                           </div>
                         ))
@@ -395,6 +451,40 @@ export default function MyRecipePage() {
           )}
         </div>
       </main>
+
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white border border-[#71B254]/30 rounded-[24px] p-6 max-w-[420px] w-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-scale-in text-center">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">ยืนยันการลบ</h3>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              คุณต้องการลบสูตรอาหาร/เซ็ทนี้ใช่หรือไม่? การลบนี้จะเป็นการลบอย่างถาวรและไม่สามารถกู้คืนข้อมูลได้
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                disabled={isDeleting}
+                onClick={() => setDeleteModal({ isOpen: false, recipeId: null, storePostId: null })}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition duration-200 disabled:opacity-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex-1 py-3 bg-[#E74C3C] hover:bg-[#c0392b] text-white font-bold rounded-xl transition duration-200 flex items-center justify-center gap-2 disabled:opacity-70"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>กำลังลบ...</span>
+                  </>
+                ) : (
+                  <span>ยืนยันการลบ</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
