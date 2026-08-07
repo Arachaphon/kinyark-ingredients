@@ -86,7 +86,7 @@ model Recipe {
 model StorePost {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId           String   @db.Uuid
-  recipeId         String   @db.Uuid
+  recipeId         String?  @db.Uuid
   storeName        String
   sellingPrice     Float
   storeDescription String?
@@ -97,7 +97,7 @@ model StorePost {
   createdAt        DateTime @default(now()) @db.Timestamptz
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe           Recipe            @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe           Recipe?           @relation(fields: [recipeId], references: [id], onDelete: SetNull)
   images           StorePostImage[]
   videos           StorePostVideo[]
 

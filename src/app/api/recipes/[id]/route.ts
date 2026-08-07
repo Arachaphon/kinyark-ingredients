@@ -164,7 +164,6 @@ export async function DELETE(
       prisma.recipeEquipment.deleteMany({ where: { recipeId } }),
       prisma.recipeImage.deleteMany({ where: { recipeId } }),
       prisma.recipeVideo.deleteMany({ where: { recipeId } }),
-      prisma.storePost.deleteMany({ where: { recipeId } }),
       prisma.recipe.delete({ where: { id: recipeId } }),
     ])
 

@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Image from "next/image";
@@ -28,7 +27,7 @@ export default function PostsFeedPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState<Record<string, number>>({});
+
 
   const fetchPosts = useCallback(async (targetPage: number, append = false) => {
     if (append) {
@@ -64,12 +63,7 @@ export default function PostsFeedPage() {
     fetchPosts(1);
   }, [fetchPosts]);
 
-  const handleSelectImage = (postId: string, index: number) => {
-    setActiveImageIndex((prev) => ({
-      ...prev,
-      [postId]: index,
-    }));
-  };
+
 
   const renderStars = (rating: number) => {
     return (
@@ -149,7 +143,7 @@ export default function PostsFeedPage() {
                   <div className="flex flex-col md:flex-row gap-10">
                     <div className="w-full md:w-[380px] h-[350px] flex-shrink-0 relative">
                       <Image
-                        src={storePost?.images[0]?.imageUrl ?? post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
+                        src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                         alt={post.recipeName}
                         fill
                         className="object-cover rounded-3xl shadow-md border border-[#71B254]/20"
@@ -243,28 +237,6 @@ export default function PostsFeedPage() {
                       </div>
                     </div>
 
-                    {/* Thumbnail เลือกดูรูปภาพทั้งหมด 4 รูป */}
-                    <div className="grid grid-cols-4 gap-2">
-                      {post.images.map((img, idx) => {
-                        const currentImgIdx = activeImageIndex[post.id] || 0;
-                        return (
-                        <button
-                          key={idx}
-                          onClick={() => handleSelectImage(post.id, idx)}
-                          className={`h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                            currentImgIdx === idx
-                              ? "border-[#71B254] scale-95 shadow-sm"
-                              : "border-transparent opacity-60 hover:opacity-100"
-                          }`}
-                        >
-                          <img  
-                            src={img.imageUrl}
-                            alt={`รูปที่ ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      )})}
-                    </div>
                   </div>
                 </div>
               );

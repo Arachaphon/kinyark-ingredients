@@ -11,15 +11,14 @@ const anuphan = Anuphan({
 });
 
 export default function CookieConsent() {
-  const [isVisible, setIsVisible] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+  const [isVisible, setIsVisible] = useState(false);
 
-    return !localStorage.getItem(
-      "kinyark_cookie_consent"
-    );
-  });
+  React.useEffect(() => {
+    const consent = localStorage.getItem("kinyark_cookie_consent");
+    if (!consent) {
+      setIsVisible(true);
+    }
+  }, []);
 
   const handleAcceptAll = () => {
     localStorage.setItem(
