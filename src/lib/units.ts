@@ -34,7 +34,8 @@ const UNIT_TRANSLATIONS: Record<string, string> = {
   "": "",
 }
 
-export function translateUnit(unit: string): string {
+export function translateUnit(unit: string | null | undefined): string {
+  if (!unit) return ""
   const normalized = unit.trim().toLowerCase()
   return UNIT_TRANSLATIONS[normalized] ?? normalized
 }

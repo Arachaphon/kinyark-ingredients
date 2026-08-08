@@ -8,6 +8,12 @@ const mockPrisma = {
     findMany: jest.fn(),
     count: jest.fn(),
   },
+  storePost: {
+    findMany: jest.fn(),
+  },
+  user: {
+    findUnique: jest.fn(),
+  },
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
@@ -32,6 +38,8 @@ describe('GET /api/recipes', () => {
     jest.clearAllMocks()
     mockPrisma.recipe.findMany.mockResolvedValue(mockRecipes)
     mockPrisma.recipe.count.mockResolvedValue(3)
+    mockPrisma.storePost.findMany.mockResolvedValue([])
+    mockPrisma.user.findUnique.mockResolvedValue({ role: 'USER' })
     mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
   })
 
