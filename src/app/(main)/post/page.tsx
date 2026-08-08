@@ -18,23 +18,18 @@ const FALLBACK_IMAGE =
 const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 10;
 
 export default function PostsFeedPage() {
   const [posts, setPosts] = useState<RecipeListItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
 
 
-  const fetchPosts = useCallback(async (targetPage: number, append = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
+  const fetchPosts = useCallback(async (targetPage: number) => {
+    setLoading(true);
     setError(false);
 
     try {
@@ -46,16 +41,13 @@ export default function PostsFeedPage() {
         return;
       }
       const body = (await res.json()) as RecipeListResponse;
-      setPosts((prev) =>
-        append ? [...prev, ...body.data] : body.data
-      );
+      setPosts(body.data);
       setTotalPages(body.meta.totalPages);
       setPage(targetPage);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, []);
 
@@ -329,14 +321,32 @@ export default function PostsFeedPage() {
           })}
         </div>
 
-        {!loading && !error && page < totalPages && (
-          <div className="flex justify-center mt-8">
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-12">
             <button
-              onClick={() => fetchPosts(page + 1, true)}
-              disabled={loadingMore}
-              className="px-8 py-3 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white transition disabled:opacity-50"
+              onClick={() => {
+                fetchPosts(page - 1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={page === 1}
+              className="px-6 py-2 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#71B254] transition cursor-pointer disabled:cursor-not-allowed"
             >
-              {loadingMore ? "กำลังโหลด..." : "โหลดเพิ่มเติม"}
+              ย้อนกลับ
+            </button>
+            
+            <span className="font-bold text-[#71B254]">
+              หน้า {page} จาก {totalPages}
+            </span>
+
+            <button
+              onClick={() => {
+                fetchPosts(page + 1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={page === totalPages}
+              className="px-6 py-2 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#71B254] transition cursor-pointer disabled:cursor-not-allowed"
+            >
+              ถัดไป
             </button>
           </div>
         )}
