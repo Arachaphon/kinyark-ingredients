@@ -18,7 +18,10 @@ export async function GET(request: Request) {
     })
 
     if (!parsed.success) {
-      return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+      return Response.json(
+        { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+        { status: 400 }
+      )
     }
 
     const { page, limit, mine, publicOnly } = parsed.data
@@ -144,7 +147,7 @@ export async function POST(request: Request) {
   if (!result.success) {
     return Response.json(
       {
-        error: result.error.flatten(),
+        error: result.error.issues.map((issue) => issue.message).join("; "),
       },
       {
         status: 400,
@@ -202,7 +205,7 @@ export async function POST(request: Request) {
             storeDescription: store.storeDescription,
             storeLocation: store.storeLocation,
             contactInfo: store.contactInfo,
-            visibility: visibility,
+            visibility: store.visibility ?? visibility,
             setIngredients: store.setIngredients ? store.setIngredients : undefined,
             ...(store.storeImages && store.storeImages.length > 0 && {
               images: {
@@ -284,7 +287,7 @@ export async function POST(request: Request) {
                 storeDescription: store.storeDescription,
                 storeLocation: store.storeLocation,
                 contactInfo: store.contactInfo,
-                visibility: visibility,
+                visibility: store.visibility ?? visibility,
                 setIngredients: store.setIngredients ? store.setIngredients : undefined,
                 ...(store.storeImages && store.storeImages.length > 0 && {
                   images: {

@@ -83,6 +83,7 @@ export interface StorePostItem {
   storeLocation: string | null
   contactInfo: string | null
   setIngredients: StoreSetIngredient[] | null
+  visibility: string
   createdAt: string
   user: RecipeUser
   images: RecipeImage[]

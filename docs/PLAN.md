@@ -69,11 +69,11 @@
 
 | ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| W1-1 | Create Recipe | อรชพร | Aug 3 | 20 | 20 | ToDO |
-| W1-2 | Get Recipe | อรชพร | Aug 3 | 20 | 20 | ToDO |
+| W1-1 | Create Recipe | อรชพร | Aug 3 | 20 | 4 | Done |
+| W1-2 | Get Recipe | อรชพร | Aug 3 | 20 | 4 | Done |
 | W1-3 | Build Multi-step form state management | พีรพัฒน์ | Aug 3 | 20 | 0 | Complete |
 | W1-4 | Retrieve User Context | การัญภาส | Aug 4 | 20 | 20 | ToDO |
-| W1-5 | Update Recipe | อรชพร | Aug 5 | 20 | 20 | ToDO |
+| W1-5 | Update Recipe | อรชพร | Aug 5 | 20 | 8 | Testing |
 | W1-6 | Implement Image Upload & Preview | พีรพัฒน์ | Aug 5 | 20 | 0 | Complete |
 | W1-7 | Delete Recipe | อรชพร | Aug 6 | 20 | 20 | ToDO |
 | W1-8 | Build Recommendation Prompt | การัญภาส | Aug 6 | 20 | 20 | ToDO |
@@ -91,7 +91,7 @@
 | W2-5 | Connect Delete/Edit action triggers | พีรพัฒน์ | Aug 13 | 20 | 20 | ToDO |
 | W2-6 | Optimize Context Payload | การัญภาส | Aug 13 | 20 | 20 | ToDO |
 
-**Iteration 01:** Planned Score 320 · Actual Score 58
+**Iteration 01:** Planned Score 320 · Actual Score 102
 
 ### Iteration 02 — Week 1 (Aug 18–21)
 
