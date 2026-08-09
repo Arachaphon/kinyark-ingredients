@@ -76,7 +76,7 @@ export interface StoreSetIngredient {
 export interface StorePostItem {
   id: string
   userId: string
-  recipeId: string
+  recipeId: string | null
   storeName: string
   sellingPrice: number
   storeDescription: string | null

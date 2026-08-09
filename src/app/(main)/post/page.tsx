@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import Image from "next/image";
@@ -19,23 +18,18 @@ const FALLBACK_IMAGE =
 const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 10;
 
 export default function PostsFeedPage() {
   const [posts, setPosts] = useState<RecipeListItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState<Record<string, number>>({});
 
-  const fetchPosts = useCallback(async (targetPage: number, append = false) => {
-    if (append) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
+
+  const fetchPosts = useCallback(async (targetPage: number) => {
+    setLoading(true);
     setError(false);
 
     try {
@@ -47,16 +41,13 @@ export default function PostsFeedPage() {
         return;
       }
       const body = (await res.json()) as RecipeListResponse;
-      setPosts((prev) =>
-        append ? [...prev, ...body.data] : body.data
-      );
+      setPosts(body.data);
       setTotalPages(body.meta.totalPages);
       setPage(targetPage);
     } catch {
       setError(true);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, []);
 
@@ -64,12 +55,7 @@ export default function PostsFeedPage() {
     fetchPosts(1);
   }, [fetchPosts]);
 
-  const handleSelectImage = (postId: string, index: number) => {
-    setActiveImageIndex((prev) => ({
-      ...prev,
-      [postId]: index,
-    }));
-  };
+
 
   const renderStars = (rating: number) => {
     return (
@@ -149,7 +135,7 @@ export default function PostsFeedPage() {
                   <div className="flex flex-col md:flex-row gap-10">
                     <div className="w-full md:w-[380px] h-[350px] flex-shrink-0 relative">
                       <Image
-                        src={storePost?.images[0]?.imageUrl ?? post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
+                        src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                         alt={post.recipeName}
                         fill
                         className="object-cover rounded-3xl shadow-md border border-[#71B254]/20"
@@ -243,28 +229,6 @@ export default function PostsFeedPage() {
                       </div>
                     </div>
 
-                    {/* Thumbnail เลือกดูรูปภาพทั้งหมด 4 รูป */}
-                    <div className="grid grid-cols-4 gap-2">
-                      {post.images.map((img, idx) => {
-                        const currentImgIdx = activeImageIndex[post.id] || 0;
-                        return (
-                        <button
-                          key={idx}
-                          onClick={() => handleSelectImage(post.id, idx)}
-                          className={`h-16 rounded-xl overflow-hidden border-2 transition-all ${
-                            currentImgIdx === idx
-                              ? "border-[#71B254] scale-95 shadow-sm"
-                              : "border-transparent opacity-60 hover:opacity-100"
-                          }`}
-                        >
-                          <img  
-                            src={img.imageUrl}
-                            alt={`รูปที่ ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      )})}
-                    </div>
                   </div>
                 </div>
               );
@@ -357,14 +321,32 @@ export default function PostsFeedPage() {
           })}
         </div>
 
-        {!loading && !error && page < totalPages && (
-          <div className="flex justify-center mt-8">
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-12">
             <button
-              onClick={() => fetchPosts(page + 1, true)}
-              disabled={loadingMore}
-              className="px-8 py-3 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white transition disabled:opacity-50"
+              onClick={() => {
+                fetchPosts(page - 1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={page === 1}
+              className="px-6 py-2 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#71B254] transition cursor-pointer disabled:cursor-not-allowed"
             >
-              {loadingMore ? "กำลังโหลด..." : "โหลดเพิ่มเติม"}
+              ย้อนกลับ
+            </button>
+            
+            <span className="font-bold text-[#71B254]">
+              หน้า {page} จาก {totalPages}
+            </span>
+
+            <button
+              onClick={() => {
+                fetchPosts(page + 1);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              disabled={page === totalPages}
+              className="px-6 py-2 border-2 border-[#71B254] text-[#71B254] rounded-full text-sm font-bold hover:bg-[#71B254] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#71B254] transition cursor-pointer disabled:cursor-not-allowed"
+            >
+              ถัดไป
             </button>
           </div>
         )}

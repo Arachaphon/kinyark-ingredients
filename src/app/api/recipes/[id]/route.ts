@@ -119,11 +119,14 @@ export async function DELETE(
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { id: recipeId } = await params
+  const { id: rawId } = await params
 
-  if (!recipeId) {
+  const parsedId = recipeIdParamSchema.safeParse({ id: rawId })
+  if (!parsedId.success) {
     return Response.json({ error: "Invalid recipe ID" }, { status: 400 })
   }
+
+  const recipeId = parsedId.data.id
 
   try {
     // 1. Check recipe ownership & get image/video URLs
@@ -132,6 +135,9 @@ export async function DELETE(
       include: {
         images: true,
         videos: true,
+        storePosts: {
+          include: { images: true, videos: true },
+        },
       },
     })
 
@@ -143,9 +149,11 @@ export async function DELETE(
       return Response.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    // 2. Collect image & video URLs before deleting records from DB
+    // 2. Collect image & video URLs (recipe + store posts) before deleting records from DB
     const imageUrls = recipe.images.map((img) => img.imageUrl)
     const videoUrls = recipe.videos.map((vid) => vid.videoUrl)
+    const storeImageUrls = recipe.storePosts.flatMap((sp) => sp.images.map((img) => img.imageUrl))
+    const storeVideoUrls = recipe.storePosts.flatMap((sp) => sp.videos.map((vid) => vid.videoUrl))
 
     // 3. Delete related relations and recipe record from Database
     await prisma.$transaction([
@@ -156,16 +164,15 @@ export async function DELETE(
       prisma.recipeEquipment.deleteMany({ where: { recipeId } }),
       prisma.recipeImage.deleteMany({ where: { recipeId } }),
       prisma.recipeVideo.deleteMany({ where: { recipeId } }),
-      prisma.storePost.deleteMany({ where: { recipeId } }),
       prisma.recipe.delete({ where: { id: recipeId } }),
     ])
 
     // 4. Delete files from Supabase Storage Bucket
-    for (const url of imageUrls) {
+    for (const url of [...imageUrls, ...storeImageUrls]) {
       await deleteFileByUrl(supabase, url)
     }
 
-    for (const url of videoUrls) {
+    for (const url of [...videoUrls, ...storeVideoUrls]) {
       await deleteFileByUrl(supabase, url)
     }
 

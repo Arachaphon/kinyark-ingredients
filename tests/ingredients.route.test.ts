@@ -1,9 +1,10 @@
 const mockPrisma = {
-  ingredient: { findMany: jest.fn() },
+  ingredient: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), upsert: jest.fn() },
+  category: { findFirst: jest.fn(), create: jest.fn() },
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
-import { GET } from '@/app/api/ingredients/route'
+import { GET, POST } from '@/app/api/ingredients/route'
 
 const mockIngredients = [
   {
@@ -93,5 +94,85 @@ describe('GET /api/ingredients', () => {
 
     expect(res.status).toBe(500)
     expect(body.error).toBe('Internal server error')
+  })
+})
+
+describe('POST /api/ingredients', () => {
+  const postRequest = (body: unknown): Request =>
+    new Request('http://localhost/api/ingredients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockPrisma.category.findFirst.mockResolvedValue(null)
+    mockPrisma.category.create.mockResolvedValue({ id: 5, name: 'Meat' })
+    mockPrisma.ingredient.findUnique.mockResolvedValue(null)
+    mockPrisma.ingredient.create.mockResolvedValue({
+      id: 1,
+      name: 'Chicken',
+      categoryId: 5,
+      category: { id: 5, name: 'Meat' },
+    })
+  })
+
+  test('creates ingredient and resolves category by name', async () => {
+    const res = await POST(postRequest({ name: 'Chicken', category: 'Meat' }))
+    expect(res.status).toBe(200)
+    expect(mockPrisma.category.findFirst).toHaveBeenCalled()
+    expect(mockPrisma.ingredient.create).toHaveBeenCalledWith(expect.objectContaining({ data: { name: 'Chicken', categoryId: 5 } }))
+  })
+
+  test('links to an existing category by name', async () => {
+    mockPrisma.category.findFirst.mockResolvedValue({ id: 2, name: 'Meat' })
+    await POST(postRequest({ name: 'Chicken', category: 'Meat' }))
+    expect(mockPrisma.ingredient.create).toHaveBeenCalledWith(expect.objectContaining({ data: { name: 'Chicken', categoryId: 2 } }))
+  })
+
+  test('uses categoryId directly when provided', async () => {
+    await POST(postRequest({ name: 'Chicken', categoryId: 7 }))
+    expect(mockPrisma.category.findFirst).not.toHaveBeenCalled()
+    expect(mockPrisma.ingredient.create).toHaveBeenCalledWith(expect.objectContaining({ data: { name: 'Chicken', categoryId: 7 } }))
+  })
+
+  test('creates ingredient without category', async () => {
+    await POST(postRequest({ name: 'Chicken' }))
+    expect(mockPrisma.category.findFirst).not.toHaveBeenCalled()
+    expect(mockPrisma.ingredient.create).toHaveBeenCalledWith(expect.objectContaining({ data: { name: 'Chicken', categoryId: null } }))
+  })
+
+  test('returns 400 for invalid body', async () => {
+    const res = await POST(postRequest({}))
+    expect(res.status).toBe(400)
+    expect(mockPrisma.ingredient.create).not.toHaveBeenCalled()
+  })
+
+  test('returns 400 if ingredient already exists under a different category', async () => {
+    mockPrisma.ingredient.findUnique.mockResolvedValue({
+      id: 1,
+      name: 'Chicken',
+      categoryId: 1, // Category 1
+      category: { id: 1, name: 'Vegetables' },
+    })
+
+    const res = await POST(postRequest({ name: 'Chicken', categoryId: 2 })) // Try to create under category 2
+    const body = await res.json()
+
+    expect(res.status).toBe(400)
+    expect(body.error).toContain('already exists under category')
+    expect(mockPrisma.ingredient.create).not.toHaveBeenCalled()
+  })
+
+  test('returns 400 when both category and categoryId provided', async () => {
+    const res = await POST(postRequest({ name: 'X', category: 'Meat', categoryId: 2 }))
+    expect(res.status).toBe(400)
+  })
+
+  test('returns 500 on internal server error', async () => {
+    mockPrisma.ingredient.findUnique.mockRejectedValue(new Error('db down'))
+    const res = await POST(postRequest({ name: 'Chicken' }))
+    expect(res.status).toBe(500)
   })
 })
