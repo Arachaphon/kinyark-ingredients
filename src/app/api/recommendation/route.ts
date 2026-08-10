@@ -6,7 +6,7 @@ import Groq from 'groq-sdk';
 
 // สร้าง instance ของ Groq (ระบบจะดึง GROQ_API_KEY จาก .env.local อัตโนมัติ)
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY ,
+  apiKey: process.env.GROQ_API_KEY || tempKey,
 });
 
 export async function POST(req: Request) {
