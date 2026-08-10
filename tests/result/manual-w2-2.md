@@ -47,17 +47,3 @@ await fetch("/api/reviews", {
     rating: 6
   })
 }).then(async (res) => console.log("Create Review (Invalid Rating) - Status:", res.status, "Body:", await res.json()));
-
-
-// 4. เขียนรีวิวซ้ำบนเมนูเดิมที่เคยรีวิวไปแล้วในขั้นตอนที่ 1
-// คาดหวัง: Status: 409 Conflict, คืนค่า { error: "You have already reviewed this recipe" }
-// ----------------------------------------------------
-await fetch("/api/reviews", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    recipeId: "62522073-dab1-4214-a195-59135f9d868d",
-    rating: 4,
-    comment: "ลองรีวิวซ้ำดูครับ"
-  })
-}).then(async (res) => console.log("Create Review (Duplicate) - Status:", res.status, "Body:", await res.json()));
