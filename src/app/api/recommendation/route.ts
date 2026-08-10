@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { userId } = body;
 
-    // เช็คว่ามีการส่ง userId มาหรือไม่
+    // เช็คว่ามีการส่ง userId   มาหรือไม่
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
