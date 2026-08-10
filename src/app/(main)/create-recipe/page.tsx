@@ -1238,7 +1238,7 @@ export default function CreateRecipePage() {
                       <label className="block text-gray-600 text-sm font-semibold mb-2">
                         วิดีโอวัตถุดิบ <span className="text-gray-400 font-normal">(ไม่บังคับ)</span>
                       </label>
-                      <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
+                      <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={shopIngredientVideo.previewUrl} controls className="w-full h-full object-contain" />
@@ -1887,7 +1887,7 @@ export default function CreateRecipePage() {
                   <div className="mt-2">
                     <label className="block text-gray-600 text-sm font-semibold mb-2">วิดีโอสอนทำอาหาร</label>
                     <div className="h-[140px] relative">
-                      <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
+                      <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
                       {videoFile ? (
                         <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={videoFile.previewUrl} controls className="w-full h-full object-contain" />

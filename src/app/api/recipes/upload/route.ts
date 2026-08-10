@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    const isVideo = file.type.startsWith('video/')
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    const isVideo = file.type.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext)
     if (isVideo) {
       const validation = validateVideoFile(file)
       if (!validation.valid) {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const path = generateStoragePath(user.id, file.type)
+    const path = generateStoragePath(user.id, file.type, file.name)
     if (!path) {
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 })
     }

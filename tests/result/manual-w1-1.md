@@ -1,11 +1,6 @@
 /* ============================================================
    Manual Console Test Cases - Iteration 2 W1-1 Manage Recipe Video
    ============================================================
-   วิธีทดสอบ:
-   1. เปิดบราวเซอร์ไปที่หน้าเว็บหลัก (เช่น http://localhost:3000)
-   2. ล็อกอินเข้าสู่ระบบ
-   3. เปิด Developer Tools (กด F12) แล้วไปที่แท็บ Console
-   4. คัดลอกโค้ดด้านล่างนี้ไปวางเพื่อรันและตรวจสอบผลลัพธ์
    ============================================================ */
 
 /* ================= 1. VIDEO UPLOAD TESTS ================= */
@@ -24,7 +19,7 @@ const uploadRes = await fetch("/api/recipes/upload", {
 }).then(res => res.json());
 
 console.log("Upload Result:", uploadRes);
-const videoUrl = uploadRes.url; // นำไปใช้ต่อในการสร้างสูตรอาหาร
+const videoUrl = uploadRes.url; 
 
 
 // 1.2 อัปโหลดวิดีโอขนาดเกินขีดจำกัด (เกิน 50MB)
