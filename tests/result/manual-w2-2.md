@@ -7,7 +7,6 @@
 
 const targetRecipeId = "ใส่_REAL_RECIPE_UUID_ตรงนี้"; // แทนค่าด้วยไอดีสูตรอาหารที่มีอยู่ในระบบจริง
 
-
 // 1. เขียนรีวิวสูตรอาหารปกติ (Positive Case)
 // คาดหวัง: Status: 201 Created, คืนค่ารีวิวที่สร้างสำเร็จ และอัปเดตคะแนน/จำนวนรีวิวของสูตรอาหาร
 // ----------------------------------------------------
@@ -57,22 +56,8 @@ await fetch("/api/reviews", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    recipeId: targetRecipeId,
+    recipeId: "62522073-dab1-4214-a195-59135f9d868d",
     rating: 4,
     comment: "ลองรีวิวซ้ำดูครับ"
   })
 }).then(async (res) => console.log("Create Review (Duplicate) - Status:", res.status, "Body:", await res.json()));
-
-
-// 5. เขียนรีวิวเมนูของตัวเอง (ผู้สร้างสามารถคอมเมนต์และให้เรตติ้งสูตรตัวเองได้)
-// คาดหวัง: Status: 201 Created, สามารถเขียนคอมเมนต์และโหวตเรตติ้งสูตรตัวเองได้
-// ----------------------------------------------------
-await fetch("/api/reviews", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    recipeId: targetRecipeId,
-    rating: 5,
-    comment: "ลองรีวิวสูตรของตัวเองดูครับ!"
-  })
-}).then(async (res) => console.log("Create Review (Self Review) - Status:", res.status, "Body:", await res.json()));
