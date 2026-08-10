@@ -5,8 +5,10 @@ import { buildRecommendationPrompt } from '@/lib/ai/prompts';
 import Groq from 'groq-sdk';
 
 // สร้าง instance ของ Groq (ระบบจะดึง GROQ_API_KEY จาก .env.local อัตโนมัติ)
+
+const tempKey = "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";
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || tempKey,
+  apiKey: process.env.GROQ_API_KEY || tempKey ,
 });
 
 export async function POST(req: Request) {
