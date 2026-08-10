@@ -32,10 +32,23 @@ export async function POST(request: Request) {
     const { name, category, categoryId } = parsed.data
     const resolvedCategoryId = await resolveCategoryId(category, categoryId)
 
-    const ingredient = await prisma.ingredient.upsert({
+    const existing = await prisma.ingredient.findUnique({
       where: { name },
-      update: { categoryId: resolvedCategoryId },
-      create: { name, categoryId: resolvedCategoryId },
+      include: { category: true },
+    })
+
+    if (existing) {
+      if (existing.categoryId !== resolvedCategoryId) {
+        return Response.json(
+          { error: `Ingredient "${name}" already exists under category "${existing.category?.name || "Others"}"` },
+          { status: 400 }
+        )
+      }
+      return Response.json({ data: existing }, { status: 200 })
+    }
+
+    const ingredient = await prisma.ingredient.create({
+      data: { name, categoryId: resolvedCategoryId },
       include: { category: true },
     })
 

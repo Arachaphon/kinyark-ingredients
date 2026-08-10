@@ -6,7 +6,24 @@
 
 ### 1. สร้าง ingredient ใหม่ (POST /api/ingredients)
 **ขั้นตอน (Steps):**
-1. POST `/api/ingredients` body `{ "name": "ไข่ไก่", "category": "ไข่" }`
+1. มีแล้ว
+fetch('/api/ingredients', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'ไข่ไก่', category: 'Dairy & Eggs' })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+ไม่มี
+fetch('/api/ingredients', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'น้ำมันดอกทานตะวัน', category: 'Fats & Oils' })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
 2. ถ้า category "ไข่" ยังไม่มีในระบบ จะถูกสร้างขึ้นใหม่
 
 **ผลลัพธ์ที่คาดหวัง (Expected Results):**
@@ -16,49 +33,81 @@
 
 ### 2. ใช้ categoryId ตรง ๆ
 - **ขั้นตอน:** POST `/api/ingredients` body `{ "name": "พริก", "categoryId": 5 }`
+1. มีแล้ว
+fetch('/api/ingredients', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'ไก่', categoryId: '1' })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
+ไม่มี
+fetch('/api/ingredients', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name: 'ผงกะหรี่', categoryId: '13' })
+})
+  .then(res => res.json())
+  .then(data => console.log(data))
+  .catch(err => console.error(err));
 - **ผลลัพธ์:** `200 OK`, ingredient ผูก categoryId=5 โดยไม่ query category name
 
 ### 3. GET รายการ ingredients (คงเดิม) / ค้นหา / filter category
-- **ขั้นตอน:** GET `/api/ingredients?category=หมู`, `/api/ingredients?search=ไข`
+- **ขั้นตอน:** 
+// ทดสอบ filter ด้วย category
+    fetch('/api/ingredients?category=Meat')                                                                    
+      .then(res => res.json())                                                                                 
+      .then(data => console.log(data))                                                                         
+      .catch(err => console.error(err));                                                                        
+
+// ทดสอบ search
+    fetch('/api/ingredients?search=หมู')                                                                        
+      .then(res => res.json())                                                                                 
+      .then(data => console.log(data))                                                                         
+      .catch(err => console.error(err));                                                                       
 - **ผลลัพธ์:** `200 OK` ตามเดิม
-
-### 4. แก้ไข ingredient (PATCH /api/ingredients/[id])
-- **ขั้นตอน:** PATCH body `{ "name": "ไข่ไก่สด" }` หรือ `{ "category": "โปรตีน" }`
-- **ผลลัพธ์:** `200 OK` อัปเดต name/category (resolve category by name ใหม่ได้)
-
-### 5. ลบ ingredient ที่ไม่ได้ถูก recipe ใช้ (DELETE /api/ingredients/[id])
-- **ขั้นตอน:** DELETE ingredient id ที่ไม่มี RecipeIngredient อ้างอิง
-- **ผลลัพธ์:** `200 OK` `{ data: { success: true, id } }`
-
 ---
 
 ## Negative Test Cases
 
 ### 6. POST ไม่มี name
-- **ขั้นตอน:** POST body `{}`
+- **ขั้นตอน:**
+    fetch('/api/ingredients', {                                                                                
+      method: 'POST',                                                                                          
+      headers: { 'Content-Type': 'application/json' },                                                         
+      body: JSON.stringify({})                                                                                 
+    })                                                                                                         
+      .then(async res => {                                                                                     
+        const data = await res.json();                                                                         
+        console.log(`%c[Result Case 6] Status: ${res.status}`, 'font-weight: bold; color: #E74C3C;', data);    
+      })                                                                                                       
+      .catch(err => console.error(err)); 
 - **ผลลัพธ์:** `400 Bad Request`
 
-### 7. ส่งทั้ง category และ categoryId พร้อมกัน
-- **ขั้นตอน:** POST body `{ "name": "X", "category": "A", "categoryId": 1 }`
-- **ผลลัพธ์:** `400 Bad Request` "Provide either category name or categoryId, not both"
-
-### 8. PATCH body ว่าง
-- **ขั้นตอน:** PATCH body `{}`
-- **ผลลัพธ์:** `400 Bad Request` "No fields to update"
-
-### 9. DELETE ingredient ที่ถูก recipe ใช้
-- **ขั้นตอน:** DELETE ingredient ที่มี RecipeIngredient.count > 0
-- **ผลลัพธ์:** `409 Conflict` พร้อมข้อความ "used in recipes"
-
-### 10. id ไม่ใช่ตัวเลข / ไม่มี ingredient
-- **ขั้นตอน:** PATCH/DELETE `/api/ingredients/abc` หรือ id ที่ไม่มี
-- **ผลลัพธ์:** `400` (invalid id) / `404 Not Found`
-
+### 7. POST ไม่มี category ไม่ตรง เช่น ไข่ อยุ่หมวด ผัก
+- **ขั้นตอน:** 
+    fetch('/api/ingredients', {                                                                                
+      method: 'POST',                                                                                          
+      headers: { 'Content-Type': 'application/json' },                                                         
+      body: JSON.stringify({ name: "ไข่ไก่", categoryId: 3 })                                                    
+    })                                                                                                         
+      .then(async res => {                                                                                     
+        const data = await res.json();                                                                         
+        console.log(`Status: ${res.status}`, data);                                                            
+      });        
+- **ผลลัพธ์:** 
+    Status: 400 {                                                                                              
+      "error": "Ingredient \"ไข่ไก่\" already exists under category \"Dairy & Eggs\""                            
+    }   
+ ### 8. ทดสอบกรองข้อมูลด้วยชื่อหมวดหมู่ที่ไม่มีอยู่จริง (Empty Array)                                                       
+                                                                                                               
+  กรณีใส่ชื่อหมวดหมู่ที่ระบบไม่รู้จัก เช่น ?category=UnkownCategory ระบบจะต้องทำงานได้ตามปกติและส่งอาร์เรย์ว่างกลับมาโดยไม่ระเบิดเป็น   
+  Error 500                                                                                                    
+                                                                                                               
+    fetch('/api/ingredients?category=McDonalds')                                                               
+      .then(res => res.json())                                                                                 
+      .then(data => console.log('%c[Test Unknown Category]', 'font-weight: bold; color: #2ECC71;', data));     
+                                                                                                               
+  • ผลลัพธ์ที่คาดหวัง: สถานะ 200 OK พร้อมข้อมูล { data: [] }     
 ---
-
-## Automated Tests (Jest)
-- [x] `tests/ingredients.route.test.ts` - ผ่าน (GET 6 + POST 7)
-- [x] `tests/ingredients-id.route.test.ts` - ผ่าน 10 (GET/PATCH/DELETE)
-- [x] `npx tsc --noEmit` ผ่าน
-- [x] `npx eslint . --max-warnings 0` ผ่าน
-- [x] `npm test` ผ่าน (23 suites, 192 passed)
