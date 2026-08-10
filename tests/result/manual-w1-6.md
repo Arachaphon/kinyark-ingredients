@@ -1,8 +1,5 @@
 /* ============================================================
    Manual Console Test Cases - Iteration 2 W1-6 Get Favorite Recipes
-   ============================================================
-   Copy and run these scripts in the browser console (DevTools)
-   to test the favorites GET status and count API actions.
    ============================================================ */
 
 const targetRecipeId = "ใส่_REAL_RECIPE_UUID_ตรงนี้"; // แทนค่าด้วยไอดีสูตรอาหารที่มีอยู่ในระบบจริง
