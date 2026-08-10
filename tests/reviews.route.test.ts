@@ -88,30 +88,6 @@ describe('POST /api/reviews', () => {
     expect(body.error).toBe('Recipe not found')
   })
 
-  test('returns 403 when user attempts to review own recipe', async () => {
-    mockSupabaseAuth.getUser.mockResolvedValue({
-      data: { user: { id: 'user-creator' } },
-      error: null,
-    })
-    mockPrisma.recipe.findUnique.mockResolvedValue({
-      id: validRecipeId,
-      userId: 'user-creator', // Matches user ID
-    })
-
-    const req = new Request('http://localhost/api/reviews', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipeId: validRecipeId,
-        rating: 5,
-      }),
-    })
-    const res = await POST(req)
-    const body = await res.json()
-
-    expect(res.status).toBe(403)
-    expect(body.error).toBe('Cannot review your own recipe')
-  })
 
   test('returns 409 when user attempts a duplicate review', async () => {
     mockSupabaseAuth.getUser.mockResolvedValue({

@@ -64,14 +64,15 @@ await fetch("/api/reviews", {
 }).then(async (res) => console.log("Create Review (Duplicate) - Status:", res.status, "Body:", await res.json()));
 
 
-// 5. เขียนรีวิวเมนูของตัวเอง (ต้องสลับไปใช้บัญชีที่เป็นผู้สร้างสูตรอาหารนี้ก่อนรัน)
-// คาดหวัง: Status: 403 Forbidden, คืนค่า { error: "Cannot review your own recipe" }
+// 5. เขียนรีวิวเมนูของตัวเอง (ผู้สร้างสามารถคอมเมนต์และให้เรตติ้งสูตรตัวเองได้)
+// คาดหวัง: Status: 201 Created, สามารถเขียนคอมเมนต์และโหวตเรตติ้งสูตรตัวเองได้
 // ----------------------------------------------------
 await fetch("/api/reviews", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     recipeId: targetRecipeId,
-    rating: 5
+    rating: 5,
+    comment: "ลองรีวิวสูตรของตัวเองดูครับ!"
   })
 }).then(async (res) => console.log("Create Review (Self Review) - Status:", res.status, "Body:", await res.json()));

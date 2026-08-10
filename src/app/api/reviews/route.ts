@@ -34,10 +34,6 @@ export async function POST(request: Request) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // 2. Prevent self-reviews
-    if (recipe.userId === user.id) {
-      return Response.json({ error: "Cannot review your own recipe" }, { status: 403 })
-    }
 
     // 3. Prevent duplicate reviews
     const existingReview = await prisma.review.findFirst({
