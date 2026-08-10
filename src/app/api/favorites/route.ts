@@ -1,16 +1,35 @@
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
+import { z } from "zod"
+
+const favoriteSchema = z.object({
+  recipeId: z.string({
+    required_error: "Invalid recipe ID",
+    invalid_type_error: "Invalid recipe ID",
+  }).uuid("Invalid recipe ID"),
+})
 
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await request.json()
-  const { recipeId } = body
-  if (!recipeId || typeof recipeId !== "string") {
-    return Response.json({ error: "recipeId is required" }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
+
+  const parsed = favoriteSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
+
+  const { recipeId } = parsed.data
 
   const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
   if (!recipe) return Response.json({ error: "Recipe not found" }, { status: 404 })
