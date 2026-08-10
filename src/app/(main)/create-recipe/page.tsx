@@ -665,7 +665,7 @@ export default function CreateRecipePage() {
     if (!isDraft && coverImages.length === 0) missing.push("coverImages");
 
     const validIngredients = ingredients.filter(i => i.name.trim() !== "");
-    if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+    if (validIngredients.length === 0 || validIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
       missing.push("ingredients");
     }
 
@@ -679,11 +679,11 @@ export default function CreateRecipePage() {
 
       const validSetIngredients = setIngredientsList.filter(i => i.name.trim() !== "");
       if (!isDraft) {
-        if (validSetIngredients.length === 0 || setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+        if (validSetIngredients.length === 0 || validSetIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
           missing.push("setIngredients");
         }
       } else {
-        if (validSetIngredients.length > 0 && setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+        if (validSetIngredients.length > 0 && validSetIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
           missing.push("setIngredients");
         }
       }
