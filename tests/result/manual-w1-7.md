@@ -1,28 +1,62 @@
-# Manual Test Results - W1-7 Delete Recipe (DELETE)
+/* ============================================================
+   Manual Console Test Cases - W1-7 Delete Recipe (DELETE)
+   ============================================================
+   วิธีทดสอบ:
+   1. เปิดบราวเซอร์ไปที่หน้าเว็บหลัก (เช่น http://localhost:3000)
+   2. ล็อกอินเข้าสู่ระบบ
+   3. เปิด Developer Tools (กด F12) แล้วไปที่แท็บ Console
+   4. คัดลอกโค้ดด้านล่างนี้ไปวางเพื่อรันและตรวจสอบผลลัพธ์
+   ============================================================ */
 
-## Positive Test Cases
+/* ================= POSITIVE CASES ================= */
 
-### 1. ลบสูตรอาหารโดยเจ้าของสูตร (Recipe Owner)
-**ขั้นตอน (Steps):**
-1. เข้าสู่ระบบด้วยบัญชีที่เป็นเจ้าของสูตร
-2. ไปที่หน้า "สูตรอาหารของฉัน" (My Recipe)
-3. เลือกสูตรที่ต้องการลบ แล้วกดปุ่มลบ
-4. ยืนยันการลบ
+// ----------------------------------------------------
+// 1. ลบสูตรอาหารของตนเอง (Recipe Owner)
+// หมายเหตุ: ต้องนำ ID ของสูตรอาหารของตัวเองที่อยู่ใน Database มาใส่แทน 'YOUR_RECIPE_ID'
+// คาดหวัง: Status: 200, Body: { data: { success: true, id: "..." } }
+// ----------------------------------------------------
+const myRecipeId = 'YOUR_RECIPE_ID';
 
-**ผลลัพธ์ที่คาดหวัง (Expected Results):**
-- [x] ส่งคำขอด้วย Method `DELETE` ไปยัง `/api/recipes/[id]` โดยใช้ recipe ID ที่ถูกต้อง
-- [x] ระบบคืน HTTP Status `200 OK` พร้อม `{ data: { success: true, id } }`
-- [x] สูตรถูกลบออกจากฐานข้อมูลพร้อมความสัมพันธ์ทั้งหมด (ingredients, images, videos, store posts, reviews, favorites)
-- [x] ไฟล์รูปภาพ/วิดีโอของสูตรและของ store post ถูกลบออกจาก Supabase Storage
+await fetch(`/api/recipes/${myRecipeId}`, {
+  method: 'DELETE',
+  headers: { 'Content-Type': 'application/json' },
+}).then(async (res) => console.log('1. Delete Own Recipe - Status:', res.status, 'Body:', await res.json()));
 
-### 2. ลบสูตรที่มี Store Post (เซ็ทอาหาร)
-**ขั้นตอน (Steps):**
-1. เตรียมสูตรที่มี store post (มีรูป/วิดีโอของ store post)
-2. ลบสูตรด้วย API
-3. ตรวจสอบว่า store post และไฟล์ media ของมันถูกลบด้วย
 
-**ผลลัพธ์ที่คาดหวัง (Expected Results):**
-- [x] HTTP Status `200 OK`
-- [x] store post (ตาราง store_posts) ถูกลบ (cascade จาก store_post_images / store_post_videos)
-- [x] ไฟล์รูป/วิดีโอของ store post ถูก deleteFileByUrl ลบจาก bucket `recipes`
+/* ================= NEGATIVE CASES ================= */
 
+// ----------------------------------------------------
+// 2. พยายามลบสูตรอาหารที่ไม่มีอยู่จริง (Not Found)
+// คาดหวัง: Status: 404, Body: { error: "Recipe not found" }
+// ----------------------------------------------------
+const nonExistentId = '00000000-0000-0000-0000-000000000000';
+
+await fetch(`/api/recipes/${nonExistentId}`, {
+  method: 'DELETE',
+  headers: { 'Content-Type': 'application/json' },
+}).then(async (res) => console.log('2. Delete Non-Existent Recipe - Status:', res.status, 'Body:', await res.json()));
+
+
+// ----------------------------------------------------
+// 3. พยายามลบสูตรอาหารด้วย ID ที่มีรูปแบบไม่ถูกต้อง (Invalid UUID format)
+// คาดหวัง: Status: 400, Body: { error: "Invalid recipe ID" } (หรือที่เกี่ยวข้องกับ Validation)
+// ----------------------------------------------------
+const invalidId = 'not-a-valid-uuid-format';
+
+await fetch(`/api/recipes/${invalidId}`, {
+  method: 'DELETE',
+  headers: { 'Content-Type': 'application/json' },
+}).then(async (res) => console.log('3. Delete Invalid ID format - Status:', res.status, 'Body:', await res.json()));
+
+
+// ----------------------------------------------------
+// 4. พยายามลบสูตรอาหารของผู้อื่น (Forbidden)
+// หมายเหตุ: ต้องนำ ID ของสูตรอาหารที่เป็นของผู้อื่นมาใส่แทน 'OTHER_USER_RECIPE_ID'
+// คาดหวัง: Status: 403, Body: { error: "Forbidden" }
+// ----------------------------------------------------
+const otherRecipeId = 'OTHER_USER_RECIPE_ID';
+
+await fetch(`/api/recipes/${otherRecipeId}`, {
+  method: 'DELETE',
+  headers: { 'Content-Type': 'application/json' },
+}).then(async (res) => console.log('4. Delete Other\'s Recipe - Status:', res.status, 'Body:', await res.json()));
