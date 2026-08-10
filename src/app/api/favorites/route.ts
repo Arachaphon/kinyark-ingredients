@@ -73,7 +73,7 @@ export async function GET(request?: Request) {
           message: "Invalid recipe ID",
         }).uuid("Invalid recipe ID"),
         action: z.enum(["status", "count"], {
-          errorMap: () => ({ message: "Invalid action. Must be 'status' or 'count'" })
+          message: "Invalid action. Must be 'status' or 'count'",
         })
       }).safeParse({ recipeId, action })
 
