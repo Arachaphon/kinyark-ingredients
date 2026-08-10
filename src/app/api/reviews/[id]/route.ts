@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
-import { createReviewSchema } from "@/lib/validations/review.schema"
+import { updateReviewSchema } from "@/lib/validations/review.schema"
 
 export async function PATCH(
   request: Request,
@@ -15,30 +15,47 @@ export async function PATCH(
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
   if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
 
-  const body = await request.json()
-  const parsed = createReviewSchema.safeParse(body)
-  if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
-  try {
-    const updated = await prisma.review.update({
-      where: { id },
-      data: {
-        rating: parsed.data.rating,
-        comment: parsed.data.comment,
-        isAnonymous: parsed.data.isAnonymous,
-      },
-    })
+  const parsed = updateReviewSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
 
-    // Recalculate recipe rating
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: existing.recipeId },
-      _avg: { rating: true },
-    })
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
+  const { rating, comment, isAnonymous } = parsed.data
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedReview = await tx.review.update({
+        where: { id },
+        data: {
+          ...(rating !== undefined && { rating }),
+          ...(comment !== undefined && { comment }),
+          ...(isAnonymous !== undefined && { isAnonymous }),
+        },
+      })
+
+      const agg = await tx.review.aggregate({
+        where: { recipeId: existing.recipeId },
+        _avg: { rating: true },
+      })
+
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: { rating: newRating },
+      })
+
+      return updatedReview
     })
 
     return Response.json({ data: updated })
@@ -62,22 +79,27 @@ export async function DELETE(
   if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   try {
-    await prisma.review.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.review.delete({ where: { id } })
 
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: {
-        reviewCount: { decrement: 1 },
-      },
-    })
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: {
+          reviewCount: { decrement: 1 },
+        },
+      })
 
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: existing.recipeId },
-      _avg: { rating: true },
-    })
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
+      const agg = await tx.review.aggregate({
+        where: { recipeId: existing.recipeId },
+        _avg: { rating: true },
+      })
+
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: { rating: newRating },
+      })
     })
 
     return Response.json({ data: { id } })

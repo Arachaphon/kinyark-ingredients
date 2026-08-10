@@ -68,9 +68,10 @@ export async function POST(request: Request) {
         _avg: { rating: true },
       })
 
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
       await tx.recipe.update({
         where: { id: recipeId },
-        data: { rating: agg._avg.rating ?? 0 },
+        data: { rating: newRating },
       })
 
       return createdReview
