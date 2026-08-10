@@ -7,38 +7,77 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await request.json()
-  const parsed = createReviewSchema.safeParse(body)
-  if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
+  const parsed = createReviewSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
+
+  const { recipeId, rating, comment, isAnonymous } = parsed.data
+
   try {
-    const review = await prisma.review.create({
-      data: {
-        recipeId: parsed.data.recipeId,
-        userId: user.id,
-        rating: parsed.data.rating,
-        comment: parsed.data.comment,
-        isAnonymous: parsed.data.isAnonymous,
-      },
+    // 1. Verify recipe exists and get owner id
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
     })
 
-    await prisma.recipe.update({
-      where: { id: parsed.data.recipeId },
-      data: {
-        reviewCount: { increment: 1 },
-      },
+    if (!recipe) {
+      return Response.json({ error: "Recipe not found" }, { status: 404 })
+    }
+
+    // 2. Prevent self-reviews
+    if (recipe.userId === user.id) {
+      return Response.json({ error: "Cannot review your own recipe" }, { status: 403 })
+    }
+
+    // 3. Prevent duplicate reviews
+    const existingReview = await prisma.review.findFirst({
+      where: { recipeId, userId: user.id },
     })
 
-    // Recalculate average rating
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: parsed.data.recipeId },
-      _avg: { rating: true },
-    })
-    await prisma.recipe.update({
-      where: { id: parsed.data.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
+    if (existingReview) {
+      return Response.json({ error: "You have already reviewed this recipe" }, { status: 409 })
+    }
+
+    // 4. Perform database updates in transaction
+    const review = await prisma.$transaction(async (tx) => {
+      const createdReview = await tx.review.create({
+        data: {
+          recipeId,
+          userId: user.id,
+          rating,
+          comment,
+          isAnonymous,
+        },
+      })
+
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: {
+          reviewCount: { increment: 1 },
+        },
+      })
+
+      const agg = await tx.review.aggregate({
+        where: { recipeId },
+        _avg: { rating: true },
+      })
+
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: { rating: agg._avg.rating ?? 0 },
+      })
+
+      return createdReview
     })
 
     return Response.json({ data: review }, { status: 201 })
