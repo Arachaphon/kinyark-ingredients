@@ -8,6 +8,7 @@
     "test": "jest --ci",
     "start": "next start",
     "lint": "eslint",
+    "clean:users": "node -r dotenv/config -r ts-node/register scripts/clean-users.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -17,6 +18,7 @@
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "@tanstack/react-query": "^5.90.21",
+    "@types/pg": "^8.20.0",
     "ai": "^6.0.116",
     "leaflet": "^1.9.4",
     "next": "^16.2.9",
@@ -36,8 +38,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^29.5.14",
     "@types/leaflet": "^1.9.21",
-    "@types/node": "^20",
-    "@types/pg": "^8.20.0",
+    "@types/node": "^20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
@@ -47,6 +48,7 @@
     "jest-util": "^30.4.1",
     "tailwindcss": "^4",
     "ts-jest": "^29",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

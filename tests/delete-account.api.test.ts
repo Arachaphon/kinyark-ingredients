@@ -39,7 +39,14 @@ jest.mock('@/lib/supabase/server', () => {
 jest.mock('@/lib/prisma', () => {
   const mockPrisma = {
     user: {
+      findUnique: jest.fn().mockResolvedValue({ avatarUrl: null }),
       delete: jest.fn(),
+    },
+    recipeImage: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    recipeVideo: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
   };
   return {

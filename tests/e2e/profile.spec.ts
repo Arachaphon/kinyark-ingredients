@@ -28,7 +28,7 @@ test.describe('Profile E2E', () => {
     await loginPage.login(testEmail, testPassword);
     await expect(page).toHaveURL(/.*\/home/);
 
-    await page.locator('div[class*="3AC9B5"]').click();
+    await page.locator('div[class*="border-[3px]"][class*="3AC9B5"]').first().click();
 
     // รอจนกว่า fallback "User" (ตอนยังโหลด profile ไม่เสร็จ) หายไป ก่อน assert ข้อมูลจริง
     await expect(page.getByRole('heading', { name: 'User' })).toHaveCount(0, { timeout: 15000 });
