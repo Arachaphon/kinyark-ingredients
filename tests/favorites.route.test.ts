@@ -132,7 +132,7 @@ describe('POST /api/favorites', () => {
     const res1 = await POST(req1)
     const body1 = await res1.json()
     expect(res1.status).toBe(400)
-    expect(body1.error).toContain('expected string')
+    expect(body1.error).toContain('Invalid recipe ID')
 
     // Invalid UUID
     const req2 = new Request('http://localhost/api/favorites', {

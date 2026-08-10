@@ -4,8 +4,7 @@ import { z } from "zod"
 
 const favoriteSchema = z.object({
   recipeId: z.string({
-    required_error: "Invalid recipe ID",
-    invalid_type_error: "Invalid recipe ID",
+    message: "Invalid recipe ID",
   }).uuid("Invalid recipe ID"),
 })
 
