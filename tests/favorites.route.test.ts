@@ -9,6 +9,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     create: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
   },
   recipe: {
     findUnique: jest.fn(),
@@ -92,6 +93,84 @@ describe('GET /api/favorites', () => {
       },
       orderBy: { createdAt: 'desc' },
     })
+  })
+
+  const validRecipeId = 'a2f3c7c4-07e3-41c8-bfbe-494d014982b2'
+
+  test('GET status: returns 401 when unauthenticated', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    const req = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=status`)
+    const res = await GET(req)
+    const body = await res.json()
+    expect(res.status).toBe(401)
+    expect(body.error).toBe('Unauthorized')
+  })
+
+  test('GET status/count: returns 400 when params are invalid', async () => {
+    // Invalid action
+    const req1 = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=invalid`)
+    const res1 = await GET(req1)
+    const body1 = await res1.json()
+    expect(res1.status).toBe(400)
+    expect(body1.error).toContain('status')
+
+    // Invalid UUID
+    const req2 = new Request(`http://localhost/api/favorites?recipeId=not-a-uuid&action=status`)
+    const res2 = await GET(req2)
+    const body2 = await res2.json()
+    expect(res2.status).toBe(400)
+    expect(body2.error).toContain('Invalid recipe ID')
+  })
+
+  test('GET status/count: returns 404 when recipe is not found', async () => {
+    mockPrisma.recipe.findUnique.mockResolvedValue(null)
+    const req = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=status`)
+    const res = await GET(req)
+    const body = await res.json()
+    expect(res.status).toBe(404)
+    expect(body.error).toBe('Recipe not found')
+  })
+
+  test('GET status: returns true when already favorited', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    })
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    mockPrisma.favorite.findUnique.mockResolvedValue({ id: 'fav-1' })
+
+    const req = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=status`)
+    const res = await GET(req)
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.data).toEqual({ isFavorite: true })
+  })
+
+  test('GET status: returns false when not favorited', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    })
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    mockPrisma.favorite.findUnique.mockResolvedValue(null)
+
+    const req = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=status`)
+    const res = await GET(req)
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.data).toEqual({ isFavorite: false })
+  })
+
+  test('GET count: returns count of favorites (public)', async () => {
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    mockPrisma.favorite.count.mockResolvedValue(10)
+
+    const req = new Request(`http://localhost/api/favorites?recipeId=${validRecipeId}&action=count`)
+    const res = await GET(req)
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.data).toEqual({ recipeId: validRecipeId, count: 10 })
   })
 })
 

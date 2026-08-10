@@ -79,3 +79,4 @@ await fetch("/api/favorites", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ recipeId: targetRecipeId })
 }).then(async (res) => console.log("Remove Favorite Result - Status:", res.status, "Body:", await res.json()));
+
