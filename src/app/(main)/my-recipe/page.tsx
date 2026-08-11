@@ -107,14 +107,16 @@ export default function MyRecipePage() {
   };
 
   useEffect(() => {
-    fetchRecipes();
-    // Fetch user role
-    fetch('/api/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data?.user?.role) setUserRole(data.user.role);
-      })
-      .catch(() => {});
+    // Run both fetches in parallel — no sequential wait
+    Promise.all([
+      fetchRecipes(),
+      fetch('/api/auth/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.user?.role) setUserRole(data.user.role);
+        })
+        .catch(() => {}),
+    ]);
   }, [fetchRecipes]);
 
   const myRecipes = recipes.filter((r) => r.user?.id === myUserId);
