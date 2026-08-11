@@ -29,10 +29,9 @@ export async function GET(
 
     const recipeId = parsed.data.id
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const userId = _request.headers.get("x-user-id")
+    const userRole = _request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
 
     const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId },
@@ -109,15 +108,14 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
+  const userId = request.headers.get("x-user-id")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const user = { id: userId }
+  const supabase = await createClient()
 
   const { id: rawId } = await params
 
@@ -191,12 +189,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
+    const userId = request.headers.get("x-user-id")
+    if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const user = { id: userId }
+    const supabase = await createClient()
 
     const { id } = await params
     const parsedId = recipeIdParamSchema.safeParse({ id })

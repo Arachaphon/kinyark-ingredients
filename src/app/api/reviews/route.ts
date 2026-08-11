@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { createReviewSchema } from "@/lib/validations/review.schema"
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: unknown
   try {
@@ -37,7 +35,7 @@ export async function POST(request: Request) {
 
     // 3. Prevent duplicate reviews
     const existingReview = await prisma.review.findFirst({
-      where: { recipeId, userId: user.id },
+      where: { recipeId, userId: userId },
     })
 
     if (existingReview) {
@@ -49,7 +47,7 @@ export async function POST(request: Request) {
       const createdReview = await tx.review.create({
         data: {
           recipeId,
-          userId: user.id,
+          userId: userId,
           rating,
           comment,
           isAnonymous,

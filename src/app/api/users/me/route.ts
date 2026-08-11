@@ -22,9 +22,17 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const userId = request.headers.get("x-user-id")
+    if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true }
+    })
+    if (!dbUser) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    const user = { id: userId, email: dbUser.email }
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     let body: Record<string, unknown>
     try {
@@ -147,11 +155,12 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function DELETE() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function DELETE(request: Request) {
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const user = { id: userId }
+  const supabase = await createClient()
 
   try {
     // Collect file URLs to delete from storage

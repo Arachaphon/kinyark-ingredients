@@ -1,25 +1,20 @@
-// src/app/api/posts/recommended/route.ts
 import { NextResponse } from "next/server";
 
 // ✅ อ้างอิงพุ่งตรงเข้าหา @/lib/prisma ที่เจอตัวจริงได้เลยครับ!
 import { prisma } from "@/lib/prisma"; 
-import { createClient } from "@/lib/supabase/server";
 import { Prisma } from "@prisma/client";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Check user role for visibility filtering
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const userId = request.headers.get("x-user-id");
+    const userRole = request.headers.get("x-user-role");
+    const user = userId ? { id: userId, role: userRole } : null;
 
     let whereCondition: Prisma.RecipeWhereInput;
 
     if (user) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (userRole === "STORE") {
         whereCondition = {
           OR: [
             { visibility: "public" },

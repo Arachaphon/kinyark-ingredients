@@ -1,4 +1,4 @@
-import { middleware } from '../src/middleware';
+import { proxy } from '../src/proxy';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
@@ -54,7 +54,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const request = new NextRequest('http://localhost:3000/home');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.redirect).toHaveBeenCalled();
     const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
@@ -65,7 +65,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const request = new NextRequest('http://localhost:3000/create-recipe');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.redirect).toHaveBeenCalled();
     const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
@@ -76,7 +76,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
 
     const request = new NextRequest('http://localhost:3000/home');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.next).toHaveBeenCalled();
     expect(NextResponse.redirect).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
 
     const request = new NextRequest('http://localhost:3000/login');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.redirect).toHaveBeenCalled();
     const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
@@ -97,7 +97,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const request = new NextRequest('http://localhost:3000/login');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.next).toHaveBeenCalled();
     expect(NextResponse.redirect).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
     const request = new NextRequest('http://localhost:3000/');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.next).toHaveBeenCalled();
     expect(NextResponse.redirect).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ describe('Middleware Route Protection', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
 
     const request = new NextRequest('http://localhost:3000/');
-    await middleware(request);
+    await proxy(request);
 
     expect(NextResponse.redirect).toHaveBeenCalled();
     const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];

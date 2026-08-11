@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { recipeListItemSelect } from "@/lib/recipes"
 import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
 import { Prisma } from "@prisma/client"
@@ -26,12 +25,14 @@ export async function GET(request: Request) {
 
     const { page, limit, mine, publicOnly } = parsed.data
 
-    if (mine) {
-      const supabase = await createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    console.log(`\n=== API PROFILING START: GET /api/recipes?page=${page}&limit=${limit} ===`)
+    console.time("1. Auth & Role Check")
+    const userId = request.headers.get("x-user-id")
+    const userRole = request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
+    console.timeEnd("1. Auth & Role Check")
 
+    if (mine) {
       if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 })
       }
@@ -43,29 +44,37 @@ export async function GET(request: Request) {
         ],
       }
 
-      const [total, recipes] = await Promise.all([
-        prisma.recipe.count({ where: userRecipesWhere }),
-        prisma.recipe.findMany({
-          where: userRecipesWhere,
-          select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
+      console.time("2. Recipes & StorePosts Parallel Query (Mine)")
+      const [
+        [total, recipes],
+        orphanedStorePosts
+      ] = await Promise.all([
+        Promise.all([
+          prisma.recipe.count({ where: userRecipesWhere }),
+          prisma.recipe.findMany({
+            relationLoadStrategy: "join",
+            where: userRecipesWhere,
+            select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
+            orderBy: { createdAt: "desc" },
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
+        ]),
+        prisma.storePost.findMany({
+          relationLoadStrategy: "join",
+          where: {
+            userId: user.id,
+            recipeId: null,
+          },
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+            images: { orderBy: { createdAt: "asc" } },
+            videos: { orderBy: { createdAt: "asc" } },
+          },
           orderBy: { createdAt: "desc" },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
+        })
       ])
-
-      const orphanedStorePosts = await prisma.storePost.findMany({
-        where: {
-          userId: user.id,
-          recipeId: null,
-        },
-        include: {
-          user: { select: { id: true, username: true, avatarUrl: true } },
-          images: { orderBy: { createdAt: "asc" } },
-          videos: { orderBy: { createdAt: "asc" } },
-        },
-        orderBy: { createdAt: "desc" },
-      })
+      console.timeEnd("2. Recipes & StorePosts Parallel Query (Mine)")
 
       const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
         id: `orphan-${sp.id}`,
@@ -113,17 +122,8 @@ export async function GET(request: Request) {
     if (publicOnly) {
       visibilityFilter = { visibility: "public" };
     } else {
-      // Check if logged-in user has STORE role
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
       if (user) {
-        const profile = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-
-        if (profile?.role === "STORE") {
+        if (userRole === "STORE") {
           // Store users cannot see protected recipes, unless they own the recipe
           visibilityFilter = {
             OR: [
@@ -147,30 +147,13 @@ export async function GET(request: Request) {
 
     const where: Prisma.RecipeWhereInput = visibilityFilter;
 
-    const [total, recipes] = await Promise.all([
-      prisma.recipe.count({ where }),
-      prisma.recipe.findMany({
-        where,
-        select: recipeListItemSelect({ withUser: true, withIngredients: true }),
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-    ])
-
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
     };
     
     // Check auth for visibility filtering of orphaned store posts
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (userRole === "STORE") {
         storePostVisibilityConditions.OR = [
           { visibility: "public" },
           { userId: user.id }
@@ -185,15 +168,43 @@ export async function GET(request: Request) {
       storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
     }
 
-    const orphanedStorePosts = await prisma.storePost.findMany({
-      where: storePostVisibilityConditions,
-      include: {
-        user: { select: { id: true, username: true, avatarUrl: true } },
-        images: { orderBy: { createdAt: "asc" } },
-        videos: { orderBy: { createdAt: "asc" } },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+    console.time("2. Recipes & StorePosts Parallel Query")
+    const [
+      [total, recipes],
+      [orphanedStorePosts, totalOrphanedStorePosts]
+    ] = await Promise.all([
+      Promise.all([
+        prisma.recipe.count({ where }),
+        prisma.recipe.findMany({
+          relationLoadStrategy: "join",
+          where,
+          select: recipeListItemSelect({ withUser: true, withIngredients: true }),
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+      ]),
+      Promise.all([
+        prisma.storePost.findMany({
+          relationLoadStrategy: "join",
+          where: storePostVisibilityConditions,
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+            images: { orderBy: { createdAt: "asc" } },
+            videos: { orderBy: { createdAt: "asc" } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.storePost.count({
+          where: storePostVisibilityConditions,
+        }),
+      ])
+    ])
+    console.timeEnd("2. Recipes & StorePosts Parallel Query")
+
+    console.time("3. Mapping Data")
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
       id: `orphan-${sp.id}`,
@@ -225,8 +236,11 @@ export async function GET(request: Request) {
     }))
 
     const combinedData = [...recipes, ...dummyRecipesForOrphans]
-    const totalWithOrphans = total + orphanedStorePosts.length
+    const totalWithOrphans = total + totalOrphanedStorePosts
     const totalPages = Math.max(1, Math.ceil(totalWithOrphans / limit))
+
+    console.timeEnd("3. Mapping Data")
+    console.log("=== API PROFILING END ===\n")
 
     return Response.json({
       data: combinedData,
@@ -239,18 +253,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
+  const userId = request.headers.get("x-user-id")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!userId) {
     return Response.json(
       { error: "Unauthorized" },
       { status: 401 }
     )
   }
+  const user = { id: userId }
 
   const body = await request.json()
 

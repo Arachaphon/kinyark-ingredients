@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 
 const favoriteSchema = z.object({
@@ -9,9 +8,8 @@ const favoriteSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: unknown
   try {
@@ -35,7 +33,7 @@ export async function POST(request: Request) {
 
   try {
     const existing = await prisma.favorite.findUnique({
-      where: { userId_recipeId: { userId: user.id, recipeId: recipeId } },
+      where: { userId_recipeId: { userId: userId, recipeId: recipeId } },
     })
 
     if (existing) {
@@ -48,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     await prisma.favorite.create({
-      data: { userId: user.id, recipeId: recipeId },
+      data: { userId: userId, recipeId: recipeId },
     })
     await prisma.recipe.update({
       where: { id: recipeId },
@@ -94,12 +92,11 @@ export async function GET(request?: Request) {
       }
 
       if (validatedAction === "status") {
-        const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+        const userId = request?.headers.get("x-user-id")
+        if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
         const existing = await prisma.favorite.findUnique({
-          where: { userId_recipeId: { userId: user.id, recipeId: validatedRecipeId } }
+          where: { userId_recipeId: { userId: userId, recipeId: validatedRecipeId } }
         })
         return Response.json({ data: { isFavorite: existing !== null } })
       }
@@ -112,12 +109,12 @@ export async function GET(request?: Request) {
       }
     }
 
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+    const userId = request?.headers.get("x-user-id")
+    if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     const favorites = await prisma.favorite.findMany({
-      where: { userId: user.id },
+      relationLoadStrategy: "join",
+      where: { userId: userId },
       include: {
         recipe: {
           include: {

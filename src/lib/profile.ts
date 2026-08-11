@@ -1,17 +1,17 @@
-import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
+import { headers } from 'next/headers';
 
 export async function getProfile(select: Prisma.UserSelect) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const headerStore = await headers();
+  const userId = headerStore.get('x-user-id');
 
-  if (!user) {
+  if (!userId) {
     return { user: null, error: 'Unauthorized' as const, status: 401 as const };
   }
 
   const profile = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: userId },
     select,
   });
 

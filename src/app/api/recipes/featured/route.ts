@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { recipeListItemSelect } from "@/lib/recipes"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
+
 
 export const dynamic = "force-dynamic";
 
@@ -62,20 +62,13 @@ export async function GET(request: Request) {
 
     const limit = parsed.data.limit
 
-    // Determine visibility filter based on user role
-    // STORE role users cannot see protected recipes
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const userId = request.headers.get("x-user-id")
+    const userRole = request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
 
     let visibilityFilter: Prisma.RecipeWhereInput;
     if (user) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (userRole === "STORE") {
         visibilityFilter = {
           OR: [
             { visibility: "public" },
@@ -97,7 +90,8 @@ export async function GET(request: Request) {
     const recipes = await prisma.recipe.findMany({
       where: visibilityFilter,
       select: recipeListItemSelect(),
-      orderBy: [{ rating: "desc" }, { favoriteCount: "desc" }, { createdAt: "desc" }],
+      orderBy: { createdAt: "desc" },
+      take: 50,
     })
 
     const shuffled: FeaturedRecipe[] = seededShuffle(recipes, daySeed())

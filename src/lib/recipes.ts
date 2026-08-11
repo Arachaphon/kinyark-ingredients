@@ -53,19 +53,25 @@ export function recipeListItemSelect(
       : {}),
     storePosts: opts.storePostUserId ? {
       where: { userId: opts.storePostUserId },
-      include: {
-        images: true,
-        videos: true,
-        user: {
-          select: { id: true, username: true, avatarUrl: true },
+      select: {
+        id: true,
+        storeName: true,
+        sellingPrice: true,
+        setIngredients: true,
+        images: {
+          orderBy: { createdAt: "asc" as const },
+          select: { id: true, imageUrl: true },
         },
       },
     } : {
-      include: {
-        images: true,
-        videos: true,
-        user: {
-          select: { id: true, username: true, avatarUrl: true },
+      select: {
+        id: true,
+        storeName: true,
+        sellingPrice: true,
+        setIngredients: true,
+        images: {
+          orderBy: { createdAt: "asc" as const },
+          select: { id: true, imageUrl: true },
         },
       },
     },

@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { updateReviewSchema } from "@/lib/validations/review.schema"
 
 export async function PATCH(
@@ -7,13 +6,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
-  if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   let body: unknown
   try {
@@ -66,17 +64,16 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
-  if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   try {
     await prisma.$transaction(async (tx) => {
