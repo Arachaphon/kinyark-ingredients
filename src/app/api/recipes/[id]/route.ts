@@ -121,8 +121,26 @@ export async function GET(
       }
     }
 
+    const ratingBreakdown = {
+      "5": 0,
+      "4": 0,
+      "3": 0,
+      "2": 0,
+      "1": 0,
+    }
+    reviews.forEach((rev) => {
+      if (rev.rating >= 1 && rev.rating <= 5) {
+        ratingBreakdown[rev.rating.toString() as keyof typeof ratingBreakdown]++
+      }
+    })
+
+    const fullRecipeWithBreakdown = {
+      ...fullRecipe,
+      ratingBreakdown,
+    }
+
     // Cache the recipe body (without isFavorite) — shared across all users
-    cache.set(cacheKey, fullRecipe, TTL_RECIPE)
+    cache.set(cacheKey, fullRecipeWithBreakdown, TTL_RECIPE)
 
     const isFavorite = user
       ? !!(await prisma.favorite.findUnique({
@@ -131,7 +149,7 @@ export async function GET(
       : false
 
     return Response.json(
-      { data: { ...fullRecipe, isFavorite } },
+      { data: { ...fullRecipeWithBreakdown, isFavorite } },
       { status: 200 }
     )
   } catch (error) {

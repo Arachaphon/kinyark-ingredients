@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
+import useSWR from "swr";
 import type { RecipeListResponse, RecipeListItem } from "@/types/recipes";
 
 const anuphan = Anuphan({
@@ -19,41 +20,28 @@ const FALLBACK_AVATAR =
   "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80";
 
 const PAGE_SIZE = 10;
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+});
 
 export default function PostsFeedPage() {
-  const [posts, setPosts] = useState<RecipeListItem[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
 
+  const { data, error: isError, isLoading } = useSWR<RecipeListResponse>(
+    `/api/recipes?page=${page}&limit=${PAGE_SIZE}`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 }
+  );
 
-  const fetchPosts = useCallback(async (targetPage: number) => {
-    setLoading(true);
-    setError(false);
+  const posts = data?.data ?? [];
+  const totalPages = data?.meta?.totalPages ?? 1;
+  const loading = isLoading;
+  const error = !!isError;
 
-    try {
-      const res = await fetch(
-        `/api/recipes?page=${targetPage}&limit=${PAGE_SIZE}`
-      );
-      if (!res.ok) {
-        setError(true);
-        return;
-      }
-      const body = (await res.json()) as RecipeListResponse;
-      setPosts(body.data);
-      setTotalPages(body.meta.totalPages);
-      setPage(targetPage);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPosts(1);
-  }, [fetchPosts]);
+  const fetchPosts = (targetPage: number) => {
+    setPage(targetPage);
+  };
 
 
 
@@ -116,7 +104,7 @@ export default function PostsFeedPage() {
         )}
 
         <div className="flex flex-col gap-8">
-          {posts.map((post) => {
+          {posts.map((post, index) => {
             // ดึงข้อมูลจาก StorePost จริงในฐานข้อมูล
             const storePost = post.storePosts && post.storePosts.length > 0 ? post.storePosts[0] : null;
             const isStoreSet = Boolean(storePost);
@@ -138,6 +126,7 @@ export default function PostsFeedPage() {
                         src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                         alt={post.recipeName}
                         fill
+                        priority={index === 0}
                         className="object-cover rounded-3xl shadow-md border border-[#71B254]/20"
                         sizes="(max-width: 768px) 100vw, 380px"
                       />

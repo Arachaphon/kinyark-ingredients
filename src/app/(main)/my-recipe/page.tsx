@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
+import useSWR from "swr";
 import type { RecipeListResponse, RecipeListItem } from "@/types/recipes";
 
 const anuphan = Anuphan({
@@ -18,23 +19,12 @@ const FALLBACK_IMAGE =
 
 type Tab = "All" | "Publish" | "Draft" | "StoreSet";
 
-const formatThaiDate = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("th-TH", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
-};
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+});
 
 export default function MyRecipePage() {
-  const [recipes, setRecipes] = useState<RecipeListItem[]>([]);
-  const [myUserId, setMyUserId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string>("USER");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [unauthorized, setUnauthorized] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("All");
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -47,32 +37,29 @@ export default function MyRecipePage() {
   });
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchRecipes = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    setUnauthorized(false);
+  const { data: recipesData, error: recipesErr, isLoading: recipesLoading, mutate: revalidateRecipes } = useSWR<RecipeListResponse>(
+    "/api/recipes?mine=true&limit=50",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 5000 }
+  );
 
-    try {
-      const res = await fetch("/api/recipes?mine=true&limit=50");
-      if (res.status === 401) {
-        setUnauthorized(true);
-        return;
-      }
-      if (!res.ok) {
-        setError(true);
-        return;
-      }
-      const body = (await res.json()) as RecipeListResponse;
-      setRecipes(body.data);
-      if (body.meta.userId) {
-        setMyUserId(body.meta.userId);
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: userData } = useSWR<{ user: { role: string } }>(
+    "/api/auth/me",
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  );
+
+  const recipes = recipesData?.data ?? [];
+  const myUserId = recipesData?.meta?.userId ?? null;
+  const userRole = userData?.user?.role ?? "USER";
+
+  const loading = recipesLoading;
+  const error = !!recipesErr;
+  const unauthorized = false;
+
+  const fetchRecipes = () => {
+    revalidateRecipes();
+  };
 
   const handleDeleteRecipeTrigger = (recipeId: string) => {
     setDeleteModal({ isOpen: true, recipeId, storePostId: null });
@@ -106,18 +93,15 @@ export default function MyRecipePage() {
     }
   };
 
-  useEffect(() => {
-    // Run both fetches in parallel — no sequential wait
-    Promise.all([
-      fetchRecipes(),
-      fetch('/api/auth/me')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data?.user?.role) setUserRole(data.user.role);
-        })
-        .catch(() => {}),
-    ]);
-  }, [fetchRecipes]);
+  const formatThaiDate = (iso: string) => {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("th-TH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
 
   const myRecipes = recipes.filter((r) => r.user?.id === myUserId);
   const publishCount = myRecipes.filter((r) => r.visibility === "public" || r.visibility === "protected" || r.visibility === "private").length;
