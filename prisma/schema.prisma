@@ -183,9 +183,10 @@ model Favorite {
   createdAt DateTime @default(now()) @db.Timestamptz
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, recipeId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("favorites")
 }
 

@@ -52,7 +52,6 @@ export async function GET(request: Request) {
         Promise.all([
           prisma.recipe.count({ where: userRecipesWhere }),
           prisma.recipe.findMany({
-            relationLoadStrategy: "join",
             where: userRecipesWhere,
             select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
             orderBy: { createdAt: "desc" },
@@ -61,7 +60,6 @@ export async function GET(request: Request) {
           }),
         ]),
         prisma.storePost.findMany({
-          relationLoadStrategy: "join",
           where: {
             userId: user.id,
             recipeId: null,
@@ -176,7 +174,6 @@ export async function GET(request: Request) {
       Promise.all([
         prisma.recipe.count({ where }),
         prisma.recipe.findMany({
-          relationLoadStrategy: "join",
           where,
           select: recipeListItemSelect({ withUser: true, withIngredients: true }),
           orderBy: { createdAt: "desc" },
@@ -186,7 +183,6 @@ export async function GET(request: Request) {
       ]),
       Promise.all([
         prisma.storePost.findMany({
-          relationLoadStrategy: "join",
           where: storePostVisibilityConditions,
           include: {
             user: { select: { id: true, username: true, avatarUrl: true } },
