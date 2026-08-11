@@ -34,6 +34,7 @@ export async function GET(
     const user = userId ? { id: userId, role: userRole } : null
 
     const recipe = await prisma.recipe.findUnique({
+      relationLoadStrategy: "join",
       where: { id: recipeId },
       include: {
         user: {
@@ -68,8 +69,8 @@ export async function GET(
     }
 
     const isStorePostOwner = user
-      ? recipe.storePosts.some((sp) => sp.userId === user.id)
-      : false
+       ? recipe.storePosts.some((sp) => sp.userId === user.id)
+       : false
 
     // Private and Draft recipes are only visible to their owner (or store post owner)
     if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
@@ -79,11 +80,7 @@ export async function GET(
 
     // Protected recipes are hidden from STORE role users (except the recipe/store post owner)
     if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (user.role === "STORE") {
         return Response.json({ error: "Recipe not found" }, { status: 404 })
       }
     }
