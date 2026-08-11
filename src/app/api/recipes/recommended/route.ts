@@ -36,7 +36,8 @@ export async function GET(request: Request) {
     // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
     const allRecipes = await prisma.recipe.findMany({
       where: whereCondition,
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
     // ✂️ คัดแยกกลุ่มตาม AI Provider (ตัวพิมพ์เล็ก)

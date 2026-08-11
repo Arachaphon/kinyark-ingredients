@@ -113,7 +113,6 @@ export async function GET(request?: Request) {
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     const favorites = await prisma.favorite.findMany({
-      relationLoadStrategy: "join",
       where: { userId: userId },
       include: {
         recipe: {

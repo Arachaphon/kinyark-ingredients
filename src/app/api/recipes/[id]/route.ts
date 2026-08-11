@@ -34,46 +34,69 @@ export async function GET(
     const user = userId ? { id: userId, role: userRole } : null
 
     console.log(`=== RECIPE DETAIL PROFILING START: ${recipeId} ===`)
-    console.time("1. Recipe Query")
-    const recipe = await prisma.recipe.findUnique({
-      relationLoadStrategy: "join",
-      where: { id: recipeId },
-      include: {
-        user: {
-          select: { id: true, username: true, avatarUrl: true },
+    console.time("1. Parallel Queries")
+    const [recipe, recipeIngredients, equipmentItems, images, videos, reviews, storePosts] = await Promise.all([
+      prisma.recipe.findUnique({
+        where: { id: recipeId },
+        include: {
+          user: {
+            select: { id: true, username: true, avatarUrl: true },
+          }
+        }
+      }),
+      prisma.recipeIngredient.findMany({
+        where: { recipeId },
+        include: { ingredient: { include: { category: true } } },
+        orderBy: { ingredient: { name: "asc" } },
+      }),
+      prisma.recipeEquipment.findMany({
+        where: { recipeId },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.recipeImage.findMany({
+        where: { recipeId },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.recipeVideo.findMany({
+        where: { recipeId },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.review.findMany({
+        where: { recipeId },
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
         },
-        recipeIngredients: {
-          include: { ingredient: { include: { category: true } } },
-          orderBy: { ingredient: { name: "asc" } },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.storePost.findMany({
+        where: { recipeId },
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+          images: { orderBy: { createdAt: "asc" } },
+          videos: { orderBy: { createdAt: "asc" } },
         },
-        equipmentItems: { orderBy: { createdAt: "asc" } },
-        images: { orderBy: { createdAt: "asc" } },
-        videos: { orderBy: { createdAt: "asc" } },
-        reviews: {
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        storePosts: {
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-            images: { orderBy: { createdAt: "asc" } },
-            videos: { orderBy: { createdAt: "asc" } },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    })
-    console.timeEnd("1. Recipe Query")
+        orderBy: { createdAt: "desc" },
+      }),
+    ])
+    console.timeEnd("1. Parallel Queries")
 
     if (!recipe) {
       console.log("=== RECIPE DETAIL PROFILING END (404) ===\n")
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
+    const fullRecipe = {
+      ...recipe,
+      recipeIngredients,
+      equipmentItems,
+      images,
+      videos,
+      reviews,
+      storePosts,
+    }
+
     const isStorePostOwner = user
-       ? recipe.storePosts.some((sp) => sp.userId === user.id)
+       ? storePosts.some((sp) => sp.userId === user.id)
        : false
 
     // Private and Draft recipes are only visible to their owner (or store post owner)
@@ -101,7 +124,7 @@ export async function GET(
     console.log("=== RECIPE DETAIL PROFILING END ===\n")
 
     return Response.json(
-      { data: { ...recipe, isFavorite: favorite !== null } },
+      { data: { ...fullRecipe, isFavorite: favorite !== null } },
       { status: 200 }
     )
   } catch (error) {
