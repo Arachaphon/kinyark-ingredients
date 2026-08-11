@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { recipeListItemSelect } from "@/lib/recipes"
 import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
 import { Prisma } from "@prisma/client"
+import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,12 @@ export async function GET(request: Request) {
     if (mine) {
       if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      const cacheKey = `recipes:mine:${userId}:${page}:${limit}`
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json(cached)
       }
 
       const userRecipesWhere: Prisma.RecipeWhereInput = {
@@ -107,10 +114,12 @@ export async function GET(request: Request) {
       const totalCount = total + orphanedStorePosts.length
       const totalPages = Math.max(1, Math.ceil(totalCount / limit))
 
-      return Response.json({
+      const mineResponse = {
         data: combinedData,
         meta: { page, limit, total: totalCount, totalPages, userId: user.id },
-      })
+      }
+      cache.set(`recipes:mine:${userId}:${page}:${limit}`, mineResponse, TTL_RECIPES_MINE)
+      return Response.json(mineResponse)
     }
 
     // Determine visibility filter based on user role
@@ -144,6 +153,12 @@ export async function GET(request: Request) {
     }
 
     const where: Prisma.RecipeWhereInput = visibilityFilter;
+
+    const cacheKey = `recipes:list:${page}:${limit}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return Response.json(cached)
+    }
 
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
@@ -238,10 +253,12 @@ export async function GET(request: Request) {
     console.timeEnd("3. Mapping Data")
     console.log("=== API PROFILING END ===\n")
 
-    return Response.json({
+    const listResponse = {
       data: combinedData,
       meta: { page, limit, total: totalWithOrphans, totalPages },
-    })
+    }
+    cache.set(cacheKey, listResponse, TTL_RECIPES_LIST)
+    return Response.json(listResponse)
   } catch (error) {
     console.error("Error fetching recipes:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
@@ -447,6 +464,9 @@ export async function POST(request: Request) {
       maxWait: 15000,
       timeout: 30000,
     });
+
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix(`recipes:mine:${userId}:`)
 
     return Response.json(
       {

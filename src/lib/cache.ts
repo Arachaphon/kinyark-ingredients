@@ -45,6 +45,10 @@ class TTLCache {
 export const cache = new TTLCache()
 
 // TTL constants
-export const TTL_RECIPE = 60_000       // recipe detail: 60 s
-export const TTL_FEATURED = 300_000    // featured list: 5 min
-export const TTL_RECIPES_LIST = 30_000 // recipe list pages: 30 s
+export const TTL_RECIPE      = 60_000        // recipe detail: 60s
+export const TTL_FEATURED    = 300_000       // featured (anon): 5 min
+export const TTL_RECIPES_LIST      = 30_000  // public recipe list: 30s
+export const TTL_RECIPES_MINE      = 15_000  // my recipes list: 15s
+export const TTL_RECOMMENDED = 120_000       // recommended: 2 min
+export const TTL_RATINGS     = 30_000        // recipe ratings: 30s
+export const TTL_INGREDIENTS = 300_000       // ingredients: 5 min

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 // ✅ อ้างอิงพุ่งตรงเข้าหา @/lib/prisma ที่เจอตัวจริงได้เลยครับ!
 import { prisma } from "@/lib/prisma"; 
 import { Prisma } from "@prisma/client";
+import { cache, TTL_RECOMMENDED } from "@/lib/cache";
 
 export async function GET(request: Request) {
   try {
@@ -33,6 +34,12 @@ export async function GET(request: Request) {
       whereCondition = { visibility: { in: ["public", "protected"] } };
     }
 
+    const cacheKey = `recommended:${userId ?? 'anon'}:${userRole ?? ''}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
     const allRecipes = await prisma.recipe.findMany({
       where: whereCondition,
@@ -44,6 +51,7 @@ export async function GET(request: Request) {
     const gemini = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "gemini");
     const deepseek = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "deepseek");
 
+    cache.set(cacheKey, { gemini, deepseek }, TTL_RECOMMENDED)
     return NextResponse.json({ gemini, deepseek });
   } catch (error) {
     console.error("Error fetching recommended recipes:", error);

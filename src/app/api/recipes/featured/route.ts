@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { recipeListItemSelect } from "@/lib/recipes"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
+import { cache, TTL_FEATURED } from "@/lib/cache"
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,11 @@ export async function GET(request: Request) {
 
     // If no logged in user, return top public recipes (0ms network cost caching since it's anonymous fallback)
     if (!user) {
+      const cacheKey = 'featured:anon'
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json({ data: cached, total: (cached as unknown[]).length, cursor: 0 })
+      }
       const anonymousRecipes = await prisma.recipe.findMany({
         relationLoadStrategy: "join",
         where: { visibility: "public" },
@@ -38,6 +44,7 @@ export async function GET(request: Request) {
         orderBy: { favoriteCount: "desc" },
         take: limit,
       })
+      cache.set(cacheKey, anonymousRecipes, TTL_FEATURED)
       return Response.json({ data: anonymousRecipes, total: anonymousRecipes.length, cursor: 0 })
     }
 

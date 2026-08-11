@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { ingredientQuerySchema, createIngredientSchema } from "@/lib/validations/ingredient.schema"
+import { cache, TTL_INGREDIENTS } from "@/lib/cache"
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
       include: { category: true },
     })
 
+    cache.delPrefix('ingredient:')
+
     return Response.json({ data: ingredient }, { status: 200 })
   } catch (error) {
     console.error("Error creating ingredient:", error)
@@ -76,6 +79,12 @@ export async function GET(request: Request) {
 
     const { id, categoryId, category, search } = parsed.data
 
+    const cacheKey = `ingredient:${id ?? ''}:${categoryId ?? ''}:${category ?? ''}:${search ?? ''}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return Response.json({ data: cached })
+    }
+
     const where: Prisma.IngredientWhereInput = {
       ...(id !== undefined && { id }),
       ...(search !== undefined && {
@@ -96,6 +105,8 @@ export async function GET(request: Request) {
       },
       orderBy: { name: "asc" },
     })
+
+    cache.set(cacheKey, ingredients, TTL_INGREDIENTS)
 
     return Response.json({ data: ingredients })
   } catch (error) {
