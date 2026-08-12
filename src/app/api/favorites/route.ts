@@ -1,23 +1,43 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
+import { z } from "zod"
+import { cache } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
+
+const favoriteSchema = z.object({
+  recipeId: z.string({
+    message: "Invalid recipe ID",
+  }).uuid("Invalid recipe ID"),
+})
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getAuthUserId(request)
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await request.json()
-  const { recipeId } = body
-  if (!recipeId || typeof recipeId !== "string") {
-    return Response.json({ error: "recipeId is required" }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
+
+  const parsed = favoriteSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
+
+  const { recipeId } = parsed.data
 
   const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
   if (!recipe) return Response.json({ error: "Recipe not found" }, { status: 404 })
 
   try {
+    cache.del(`favorites:${userId}`)
+    cache.del(`recipe:${recipeId}`)
     const existing = await prisma.favorite.findUnique({
-      where: { userId_recipeId: { userId: user.id, recipeId: recipeId } },
+      where: { userId_recipeId: { userId: userId, recipeId: recipeId } },
     })
 
     if (existing) {
@@ -30,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     await prisma.favorite.create({
-      data: { userId: user.id, recipeId: recipeId },
+      data: { userId: userId, recipeId: recipeId },
     })
     await prisma.recipe.update({
       where: { id: recipeId },
@@ -43,22 +63,109 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+export async function GET(request?: Request) {
+  try {
+    const searchParams = request ? new URL(request.url).searchParams : new URLSearchParams()
+    const recipeId = searchParams.get("recipeId")
+    const action = searchParams.get("action")
 
-  const favorites = await prisma.favorite.findMany({
-    where: { userId: user.id },
-    include: {
-      recipe: {
-        include: {
-          images: true,
+    if (recipeId || action) {
+      const parsed = z.object({
+        recipeId: z.string({
+          message: "Invalid recipe ID",
+        }).uuid("Invalid recipe ID"),
+        action: z.enum(["status", "count"], {
+          message: "Invalid action. Must be 'status' or 'count'",
+        })
+      }).safeParse({ recipeId, action })
+
+      if (!parsed.success) {
+        return Response.json(
+          { error: parsed.error.issues.map(i => i.message).join("; ") },
+          { status: 400 }
+        )
+      }
+
+      const { recipeId: validatedRecipeId, action: validatedAction } = parsed.data
+
+      const recipeExists = await prisma.recipe.findUnique({
+        where: { id: validatedRecipeId }
+      })
+      if (!recipeExists) {
+        return Response.json({ error: "Recipe not found" }, { status: 404 })
+      }
+
+      if (validatedAction === "status") {
+        const userId = await getAuthUserId(request)
+        if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+        const existing = await prisma.favorite.findUnique({
+          where: { userId_recipeId: { userId: userId, recipeId: validatedRecipeId } }
+        })
+        return Response.json({ data: { isFavorite: existing !== null } })
+      }
+
+      if (validatedAction === "count") {
+        const count = await prisma.favorite.count({
+          where: { recipeId: validatedRecipeId }
+        })
+        return Response.json({ data: { recipeId: validatedRecipeId, count } })
+      }
+    }
+
+    const userId = await getAuthUserId(request)
+    if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    const cacheKey = `favorites:${userId}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return Response.json({ data: cached })
+    }
+
+    const favorites = await prisma.favorite.findMany({
+      where: { userId: userId },
+      select: {
+        id: true,
+        userId: true,
+        recipeId: true,
+        createdAt: true,
+        recipe: {
+          select: {
+            id: true,
+            recipeName: true,
+            rating: true,
+            favoriteCount: true,
+            createdAt: true,
+            bgColor: true,
+            visibility: true,
+            images: {
+              orderBy: { createdAt: "asc" },
+              take: 1,
+              select: { id: true, imageUrl: true },
+            },
+            user: {
+              select: { id: true, username: true, avatarUrl: true },
+            },
+            recipeIngredients: {
+              select: {
+                id: true,
+                quantity: true,
+                unit: true,
+                ingredient: {
+                  select: { id: true, name: true, categoryId: true },
+                },
+              },
+            },
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+      orderBy: { createdAt: "desc" },
+    })
 
-  return Response.json({ data: favorites })
+    cache.set(cacheKey, favorites, 30_000)
+    return Response.json({ data: favorites })
+  } catch (error) {
+    console.error("GET /api/favorites error:", error)
+    return Response.json({ error: "Internal server error" }, { status: 500 })
+  }
 }

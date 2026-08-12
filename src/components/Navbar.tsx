@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -34,8 +35,6 @@ export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
@@ -58,24 +57,8 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const load = async () => {
-      try {
-        const res = await fetch('/api/auth/me', { signal: controller.signal });
-        if (res.ok) {
-          const data = await res.json();
-          setUserProfile(data.user);
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error("Failed to fetch user", error);
-        }
-      }
-    };
-    void load();
-    return () => controller.abort();
-  }, [isSettingOpen]);
+  const { data: userData } = useSWR("/api/auth/me");
+  const userProfile = userData?.user ?? null;
 
   const handleSearchSubmit = (term: string) => {
     if (!term.trim()) return;

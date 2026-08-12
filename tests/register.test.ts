@@ -26,12 +26,17 @@ describe("registerSchema", () => {
     }
   });
 
-  test("accepts shop role", () => {
-    const result = registerSchema.safeParse({ ...validInput, role: "shop" });
+  test("accepts store role", () => {
+    const result = registerSchema.safeParse({ ...validInput, role: "store" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.role).toBe("shop");
+      expect(result.data.role).toBe("store");
     }
+  });
+
+  test("rejects admin role", () => {
+    const result = registerSchema.safeParse({ ...validInput, role: "admin" });
+    expect(result.success).toBe(false);
   });
 
   test("rejects invalid email", () => {
@@ -128,20 +133,20 @@ describe("register — duplicate detection logic", () => {
 // register: Role Mapping Logic
 // ---------------------------------------------------------------------------
 describe("register — role mapping", () => {
-  function mapRole(role: string): string {
-    return role === "shop" ? "SHOP" : "USER";
-  }
+  const mapRole = (role: string) => {
+    return role === "store" ? "STORE" : "USER";
+  };
 
-  test("maps 'user' role to 'USER'", () => {
-    expect(mapRole("user")).toBe("USER");
+  test("maps undefined role to 'USER'", () => {
+    expect(mapRole("")).toBe("USER");
   });
 
-  test("maps 'shop' role to 'SHOP'", () => {
-    expect(mapRole("shop")).toBe("SHOP");
+  test("maps 'store' role to 'STORE'", () => {
+    expect(mapRole("store")).toBe("STORE");
   });
 
   test("maps any other value to 'USER'", () => {
     expect(mapRole("admin")).toBe("USER");
-    expect(mapRole("")).toBe("USER");
+    expect(mapRole("random")).toBe("USER");
   });
 });

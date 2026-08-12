@@ -3,18 +3,31 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { deleteAccountSchema } from '@/lib/validations/auth.schema'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { getAuthUserId } from '@/lib/auth-user'
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const userId = await getAuthUserId(request)
 
-    if (userError || !user) {
+    if (!userId) {
       return NextResponse.json(
         { message: 'คุณยังไม่ได้เข้าสู่ระบบ' },
         { status: 401 }
       )
     }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true }
+    })
+
+    if (!dbUser || !dbUser.email) {
+      return NextResponse.json(
+        { message: 'คุณยังไม่ได้เข้าสู่ระบบ' },
+        { status: 401 }
+      )
+    }
+
 
     const body = await request.json()
     const validatedFields = deleteAccountSchema.safeParse(body)
@@ -28,9 +41,11 @@ export async function DELETE(request: Request) {
 
     const { password } = validatedFields.data
 
+    const supabase = await createClient()
+
     // Verify password first by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email!,
+      email: dbUser.email,
       password,
     })
 
@@ -41,10 +56,43 @@ export async function DELETE(request: Request) {
       )
     }
 
+    // 1. Fetch user avatar & recipes media files before deletion
+    const userData = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true }
+    })
+
+    const recipeImages = await prisma.recipeImage.findMany({
+      where: { recipe: { userId } },
+      select: { imageUrl: true }
+    })
+
+    const recipeVideos = await prisma.recipeVideo.findMany({
+      where: { recipe: { userId } },
+      select: { videoUrl: true }
+    })
+
     // Delete from Prisma DB
     await prisma.user.delete({
-      where: { id: user.id },
+      where: { id: userId },
     })
+
+    // Delete files from Supabase Storage (User folder & individual URLs)
+    const { deleteFileByUrl, deleteUserFolder } = await import('@/lib/storage')
+    if (userData?.avatarUrl) {
+      await deleteFileByUrl(supabase, userData.avatarUrl)
+    }
+
+    for (const img of recipeImages) {
+      await deleteFileByUrl(supabase, img.imageUrl)
+    }
+
+    for (const vid of recipeVideos) {
+      await deleteFileByUrl(supabase, vid.videoUrl)
+    }
+
+    await deleteUserFolder(supabase, userId, 'avatars')
+    await deleteUserFolder(supabase, userId, 'recipes')
 
     // Delete from Supabase Auth using Service Role Key
     const supabaseAdmin = createSupabaseClient(
@@ -52,7 +100,7 @@ export async function DELETE(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id)
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
     if (deleteError) {
       throw new Error(`Supabase delete user failed: ${deleteError.message}`)

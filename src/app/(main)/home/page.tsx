@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState, useEffect, useCallback } from "react";
+import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
 // 🌟 เปลี่ยนมาอิมพอร์ตฟอนต์ Anuphan ที่ตัวผอมโปร่ง มีหัวกลมสวยตรงตามรูปเป๊ะๆ ครับ
@@ -22,6 +23,12 @@ interface WeeklyMenuRecipe {
   color: string;
   image: string;
 }
+interface FeaturedRecipe {
+  id: string;
+  recipeName: string;
+  rating: number;
+  images: { id: string; imageUrl: string }[];
+}
 
 const geminiRecipes: WeeklyMenuRecipe[] = [
   { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" },
@@ -38,6 +45,15 @@ const deepseekRecipes: WeeklyMenuRecipe[] = [
 ];
 
 export default function HomePage() {
+  const { data: featuredData, isLoading } = useSWR("/api/recipes/featured");
+  const featured: FeaturedRecipe | null = featuredData?.data?.[0] ?? null;
+
+  const featuredTitle = featured?.recipeName ?? "สลัด";
+  const featuredRating = featured?.rating ?? 5.0;
+  const featuredImage =
+    featured?.images?.[0]?.imageUrl ??
+    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
+
   return (
     // 🌟 ผูกคลาสฟอนต์ Anuphan เข้าที่นี่ มิติเลย์เอาต์ทุกอย่างจะเป๊ะ ไม่ขยับเขยื้อนแน่นอนครับ
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
@@ -58,13 +74,13 @@ export default function HomePage() {
             <CategoryCard emoji="🥗" text="ผลไม้" category="Fruits" />
             <CategoryCard emoji="🦞" text="อาหารทะเล" category="Seafood" />
             <CategoryCard emoji="🥦" text="ผัก" category="Vegetables" />
-            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" category="Carbs" />
-            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" category="Dairy and Eggs" />
-            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" category="Condiments and Sauces" />
-            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" category="Spices and Herbs" />
-            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" category="Nuts and Seeds" />
-            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" category="Oils and Fats" />
-            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" category="Beverages" />
+            <CategoryCard emoji="🍚" text="ข้าว เส้นและแป้ง" category="Grains, Pasta & Baking" />
+            <CategoryCard emoji="🥚" text="ไข่และผลิตภัณฑ์จากนม" category="Dairy & Eggs" />
+            <CategoryCard emoji="🧂" text="เครื่องปรุงและซอส" category="Condiments & Sauces" />
+            <CategoryCard emoji="🌿" text="เครื่องเทศและสมุนไพร" category="Spices & Herbs" />
+            <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" category="Nuts & Seeds" />
+            <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" category="Fats & Oils" />
+            <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" category="Liquids & Beverages" />
             
             {/* 🛠️ จัดตำแหน่งกล่อง "อื่นๆ": จอมือถือเรียงเต็มแถวปกติ (col-span-1) พอจอใหญ่ขึ้นกลับไปกว้าง 210px ตรงกลางเหมือนเดิม */}
             <div className="sm:col-span-2 flex justify-center mt-2 w-full">
@@ -82,22 +98,30 @@ export default function HomePage() {
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              <h1 className="text-6xl font-bold text-[#3AC9B5] mb-5">สลัด</h1>
-              <div className="flex items-center gap-2 mb-8">
-                <span className="text-[#F1C40F] text-2xl">★</span>
-                <span className="font-bold text-gray-800 text-lg">5.0</span>
-              </div>
-              
-              <Link 
-                href="/recipe/1"
-                className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base w-fit block text-center shadow-sm"
-              >
-                <span>▶</span> ดูเพิ่มเติม
-              </Link>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="w-9 h-9 border-4 border-[#3AC9B5] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featuredTitle}</h1>
+                  <div className="flex items-center gap-2 mb-8">
+                    <span className="text-[#F1C40F] text-2xl">★</span>
+                    <span className="font-bold text-gray-800 text-lg">{featuredRating.toFixed(1)}</span>
+                  </div>
+
+                  <Link
+                    href={featured ? `/recipe/${featured.id}` : "/recipe/1"}
+                    className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base w-fit block text-center shadow-sm"
+                  >
+                    <span>▶</span> ดูเพิ่มเติม
+                  </Link>
+                </>
+              )}
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 md:translate-x-16 w-40 h-40 md:w-80 md:h-80 drop-shadow-2xl z-20 pointer-events-none">
-              <Image src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" alt="Salad" fill className="object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" sizes="(max-width: 768px) 160px, 320px" />
+              <Image src={featuredImage} alt={featuredTitle} fill className="object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" sizes="(max-width: 768px) 160px, 320px" />
           </div>
         </div>
       </main>

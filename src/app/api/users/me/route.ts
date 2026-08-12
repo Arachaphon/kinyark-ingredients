@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 import { createClient } from "@/lib/supabase/server"
 import { deleteAvatar } from "@/lib/storage"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export async function GET() {
   try {
@@ -22,9 +23,17 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const userId = await getAuthUserId(request)
+    if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true }
+    })
+    if (!dbUser) return Response.json({ error: "Unauthorized" }, { status: 401 })
+
+    const user = { id: userId, email: dbUser.email }
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     let body: Record<string, unknown>
     try {
@@ -147,13 +156,30 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function DELETE() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export async function DELETE(request: Request) {
+  const userId = await getAuthUserId(request)
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const user = { id: userId }
+  const supabase = await createClient()
 
   try {
+    // Collect file URLs to delete from storage
+    const userData = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { avatarUrl: true },
+    })
+
+    const recipeImages = await prisma.recipeImage.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { imageUrl: true },
+    })
+
+    const recipeVideos = await prisma.recipeVideo.findMany({
+      where: { recipe: { userId: user.id } },
+      select: { videoUrl: true },
+    })
+
     await prisma.reviewLike.deleteMany({ where: { userId: user.id } })
     await prisma.favorite.deleteMany({ where: { userId: user.id } })
     await prisma.searchHistory.deleteMany({ where: { userId: user.id } })
@@ -189,6 +215,23 @@ export async function DELETE() {
 
     await prisma.review.deleteMany({ where: { userId: user.id } })
     await prisma.user.delete({ where: { id: user.id } })
+
+    // Clean up Supabase Storage Bucket Files
+    const { deleteFileByUrl, deleteUserFolder } = await import("@/lib/storage")
+    if (userData?.avatarUrl) {
+      await deleteFileByUrl(supabase, userData.avatarUrl)
+    }
+
+    for (const img of recipeImages) {
+      await deleteFileByUrl(supabase, img.imageUrl)
+    }
+
+    for (const vid of recipeVideos) {
+      await deleteFileByUrl(supabase, vid.videoUrl)
+    }
+
+    await deleteUserFolder(supabase, user.id, 'avatars')
+    await deleteUserFolder(supabase, user.id, 'recipes')
 
     const supabaseAdmin = await createClient()
     await supabaseAdmin.auth.admin.deleteUser(user.id)
