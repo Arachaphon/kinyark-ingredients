@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         if (cacheData.date === todayStr && Array.isArray(cacheData.ids) && cacheData.ids.length > 0) {
           targetIds = cacheData.ids
         }
-      } catch (e) {
+      } catch {
         // parsing failed, will recalculate
       }
     }

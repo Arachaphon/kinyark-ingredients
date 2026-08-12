@@ -249,7 +249,6 @@ export async function PATCH(
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
     const user = { id: userId }
-    const supabase = await createClient()
 
     const { id } = await params
     const parsedId = recipeIdParamSchema.safeParse({ id })

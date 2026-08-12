@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import useSWR from "swr";
-import type { RecipeListResponse, RecipeListItem } from "@/types/recipes";
+import type { RecipeListResponse } from "@/types/recipes";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],

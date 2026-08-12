@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const mockSupabaseAuth = { getUser: jest.fn() }
 jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
