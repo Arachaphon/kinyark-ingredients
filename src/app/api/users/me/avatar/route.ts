@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { FULL_PROFILE_SELECT } from '@/lib/profile'
+import { cache } from '@/lib/cache'
 import {
   validateImageFile,
   validateImageSignature,
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
         data: { avatarUrl: publicUrl },
         select: FULL_PROFILE_SELECT,
       })
+      cache.del(`user:profile:${user.id}`)
     } catch (e) {
       console.error('Database update failed after upload — removing uploaded object:', e)
       await supabase.storage.from('avatars').remove([path]).catch((cleanupErr) => {

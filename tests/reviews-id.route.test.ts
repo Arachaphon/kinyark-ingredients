@@ -3,7 +3,7 @@ jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
 }))
 
-const mockPrisma = {
+const mockPrisma: any = {
   review: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -13,7 +13,7 @@ const mockPrisma = {
   recipe: {
     update: jest.fn(),
   },
-  $transaction: jest.fn((callback) => callback(mockPrisma)),
+  $transaction: jest.fn((callback: any) => callback(mockPrisma)),
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
