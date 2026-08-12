@@ -6,6 +6,10 @@ const config = {
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  transformIgnorePatterns: ["node_modules/(?!(jose)/)"],
+  transform: {
+    "^.+\\.(ts|tsx|js|jsx)$": ["ts-jest", { tsconfig: { allowJs: true } }],
+  },
 }
 
 module.exports = config

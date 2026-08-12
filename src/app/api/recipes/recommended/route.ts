@@ -1,25 +1,21 @@
-// src/app/api/posts/recommended/route.ts
 import { NextResponse } from "next/server";
 
 // ✅ อ้างอิงพุ่งตรงเข้าหา @/lib/prisma ที่เจอตัวจริงได้เลยครับ!
 import { prisma } from "@/lib/prisma"; 
-import { createClient } from "@/lib/supabase/server";
 import { Prisma } from "@prisma/client";
+import { cache, TTL_RECOMMENDED } from "@/lib/cache";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Check user role for visibility filtering
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const userId = request.headers.get("x-user-id");
+    const userRole = request.headers.get("x-user-role");
+    const user = userId ? { id: userId, role: userRole } : null;
 
     let whereCondition: Prisma.RecipeWhereInput;
 
     if (user) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (userRole === "STORE") {
         whereCondition = {
           OR: [
             { visibility: "public" },
@@ -38,16 +34,42 @@ export async function GET() {
       whereCondition = { visibility: { in: ["public", "protected"] } };
     }
 
-    // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
+    const cacheKey = `recommended:${userId ?? 'anon'}:${userRole ?? ''}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
+    // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase (select เฉพาะฟิลด์ที่ใช้)
     const allRecipes = await prisma.recipe.findMany({
       where: whereCondition,
-      orderBy: { createdAt: "desc" }
+      select: {
+        id: true,
+        recipeName: true,
+        rating: true,
+        favoriteCount: true,
+        createdAt: true,
+        bgColor: true,
+        visibility: true,
+        aiProvider: true,
+        images: {
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: { id: true, imageUrl: true },
+        },
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
     });
 
     // ✂️ คัดแยกกลุ่มตาม AI Provider (ตัวพิมพ์เล็ก)
     const gemini = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "gemini");
     const deepseek = allRecipes.filter(r => r.aiProvider?.toLowerCase() === "deepseek");
 
+    cache.set(cacheKey, { gemini, deepseek }, TTL_RECOMMENDED)
     return NextResponse.json({ gemini, deepseek });
   } catch (error) {
     console.error("Error fetching recommended recipes:", error);

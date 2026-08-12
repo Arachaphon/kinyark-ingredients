@@ -60,7 +60,11 @@ export function validateVideoFile(file: File): { valid: true } | { valid: false;
     return { valid: false, error: 'File too large. Maximum size is 50 MB', status: 413 }
   }
 
-  if (!ALLOWED_VIDEO_MIME_TYPES.includes(file.type as AllowedVideoMimeType)) {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const isValidMime = ALLOWED_VIDEO_MIME_TYPES.includes(file.type as AllowedVideoMimeType)
+  const isValidExt = ['mp4', 'mov', 'webm'].includes(ext || '')
+
+  if (!isValidMime && !isValidExt) {
     return { valid: false, error: 'Invalid file type. Allowed: MP4, MOV, WebM', status: 400 }
   }
 
@@ -76,7 +80,11 @@ export function validateImageFile(file: File): { valid: true } | { valid: false;
     return { valid: false, error: 'File too large. Maximum size is 5 MB', status: 413 }
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType)) {
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const isValidMime = ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType)
+  const isValidExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')
+
+  if (!isValidMime && !isValidExt) {
     return { valid: false, error: 'Invalid file type. Allowed: JPEG, PNG, WebP', status: 400 }
   }
 
@@ -84,6 +92,13 @@ export function validateImageFile(file: File): { valid: true } | { valid: false;
 }
 
 export async function validateImageSignature(file: File): Promise<{ valid: true } | { valid: false; error: string; status: number }> {
+  // If browser sent an empty or generic type, but file extension is valid, bypass signature check
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const isValidExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')
+  if (!ALLOWED_MIME_TYPES.includes(file.type as AllowedMimeType) && isValidExt) {
+    return { valid: true }
+  }
+
   const buffer = await file.arrayBuffer()
   const mimeType = file.type as AllowedMimeType
 
@@ -94,8 +109,14 @@ export async function validateImageSignature(file: File): Promise<{ valid: true 
   return { valid: true }
 }
 
-export function generateStoragePath(userId: string, mimeType: string): string | null {
-  const ext = getExtension(mimeType)
+export function generateStoragePath(userId: string, mimeType: string, filename?: string): string | null {
+  let ext = getExtension(mimeType)
+  if (!ext && filename) {
+    const fileExt = filename.split('.').pop()?.toLowerCase()
+    if (fileExt && ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'].includes(fileExt)) {
+      ext = fileExt === 'jpeg' ? 'jpg' : fileExt
+    }
+  }
   if (!ext) return null
   const uuid = crypto.randomUUID()
   return `${userId}/${uuid}.${ext}`

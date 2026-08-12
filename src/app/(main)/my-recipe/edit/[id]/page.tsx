@@ -817,7 +817,7 @@ export default function EditRecipePage() {
       if (shopIngredientImages.length === 0) storeMissing.push("shopIngredientImages");
 
       const validSetIngredients = setIngredientsList.filter(i => i.name.trim() !== "");
-      if (validSetIngredients.length === 0 || setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+      if (validSetIngredients.length === 0 || validSetIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
         storeMissing.push("setIngredients");
       }
 
@@ -840,7 +840,7 @@ export default function EditRecipePage() {
         if (!isDraft && !instructions.trim()) recipeMissing.push("instructions");
         if (!isDraft && coverImages.length === 0) recipeMissing.push("coverImages");
         const validIngredients = ingredients.filter(i => i.name.trim() !== "");
-        if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+        if (validIngredients.length === 0 || validIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
           recipeMissing.push("ingredients");
         }
         if (recipeMissing.length > 0) {
@@ -865,7 +865,7 @@ export default function EditRecipePage() {
     if (!isDraft && coverImages.length === 0) missing.push("coverImages");
 
     const validIngredients = ingredients.filter(i => i.name.trim() !== "");
-    if (validIngredients.length === 0 || ingredients.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+    if (validIngredients.length === 0 || validIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
       missing.push("ingredients");
     }
 
@@ -879,11 +879,11 @@ export default function EditRecipePage() {
 
       const validSetIngredients = setIngredientsList.filter(i => i.name.trim() !== "");
       if (!isDraft) {
-        if (validSetIngredients.length === 0 || setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+        if (validSetIngredients.length === 0 || validSetIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
           missing.push("setIngredients");
         }
       } else {
-        if (validSetIngredients.length > 0 && setIngredientsList.some(i => !i.name.trim() || !i.quantity || !i.unit.trim())) {
+        if (validSetIngredients.length > 0 && validSetIngredients.some(i => !String(i.quantity).trim() || parseFloat(i.quantity) <= 0 || !i.unit.trim())) {
           missing.push("setIngredients");
         }
       }
@@ -1511,7 +1511,7 @@ export default function EditRecipePage() {
                       <label className="block text-gray-600 text-sm font-semibold mb-2">
                         วิดีโอวัตถุดิบ <span className="text-gray-400 font-normal">(ไม่บังคับ)</span>
                       </label>
-                      <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
+                      <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={shopIngredientVideo.previewUrl} controls className="w-full h-full object-contain" />
@@ -2275,7 +2275,7 @@ export default function EditRecipePage() {
                   <div className="mt-2">
                     <label className="block text-gray-600 text-sm font-semibold mb-2">วิดีโอสอนทำอาหาร</label>
                     <div className="h-[140px] relative">
-                      <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
+                      <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
                       {videoFile ? (
                         <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={videoFile.previewUrl} controls className="w-full h-full object-contain" />

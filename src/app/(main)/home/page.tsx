@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState, useEffect, useCallback } from "react";
+import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
 // 🌟 เปลี่ยนมาอิมพอร์ตฟอนต์ Anuphan ที่ตัวผอมโปร่ง มีหัวกลมสวยตรงตามรูปเป๊ะๆ ครับ
@@ -44,25 +45,8 @@ const deepseekRecipes: WeeklyMenuRecipe[] = [
 ];
 
 export default function HomePage() {
-  const [featured, setFeatured] = useState<FeaturedRecipe | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const res = await fetch("/api/recipes/featured");
-        if (res.ok) {
-          const data = await res.json();
-          setFeatured(data.data?.[0] ?? null);
-        }
-      } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการโหลดเมนูเด่น:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFeatured();
-  }, []);
+  const { data: featuredData, isLoading } = useSWR("/api/recipes/featured");
+  const featured: FeaturedRecipe | null = featuredData?.data?.[0] ?? null;
 
   const featuredTitle = featured?.recipeName ?? "สลัด";
   const featuredRating = featured?.rating ?? 5.0;
@@ -114,7 +98,7 @@ export default function HomePage() {
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              {loading ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="w-9 h-9 border-4 border-[#3AC9B5] border-t-transparent rounded-full animate-spin"></div>
                 </div>

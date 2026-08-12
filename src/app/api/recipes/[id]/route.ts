@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
+import { cache, TTL_RECIPE } from "@/lib/cache"
 import { createClient } from "@/lib/supabase/server"
 import { deleteFileByUrl } from "@/lib/storage"
-import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
-import { Prisma } from "@prisma/client"
+import { getAuthUserId } from "@/lib/auth-user"
 
 class HttpError extends Error {
   status: number
@@ -29,74 +31,128 @@ export async function GET(
 
     const recipeId = parsed.data.id
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const userId = await getAuthUserId(_request)
+    const userRole = _request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id: recipeId },
-      include: {
-        user: {
-          select: { id: true, username: true, avatarUrl: true },
-        },
-        recipeIngredients: {
+    // Cache key = recipe body only (shared for all users)
+    // isFavorite is user-specific so it is always fetched fresh
+    const cacheKey = `recipe:${recipeId}`
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get<object>(cacheKey)
+
+      if (cached) {
+        // isFavorite still needs a fresh DB lookup per user
+        const isFavorite = user
+          ? !!(await prisma.favorite.findUnique({
+              where: { userId_recipeId: { userId: user.id, recipeId } },
+            }))
+          : false
+        return Response.json({ data: { ...cached, isFavorite } }, { status: 200 })
+      }
+    }
+
+    const [recipe, recipeIngredients, equipmentItems, images, videos, reviews, storePosts] =
+      await Promise.all([
+        prisma.recipe.findUnique({
+          where: { id: recipeId },
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+          },
+        }),
+        prisma.recipeIngredient.findMany({
+          where: { recipeId },
           include: { ingredient: { include: { category: true } } },
           orderBy: { ingredient: { name: "asc" } },
-        },
-        equipmentItems: { orderBy: { createdAt: "asc" } },
-        images: { orderBy: { createdAt: "asc" } },
-        videos: { orderBy: { createdAt: "asc" } },
-        reviews: {
+        }),
+        prisma.recipeEquipment.findMany({
+          where: { recipeId },
+          orderBy: { createdAt: "asc" },
+        }),
+        prisma.recipeImage.findMany({
+          where: { recipeId },
+          orderBy: { createdAt: "asc" },
+        }),
+        prisma.recipeVideo.findMany({
+          where: { recipeId },
+          orderBy: { createdAt: "asc" },
+        }),
+        prisma.review.findMany({
+          where: { recipeId },
           include: {
             user: { select: { id: true, username: true, avatarUrl: true } },
           },
           orderBy: { createdAt: "desc" },
-        },
-        storePosts: {
+        }),
+        prisma.storePost.findMany({
+          where: { recipeId },
           include: {
             user: { select: { id: true, username: true, avatarUrl: true } },
             images: { orderBy: { createdAt: "asc" } },
             videos: { orderBy: { createdAt: "asc" } },
           },
           orderBy: { createdAt: "desc" },
-        },
-      },
-    })
+        }),
+      ])
 
     if (!recipe) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    const isStorePostOwner = user
-      ? recipe.storePosts.some((sp) => sp.userId === user.id)
-      : false
+    const fullRecipe = {
+      ...recipe,
+      recipeIngredients,
+      equipmentItems,
+      images,
+      videos,
+      reviews,
+      storePosts,
+    }
 
-    // Private and Draft recipes are only visible to their owner (or store post owner)
+    const isStorePostOwner = user
+       ? storePosts.some((sp) => sp.userId === user.id)
+       : false
+
     if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
         recipe.userId !== user?.id && !isStorePostOwner) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // Protected recipes are hidden from STORE role users (except the recipe/store post owner)
     if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (user.role === "STORE") {
         return Response.json({ error: "Recipe not found" }, { status: 404 })
       }
     }
 
-    const favorite = user
-      ? await prisma.favorite.findUnique({
+    const ratingBreakdown = {
+      "5": 0,
+      "4": 0,
+      "3": 0,
+      "2": 0,
+      "1": 0,
+    }
+    reviews.forEach((rev) => {
+      if (rev.rating >= 1 && rev.rating <= 5) {
+        ratingBreakdown[rev.rating.toString() as keyof typeof ratingBreakdown]++
+      }
+    })
+
+    const fullRecipeWithBreakdown = {
+      ...fullRecipe,
+      ratingBreakdown,
+    }
+
+    // Cache the recipe body (without isFavorite) — shared across all users
+    cache.set(cacheKey, fullRecipeWithBreakdown, TTL_RECIPE)
+
+    const isFavorite = user
+      ? !!(await prisma.favorite.findUnique({
           where: { userId_recipeId: { userId: user.id, recipeId } },
-        })
-      : null
+        }))
+      : false
 
     return Response.json(
-      { data: { ...recipe, isFavorite: favorite !== null } },
+      { data: { ...fullRecipeWithBreakdown, isFavorite } },
       { status: 200 }
     )
   } catch (error) {
@@ -109,15 +165,14 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
+  const userId = await getAuthUserId(request)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const user = { id: userId }
+  const supabase = await createClient()
 
   const { id: rawId } = await params
 
@@ -176,6 +231,7 @@ export async function DELETE(
       await deleteFileByUrl(supabase, url)
     }
 
+    cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: { success: true, id: recipeId } }, { status: 200 })
   } catch (error) {
     console.error("DELETE /api/recipes/[id] error:", error)
@@ -191,12 +247,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
+    const userId = await getAuthUserId(request)
+    if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }
+    const user = { id: userId }
 
     const { id } = await params
     const parsedId = recipeIdParamSchema.safeParse({ id })
@@ -487,6 +542,7 @@ export async function PATCH(
       timeout: 30000,
     })
 
+    cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: updatedRecipe })
   } catch (error) {
     console.error("PATCH /api/recipes/[id] error:", error)
