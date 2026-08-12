@@ -48,6 +48,13 @@ export async function GET(request: Request) {
       return Response.json({ data: anonymousRecipes, total: anonymousRecipes.length, cursor: 0 })
     }
 
+    // Check in-memory cache for logged-in user
+    const userCacheKey = `featured:${user.id}:${limit}`
+    const userCached = cache.get(userCacheKey)
+    if (userCached) {
+      return Response.json({ data: userCached, total: (userCached as unknown[]).length, cursor: 0 })
+    }
+
     const todayStr = new Date().toISOString().split('T')[0]
 
     // 1. Check if we have a cache record for today
@@ -198,6 +205,9 @@ export async function GET(request: Request) {
     const sortedRecipes = targetIds
       .map((id) => featuredRecipes.find((r) => r.id === id))
       .filter(Boolean)
+
+    // Store in-memory cache for user
+    cache.set(userCacheKey, sortedRecipes, TTL_FEATURED)
 
     return Response.json({
       data: sortedRecipes,

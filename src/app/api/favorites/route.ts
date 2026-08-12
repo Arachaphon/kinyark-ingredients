@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { cache } from "@/lib/cache"
 
 const favoriteSchema = z.object({
   recipeId: z.string({
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
   if (!recipe) return Response.json({ error: "Recipe not found" }, { status: 404 })
 
   try {
+    cache.del(`favorites:${userId}`)
+    cache.del(`recipe:${recipeId}`)
     const existing = await prisma.favorite.findUnique({
       where: { userId_recipeId: { userId: userId, recipeId: recipeId } },
     })
@@ -112,17 +115,45 @@ export async function GET(request?: Request) {
     const userId = request?.headers.get("x-user-id")
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
+    const cacheKey = `favorites:${userId}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return Response.json({ data: cached })
+    }
+
     const favorites = await prisma.favorite.findMany({
       where: { userId: userId },
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        recipeId: true,
+        createdAt: true,
         recipe: {
-          include: {
-            images: true,
+          select: {
+            id: true,
+            recipeName: true,
+            rating: true,
+            favoriteCount: true,
+            createdAt: true,
+            bgColor: true,
+            visibility: true,
+            images: {
+              orderBy: { createdAt: "asc" },
+              take: 1,
+              select: { id: true, imageUrl: true },
+            },
             user: {
               select: { id: true, username: true, avatarUrl: true },
             },
             recipeIngredients: {
-              include: { ingredient: true },
+              select: {
+                id: true,
+                quantity: true,
+                unit: true,
+                ingredient: {
+                  select: { id: true, name: true, categoryId: true },
+                },
+              },
             },
           },
         },
@@ -130,6 +161,7 @@ export async function GET(request?: Request) {
       orderBy: { createdAt: "desc" },
     })
 
+    cache.set(cacheKey, favorites, 30_000)
     return Response.json({ data: favorites })
   } catch (error) {
     console.error("GET /api/favorites error:", error)

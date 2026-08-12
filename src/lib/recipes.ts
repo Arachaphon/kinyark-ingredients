@@ -53,6 +53,7 @@ export function recipeListItemSelect(
       : {}),
     storePosts: opts.storePostUserId ? {
       where: { userId: opts.storePostUserId },
+      take: 1,
       select: {
         id: true,
         storeName: true,
@@ -60,10 +61,12 @@ export function recipeListItemSelect(
         setIngredients: true,
         images: {
           orderBy: { createdAt: "asc" as const },
+          take: 1,
           select: { id: true, imageUrl: true },
         },
       },
     } : {
+      take: 1,
       select: {
         id: true,
         storeName: true,
@@ -71,6 +74,7 @@ export function recipeListItemSelect(
         setIngredients: true,
         images: {
           orderBy: { createdAt: "asc" as const },
+          take: 1,
           select: { id: true, imageUrl: true },
         },
       },

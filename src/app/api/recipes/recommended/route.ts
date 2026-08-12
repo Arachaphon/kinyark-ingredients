@@ -40,9 +40,27 @@ export async function GET(request: Request) {
       return NextResponse.json(cached)
     }
 
-    // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase
+    // 🔍 วิ่งไปควักข้อมูลจากตาราง posts ใน Supabase (select เฉพาะฟิลด์ที่ใช้)
     const allRecipes = await prisma.recipe.findMany({
       where: whereCondition,
+      select: {
+        id: true,
+        recipeName: true,
+        rating: true,
+        favoriteCount: true,
+        createdAt: true,
+        bgColor: true,
+        visibility: true,
+        aiProvider: true,
+        images: {
+          orderBy: { createdAt: "asc" },
+          take: 1,
+          select: { id: true, imageUrl: true },
+        },
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
