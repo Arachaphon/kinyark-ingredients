@@ -85,6 +85,8 @@ model Recipe {
   @@index([userId])
   @@index([visibility])
   @@index([createdAt])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@index([favoriteCount(sort: Desc)])
   @@map("recipes")
 }
 
