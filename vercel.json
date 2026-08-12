@@ -2,11 +2,7 @@
   "crons": [
     {
       "path": "/api/health",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/recipes/featured?limit=6",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
