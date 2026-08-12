@@ -16,8 +16,7 @@ const anuphan = Anuphan({
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
-const FALLBACK_AVATAR =
-  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
+const FALLBACK_AVATAR = "/photo/default-avatar.svg";
 
 function ImageCarousel({
   images,
