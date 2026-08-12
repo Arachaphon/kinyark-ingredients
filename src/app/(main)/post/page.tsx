@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import Image from "next/image";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import useSWR from "swr";
