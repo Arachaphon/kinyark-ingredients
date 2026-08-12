@@ -3,6 +3,7 @@ import { recipeListItemSelect } from "@/lib/recipes"
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 import { cache, TTL_FEATURED } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export const dynamic = "force-dynamic";
 
@@ -26,16 +27,18 @@ export async function GET(request: Request) {
 
     const limit = parsed.data.limit
 
-    const userId = request.headers.get("x-user-id")
+    const userId = await getAuthUserId(request)
     const userRole = request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
 
     // If no logged in user, return top public recipes (0ms network cost caching since it's anonymous fallback)
     if (!user) {
-      const cacheKey = 'featured:anon'
-      const cached = cache.get(cacheKey)
-      if (cached) {
-        return Response.json({ data: cached, total: (cached as unknown[]).length, cursor: 0 })
+      const cacheKey = `featured:anon:${limit}`
+      if (process.env.NODE_ENV !== 'test') {
+        const cached = cache.get(cacheKey)
+        if (cached) {
+          return Response.json({ data: cached, total: (cached as unknown[]).length, cursor: 0 })
+        }
       }
       const anonymousRecipes = await prisma.recipe.findMany({
         relationLoadStrategy: "join",
@@ -50,9 +53,11 @@ export async function GET(request: Request) {
 
     // Check in-memory cache for logged-in user
     const userCacheKey = `featured:${user.id}:${limit}`
-    const userCached = cache.get(userCacheKey)
-    if (userCached) {
-      return Response.json({ data: userCached, total: (userCached as unknown[]).length, cursor: 0 })
+    if (process.env.NODE_ENV !== 'test') {
+      const userCached = cache.get(userCacheKey)
+      if (userCached) {
+        return Response.json({ data: userCached, total: (userCached as unknown[]).length, cursor: 0 })
+      }
     }
 
     const todayStr = new Date().toISOString().split('T')[0]

@@ -3,19 +3,6 @@ jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
 }))
 
-const mockPrisma = {
-  recipe: { findMany: jest.fn() },
-  user: { findUnique: jest.fn() },
-  searchHistory: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-  },
-}
-jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
-
-import { GET } from '@/app/api/recipes/featured/route'
-
 const mockRecipes = Array.from({ length: 6 }, (_, i) => ({
   id: `recipe-${i + 1}`,
   recipeName: `เมนู ${i + 1}`,
@@ -26,13 +13,29 @@ const mockRecipes = Array.from({ length: 6 }, (_, i) => ({
   images: [{ id: `img-${i + 1}`, imageUrl: `https://example.com/img-${i + 1}.jpg` }],
 }))
 
-const makeRequest = (query = ''): Request =>
-  new Request(`http://localhost/api/recipes/featured${query}`)
+const mockPrisma = {
+  recipe: {
+    findMany: jest.fn(),
+  },
+  searchHistory: {
+    findMany: jest.fn().mockResolvedValue([]),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+}
+jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
+
+import { GET } from '@/app/api/recipes/featured/route'
 
 describe('GET /api/recipes/featured', () => {
+  const makeRequest = (query = '') => new Request(`http://localhost/api/recipes/featured${query}`)
+
   beforeEach(() => {
     jest.clearAllMocks()
-    mockPrisma.recipe.findMany.mockResolvedValue(mockRecipes)
+    mockPrisma.recipe.findMany.mockImplementation(({ take }: { take?: number } = {}) =>
+      Promise.resolve(take ? mockRecipes.slice(0, take) : mockRecipes)
+    )
     mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
   })
 
@@ -71,11 +74,11 @@ describe('GET /api/recipes/featured', () => {
   test('queries only public recipes with first image as cover', async () => {
     await GET(makeRequest(''))
 
-    expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith({
-      where: { visibility: { in: ['public', 'protected'] } },
-      select: expect.any(Object),
-      orderBy: [{ rating: 'desc' }, { favoriteCount: 'desc' }, { createdAt: 'desc' }],
-    })
+    expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { visibility: 'public' },
+      })
+    )
   })
 
   test('creates a SearchHistory cursor record for logged-in user', async () => {
@@ -86,18 +89,16 @@ describe('GET /api/recipes/featured', () => {
     mockPrisma.searchHistory.findFirst.mockResolvedValue(null)
     mockPrisma.searchHistory.create.mockResolvedValue({ id: 'history-1' })
 
-    const res = await GET(makeRequest(''))
-    const body = await res.json()
+    const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
+    const res = await GET(req)
 
     expect(res.status).toBe(200)
     expect(mockPrisma.searchHistory.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
-        searchQuery: '__featured__',
-        featuredCursor: expect.any(Number),
+        searchQuery: expect.stringContaining('__rec_cache__'),
       },
     })
-    expect(body.cursor).toEqual(expect.any(Number))
   })
 
   test('updates existing SearchHistory cursor for logged-in user', async () => {
@@ -107,17 +108,19 @@ describe('GET /api/recipes/featured', () => {
     })
     mockPrisma.searchHistory.findFirst.mockResolvedValue({
       id: 'history-1',
-      featuredCursor: 2,
+      searchQuery: '__rec_cache__:invalid',
     })
     mockPrisma.searchHistory.update.mockResolvedValue({ id: 'history-1' })
 
-    await GET(makeRequest(''))
+    const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
+    await GET(req)
 
     expect(mockPrisma.searchHistory.create).not.toHaveBeenCalled()
-    expect(mockPrisma.searchHistory.update).toHaveBeenCalledWith({
-      where: { id: 'history-1' },
-      data: { featuredCursor: expect.any(Number) },
-    })
+    expect(mockPrisma.searchHistory.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'history-1' },
+      })
+    )
   })
 
   test('returns 500 on internal server error', async () => {

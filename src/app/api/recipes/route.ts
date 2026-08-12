@@ -3,6 +3,7 @@ import { recipeListItemSelect } from "@/lib/recipes"
 import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
 import { Prisma } from "@prisma/client"
 import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
 
     const { page, limit, mine, publicOnly } = parsed.data
 
-    const userId = request.headers.get("x-user-id")
+    const userId = await getAuthUserId(request)
     const userRole = request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
 
@@ -150,9 +151,11 @@ export async function GET(request: Request) {
     const where: Prisma.RecipeWhereInput = visibilityFilter;
 
     const cacheKey = `recipes:list:${page}:${limit}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      return Response.json(cached)
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json(cached)
+      }
     }
 
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
@@ -254,7 +257,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
 
   if (!userId) {
     return Response.json(

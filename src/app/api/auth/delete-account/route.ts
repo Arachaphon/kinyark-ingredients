@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { deleteAccountSchema } from '@/lib/validations/auth.schema'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { getAuthUserId } from '@/lib/auth-user'
 
 export async function DELETE(request: Request) {
   try {
-    const userId = request.headers.get('x-user-id')
+    const userId = await getAuthUserId(request)
 
     if (!userId) {
       return NextResponse.json(

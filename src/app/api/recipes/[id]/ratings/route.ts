@@ -19,9 +19,11 @@ export async function GET(
     const recipeId = parsed.data.id
 
     const cacheKey = `ratings:${recipeId}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      return Response.json({ data: cached })
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json({ data: cached })
+      }
     }
 
     const recipe = await prisma.recipe.findUnique({

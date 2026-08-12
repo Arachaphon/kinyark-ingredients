@@ -7,17 +7,18 @@ import { createClient } from '@/lib/supabase/server';
 const TTL_PROFILE = 30_000 // 30 seconds cache for user profile
 
 export async function getProfile(select: Prisma.UserSelect) {
-  const headerStore = await headers();
-  let userId = headerStore.get('x-user-id');
+  let userId: string | null = null
+  try {
+    const headerStore = await headers();
+    userId = headerStore.get('x-user-id');
+  } catch {
+    userId = null
+  }
 
   if (!userId) {
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id ?? null;
-    } catch {
-      userId = null;
-    }
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
   }
 
   if (!userId) {
@@ -25,9 +26,11 @@ export async function getProfile(select: Prisma.UserSelect) {
   }
 
   const cacheKey = `user:profile:${userId}`
-  const cachedUser = cache.get(cacheKey)
-  if (cachedUser) {
-    return { user: cachedUser, error: null as null, status: 200 as const }
+  if (process.env.NODE_ENV !== 'test') {
+    const cachedUser = cache.get(cacheKey)
+    if (cachedUser) {
+      return { user: cachedUser, error: null as null, status: 200 as const }
+    }
   }
 
   const profile = await prisma.user.findUnique({

@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
+import { cache, TTL_RECIPE } from "@/lib/cache"
 import { createClient } from "@/lib/supabase/server"
 import { deleteFileByUrl } from "@/lib/storage"
-import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
-import { Prisma } from "@prisma/client"
-import { cache, TTL_RECIPE } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
 
 class HttpError extends Error {
   status: number
@@ -30,23 +31,25 @@ export async function GET(
 
     const recipeId = parsed.data.id
 
-    const userId = _request.headers.get("x-user-id")
+    const userId = await getAuthUserId(_request)
     const userRole = _request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
 
     // Cache key = recipe body only (shared for all users)
     // isFavorite is user-specific so it is always fetched fresh
     const cacheKey = `recipe:${recipeId}`
-    const cached = cache.get<object>(cacheKey)
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get<object>(cacheKey)
 
-    if (cached) {
-      // isFavorite still needs a fresh DB lookup per user
-      const isFavorite = user
-        ? !!(await prisma.favorite.findUnique({
-            where: { userId_recipeId: { userId: user.id, recipeId } },
-          }))
-        : false
-      return Response.json({ data: { ...cached, isFavorite } }, { status: 200 })
+      if (cached) {
+        // isFavorite still needs a fresh DB lookup per user
+        const isFavorite = user
+          ? !!(await prisma.favorite.findUnique({
+              where: { userId_recipeId: { userId: user.id, recipeId } },
+            }))
+          : false
+        return Response.json({ data: { ...cached, isFavorite } }, { status: 200 })
+      }
     }
 
     const [recipe, recipeIngredients, equipmentItems, images, videos, reviews, storePosts] =
@@ -162,7 +165,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
 
   if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
@@ -244,7 +247,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = request.headers.get("x-user-id")
+    const userId = await getAuthUserId(request)
     if (!userId) {
       return Response.json({ error: "Unauthorized" }, { status: 401 })
     }

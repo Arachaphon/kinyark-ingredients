@@ -80,9 +80,11 @@ export async function GET(request: Request) {
     const { id, categoryId, category, search } = parsed.data
 
     const cacheKey = `ingredient:${id ?? ''}:${categoryId ?? ''}:${category ?? ''}:${search ?? ''}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      return Response.json({ data: cached })
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json({ data: cached })
+      }
     }
 
     const where: Prisma.IngredientWhereInput = {
