@@ -26,12 +26,9 @@ export async function GET(request: Request) {
 
     const { page, limit, mine, publicOnly } = parsed.data
 
-    console.log(`\n=== API PROFILING START: GET /api/recipes?page=${page}&limit=${limit} ===`)
-    console.time("1. Auth & Role Check")
     const userId = request.headers.get("x-user-id")
     const userRole = request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
-    console.timeEnd("1. Auth & Role Check")
 
     if (mine) {
       if (!user) {
@@ -51,7 +48,6 @@ export async function GET(request: Request) {
         ],
       }
 
-      console.time("2. Recipes & StorePosts Parallel Query (Mine)")
       const [
         [total, recipes],
         orphanedStorePosts
@@ -79,7 +75,6 @@ export async function GET(request: Request) {
           orderBy: { createdAt: "desc" },
         })
       ])
-      console.timeEnd("2. Recipes & StorePosts Parallel Query (Mine)")
 
       const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
         id: `orphan-${sp.id}`,
@@ -181,7 +176,6 @@ export async function GET(request: Request) {
       storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
     }
 
-    console.time("2. Recipes & StorePosts Parallel Query")
     const [
       [total, recipes],
       [orphanedStorePosts, totalOrphanedStorePosts]
@@ -213,9 +207,6 @@ export async function GET(request: Request) {
         }),
       ])
     ])
-    console.timeEnd("2. Recipes & StorePosts Parallel Query")
-
-    console.time("3. Mapping Data")
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
       id: `orphan-${sp.id}`,
@@ -249,9 +240,6 @@ export async function GET(request: Request) {
     const combinedData = [...recipes, ...dummyRecipesForOrphans]
     const totalWithOrphans = total + totalOrphanedStorePosts
     const totalPages = Math.max(1, Math.ceil(totalWithOrphans / limit))
-
-    console.timeEnd("3. Mapping Data")
-    console.log("=== API PROFILING END ===\n")
 
     const listResponse = {
       data: combinedData,
