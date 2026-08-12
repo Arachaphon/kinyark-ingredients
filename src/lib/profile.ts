@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { headers } from 'next/headers';
+import { cache } from '@/lib/cache';
+
+const TTL_PROFILE = 30_000 // 30 seconds cache for user profile
 
 export async function getProfile(select: Prisma.UserSelect) {
   const headerStore = await headers();
@@ -8,6 +11,12 @@ export async function getProfile(select: Prisma.UserSelect) {
 
   if (!userId) {
     return { user: null, error: 'Unauthorized' as const, status: 401 as const };
+  }
+
+  const cacheKey = `user:profile:${userId}`
+  const cachedUser = cache.get(cacheKey)
+  if (cachedUser) {
+    return { user: cachedUser, error: null as null, status: 200 as const }
   }
 
   const profile = await prisma.user.findUnique({
@@ -19,6 +28,7 @@ export async function getProfile(select: Prisma.UserSelect) {
     return { user: null, error: 'Not found' as const, status: 404 as const };
   }
 
+  cache.set(cacheKey, profile, TTL_PROFILE)
   return { user: profile, error: null as null, status: 200 as const };
 }
 
@@ -38,6 +48,7 @@ export async function updateProfile(
       data,
       select,
     })
+    cache.del(`user:profile:${userId}`)
     return { user, error: null as null, status: 200 as const }
   } catch (e) {
     console.error('Error updating profile:', e)

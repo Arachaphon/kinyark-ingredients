@@ -16,7 +16,7 @@ const anuphan = Anuphan({
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80";
 const FALLBACK_AVATAR =
-  "https://images.unsplash.com/photo-1531123897727-8f129e120a4?auto=format&fit=crop&w=150&q=80";
+  "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<
