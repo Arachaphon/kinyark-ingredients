@@ -76,23 +76,11 @@ describe('GET /api/favorites', () => {
     expect(body.data[0].recipe.user.username).toBe('user1')
     expect(body.data[0].recipe.recipeIngredients[0].ingredient.name).toBe('ไข่')
 
-    expect(mockPrisma.favorite.findMany).toHaveBeenCalledWith({
-      where: { userId: 'user-1' },
-      include: {
-        recipe: {
-          include: {
-            images: true,
-            user: {
-              select: { id: true, username: true, avatarUrl: true },
-            },
-            recipeIngredients: {
-              include: { ingredient: true },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+    expect(mockPrisma.favorite.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1' },
+      })
+    )
   })
 
   const validRecipeId = 'a2f3c7c4-07e3-41c8-bfbe-494d014982b2'

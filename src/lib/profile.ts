@@ -2,12 +2,23 @@ import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { headers } from 'next/headers';
 import { cache } from '@/lib/cache';
+import { createClient } from '@/lib/supabase/server';
 
 const TTL_PROFILE = 30_000 // 30 seconds cache for user profile
 
 export async function getProfile(select: Prisma.UserSelect) {
   const headerStore = await headers();
-  const userId = headerStore.get('x-user-id');
+  let userId = headerStore.get('x-user-id');
+
+  if (!userId) {
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      userId = null;
+    }
+  }
 
   if (!userId) {
     return { user: null, error: 'Unauthorized' as const, status: 401 as const };

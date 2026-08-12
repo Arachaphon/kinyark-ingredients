@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma"
 import { createReviewSchema } from "@/lib/validations/review.schema"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export async function POST(request: Request) {
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: unknown

@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma"
 import { updateReviewSchema } from "@/lib/validations/review.schema"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })
@@ -68,7 +69,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })

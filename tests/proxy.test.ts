@@ -1,9 +1,14 @@
 import { proxy } from '../src/proxy';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { verifySupabaseJWT } from '../src/lib/auth-jwt';
 
 jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(),
+}));
+
+jest.mock('../src/lib/auth-jwt', () => ({
+  verifySupabaseJWT: jest.fn(),
 }));
 
 jest.mock('next/server', () => {
@@ -12,35 +17,24 @@ jest.mock('next/server', () => {
     ...actualNextServer,
     NextResponse: {
       ...actualNextServer.NextResponse,
-      next: jest.fn(() => ({
-        cookies: {
-          set: jest.fn(),
-        },
-      })),
-      redirect: jest.fn((url) => {
-        return {
-          status: 307,
-          headers: new Map(),
-          url: url.toString()
-        };
-      }),
+      next: jest.fn((options) => options || {}),
     },
   };
 });
 
-describe('Middleware Route Protection', () => {
-  let mockGetUser: jest.Mock;
+describe('Proxy Middleware Header Injection', () => {
+  let mockGetSession: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    mockGetUser = jest.fn();
+    mockGetSession = jest.fn();
     (createServerClient as jest.Mock).mockReturnValue({
       auth: {
-        getUser: mockGetUser,
+        getSession: mockGetSession,
       },
     });
-    
+
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
   });
@@ -50,77 +44,56 @@ describe('Middleware Route Protection', () => {
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   });
 
-  it('redirects unauthenticated user from protected route (/home) to /login', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+  it('strips client-side spoofed x-user-id header when unauthenticated', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
 
-    const request = new NextRequest('http://localhost:3000/home');
-    await proxy(request);
-
-    expect(NextResponse.redirect).toHaveBeenCalled();
-    const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
-    expect(redirectUrl.pathname).toBe('/login');
-  });
-
-  it('redirects unauthenticated user from protected route (/create-recipe) to /login', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-
-    const request = new NextRequest('http://localhost:3000/create-recipe');
-    await proxy(request);
-
-    expect(NextResponse.redirect).toHaveBeenCalled();
-    const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
-    expect(redirectUrl.pathname).toBe('/login');
-  });
-
-  it('allows authenticated user on protected route (/home)', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
-
-    const request = new NextRequest('http://localhost:3000/home');
+    const request = new NextRequest('http://localhost:3000/api/recipes', {
+      headers: { 'x-user-id': 'spoofed-user-id' },
+    });
     await proxy(request);
 
     expect(NextResponse.next).toHaveBeenCalled();
-    expect(NextResponse.redirect).not.toHaveBeenCalled();
+    const callArgs = (NextResponse.next as jest.Mock).mock.calls[0][0];
+    const headers: Headers = callArgs.request.headers;
+    expect(headers.get('x-user-id')).toBeNull();
   });
 
-  it('redirects authenticated user away from /login to /home', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
+  it('injects verified x-user-id and x-user-role when session access_token is valid', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'valid-token' } },
+    });
+    (verifySupabaseJWT as jest.Mock).mockResolvedValue({
+      userId: 'user-123',
+      role: 'user',
+      error: null,
+    });
 
-    const request = new NextRequest('http://localhost:3000/login');
+    const request = new NextRequest('http://localhost:3000/api/recipes');
     await proxy(request);
 
-    expect(NextResponse.redirect).toHaveBeenCalled();
-    const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
-    expect(redirectUrl.pathname).toBe('/home');
-  });
-
-  it('allows unauthenticated user on /login', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-
-    const request = new NextRequest('http://localhost:3000/login');
-    await proxy(request);
-
+    expect(verifySupabaseJWT).toHaveBeenCalledWith('valid-token');
     expect(NextResponse.next).toHaveBeenCalled();
-    expect(NextResponse.redirect).not.toHaveBeenCalled();
+    const callArgs = (NextResponse.next as jest.Mock).mock.calls[0][0];
+    const headers: Headers = callArgs.request.headers;
+    expect(headers.get('x-user-id')).toBe('user-123');
+    expect(headers.get('x-user-role')).toBe('user');
   });
-  
-  it('allows unauthenticated user on root (/)', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
 
-    const request = new NextRequest('http://localhost:3000/');
+  it('does not set x-user-id if verifySupabaseJWT returns no userId', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { access_token: 'invalid-token' } },
+    });
+    (verifySupabaseJWT as jest.Mock).mockResolvedValue({
+      userId: null,
+      role: null,
+      error: 'Invalid or expired token',
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/recipes');
     await proxy(request);
 
-    expect(NextResponse.next).toHaveBeenCalled();
-    expect(NextResponse.redirect).not.toHaveBeenCalled();
-  });
-  
-  it('redirects root (/) to /home if authenticated', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: '123' } } });
-
-    const request = new NextRequest('http://localhost:3000/');
-    await proxy(request);
-
-    expect(NextResponse.redirect).toHaveBeenCalled();
-    const redirectUrl = (NextResponse.redirect as jest.Mock).mock.calls[0][0];
-    expect(redirectUrl.pathname).toBe('/home');
+    const callArgs = (NextResponse.next as jest.Mock).mock.calls[0][0];
+    const headers: Headers = callArgs.request.headers;
+    expect(headers.get('x-user-id')).toBeNull();
   });
 });

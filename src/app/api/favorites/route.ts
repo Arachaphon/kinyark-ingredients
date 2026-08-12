@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { cache } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
 
 const favoriteSchema = z.object({
   recipeId: z.string({
@@ -9,7 +10,7 @@ const favoriteSchema = z.object({
 })
 
 export async function POST(request: Request) {
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   let body: unknown
@@ -95,7 +96,7 @@ export async function GET(request?: Request) {
       }
 
       if (validatedAction === "status") {
-        const userId = request?.headers.get("x-user-id")
+        const userId = await getAuthUserId(request)
         if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
         const existing = await prisma.favorite.findUnique({
@@ -112,7 +113,7 @@ export async function GET(request?: Request) {
       }
     }
 
-    const userId = request?.headers.get("x-user-id")
+    const userId = await getAuthUserId(request)
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     const cacheKey = `favorites:${userId}`

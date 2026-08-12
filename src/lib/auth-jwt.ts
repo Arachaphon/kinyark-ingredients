@@ -1,21 +1,24 @@
 import { jwtVerify, createRemoteJWKSet } from 'jose'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-if (!supabaseUrl) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is not defined in environment variables.')
-}
+const getSupabaseUrl = () => process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost'
 
-// โหลดและแคช Public Keys จากระบบ JWKS ของ Supabase สำหรับตรวจสอบลายเซ็น ES256 (0ms Latency หลังโหลดครั้งแรก)
-const JWKS = createRemoteJWKSet(
-  new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`)
-)
+let jwksInstance: ReturnType<typeof createRemoteJWKSet> | null = null
+function getJWKS() {
+  if (!jwksInstance) {
+    jwksInstance = createRemoteJWKSet(
+      new URL(`${getSupabaseUrl()}/auth/v1/.well-known/jwks.json`)
+    )
+  }
+  return jwksInstance
+}
 
 /**
  * ฟังก์ชันถอดรหัสและยืนยันความถูกต้องของ Supabase JWT จากหลังบ้านแบบ 100% Local (0ms Network latency)
  */
 export async function verifySupabaseJWT(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWKS, {
+    const supabaseUrl = getSupabaseUrl()
+    const { payload } = await jwtVerify(token, getJWKS(), {
       issuer: `${supabaseUrl}/auth/v1`,
     })
     

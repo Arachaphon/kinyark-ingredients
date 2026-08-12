@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 
 import { createClient } from "@/lib/supabase/server"
 import { deleteAvatar } from "@/lib/storage"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export async function GET() {
   try {
@@ -22,7 +23,7 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const userId = request.headers.get("x-user-id")
+    const userId = await getAuthUserId(request)
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
     const dbUser = await prisma.user.findUnique({
@@ -156,7 +157,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const userId = request.headers.get("x-user-id")
+  const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const user = { id: userId }
