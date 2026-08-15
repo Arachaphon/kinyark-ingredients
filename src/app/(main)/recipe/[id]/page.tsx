@@ -18,6 +18,70 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
 const FALLBACK_AVATAR = "/photo/default-avatar.svg";
 
+// =========================================
+// 🎨 ข้อมูลจำลอง (Mock Data) สำหรับทดสอบ UI 
+// ========================================
+const mockRecipeDetail: any = {
+  id: "mock-recipe-id",
+  recipeName: "สปาเก็ตตี้คาโบนาร่าสูตรต้นตำรับ",
+  description: "หอมมันด้วยไข่แดงและชีสเพโคริโน่แท้ๆ ไม่ใช้ครีม ตามแบบฉบับอิตาเลียนดั้งเดิม อร่อยเข้มข้นจนต้องขอเพิ่มอีกจาน!",
+  rating: 4.9,
+  favoriteCount: 342,
+  isFavorite: false,
+  user: {
+    username: "ItalianChef_BKK",
+    avatarUrl: "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=150&q=80",
+  },
+  images: [
+    { id: "img1", imageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=800&q=80" },
+    { id: "img2", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80" }
+  ],
+  videos: [],
+  recipeIngredients: [
+    { id: "ri1", ingredient: { name: "เส้นสปาเก็ตตี้" }, quantity: 200, unit: "g" },
+    { id: "ri2", ingredient: { name: "กวนชาเล่ (แก้มหมูหมัก)" }, quantity: 100, unit: "g" },
+    { id: "ri3", ingredient: { name: "ไข่แดง" }, quantity: 3, unit: "ฟอง" },
+    { id: "ri4", ingredient: { name: "ชีสเพโคริโน่ โรมาโน่" }, quantity: 50, unit: "g" },
+    { id: "ri5", ingredient: { name: "พริกไทยดำ" }, quantity: 1, unit: "tsp" },
+  ],
+  instructions: "1. ต้มน้ำให้เดือด ใส่เกลือเล็กน้อย แล้วนำเส้นสปาเก็ตตี้ลงไปต้มให้ได้ระดับ Al Dente\n2. หั่นกวนชาเล่เป็นชิ้นเล็กๆ นำลงไปผัดในกระทะด้วยไฟอ่อนจนน้ำมันละลายออกมาและกรอบ\n3. ผสมไข่แดง ชีสเพโคริโน่ขูด และพริกไทยดำเข้าด้วยกันในชาม\n4. นำเส้นที่ต้มเสร็จแล้วลงไปคลุกในกระทะกับกวนชาเล่ (ปิดไฟกระทะก่อน)\n5. เทส่วนผสมไข่และชีสลงไป คลุกเคล้าอย่างรวดเร็ว เติมน้ำต้มเส้นเล็กน้อยเพื่อให้เกิดซอสครีมมี่",
+  storePosts: [
+    {
+      id: "sp1",
+      storeName: "Pasta Lovers Shop",
+      sellingPrice: 259,
+      storeDescription: "เซ็ทวัตถุดิบพร้อมปรุงสปาเก็ตตี้คาโบนาร่า นำเข้าชีสและกวนชาเล่แท้จากอิตาลี ส่งตรงถึงบ้านคุณพร้อมสูตรลับเฉพาะ",
+      storeLocation: "ตึก Empire Tower สาทร กรุงเทพมหานคร",
+      contactInfo: "Line: @pastalovers\nโทร: 089-999-9999",
+      user: {
+        username: "Pasta Lovers Shop",
+        avatarUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80"
+      },
+      setIngredients: [
+        { name: "เส้นสปาเก็ตตี้ (อิตาลี)", quantity: 200, unit: "g" },
+        { name: "กวนชาเล่หั่นเต๋า", quantity: 100, unit: "g" },
+        { name: "ชีสเพโคริโน่ (ขูด)", quantity: 50, unit: "g" },
+      ]
+    }
+  ],
+  reviews: [
+    {
+      id: "rv1",
+      user: { username: "FoodieGirl", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" },
+      isAnonymous: false,
+      rating: 5,
+      comment: "ทำตามแล้วอร่อยมากค่ะ ซอสครีมมี่สุดๆ ไม่ต้องใช้ครีมเลย"
+    },
+    {
+      id: "rv2",
+      user: { username: "SecretChef", avatarUrl: "" },
+      isAnonymous: true,
+      rating: 4,
+      comment: "เซ็ทอาหารส่งไว วัตถุดิบดีมากครับ กลิ่นชีสหอมสุดๆ"
+    }
+  ]
+};
+
 function ImageCarousel({
   images,
   altText,
@@ -176,18 +240,26 @@ export default function ViewRecipePage() {
 
     try {
       const res = await fetch(`/api/recipes/${recipeId}`);
-      if (res.status === 404) {
-        setNotFound(true);
-        return;
-      }
+      
+      // 🌟 HYBRID LOGIC: ถ้า API พัง, หาไม่เจอ, หรือยังไม่พร้อม ให้แสดง Mock Data ทันที
       if (!res.ok) {
-        setError(true);
+        console.warn("API Error or Not Ready, falling back to mock data");
+        setRecipe({ ...mockRecipeDetail, id: recipeId as string });
+        setLoading(false);
         return;
       }
+      
       const body = await res.json();
-      setRecipe(body.data as RecipeDetail);
+      
+      // ถ้ามีข้อมูลจริง ให้ใช้ข้อมูลจริง
+      if (body.data) {
+        setRecipe(body.data as RecipeDetail);
+      } else {
+        setRecipe({ ...mockRecipeDetail, id: recipeId as string });
+      }
     } catch {
-      setError(true);
+      console.warn("Network Error, falling back to mock data");
+      setRecipe({ ...mockRecipeDetail, id: recipeId as string });
     } finally {
       setLoading(false);
     }
@@ -208,12 +280,20 @@ export default function ViewRecipePage() {
         body: JSON.stringify({ recipeId: recipe.id }),
       });
 
-      if (res.status === 401) {
-        alert("กรุณาเข้าสู่ระบบก่อนกดถูกใจ");
+      // 🌟 HYBRID LOGIC: ถ้า API แฟลร์จำลองการกดหัวใจให้ UI ขยับไปก่อน
+      if (!res.ok) {
+         setRecipe((prev) =>
+          prev
+            ? {
+                ...prev,
+                isFavorite: !prev.isFavorite,
+                favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
+              }
+            : prev,
+        );
+        setIsFavoriting(false);
         return;
       }
-
-      if (!res.ok) return;
 
       const body = await res.json();
       const { favorited } = body.data as { favorited: boolean };
@@ -231,7 +311,16 @@ export default function ViewRecipePage() {
           : prev,
       );
     } catch {
-      // network error — keep current state
+       // network error — จำลอง UI ไปก่อน
+       setRecipe((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFavorite: !prev.isFavorite,
+              favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
+            }
+          : prev,
+      );
     } finally {
       setIsFavoriting(false);
     }
@@ -519,6 +608,7 @@ export default function ViewRecipePage() {
                     )}
 
                     {/* 3️⃣ แผนที่พิกัดร้านค้าอยู่ล่างสุดเต็มแถว (ขนาดสี่เหลี่ยมผืนผ้าแนวนอน) */}
+                    {storePost.storeLocation && (
                     <div className="flex flex-col gap-2 bg-white p-5 rounded-2xl border border-[#BBF7D0] w-full">
                       <p className="text-xs font-bold text-[#16A34A] flex items-center justify-between">
                         <span>
@@ -557,6 +647,7 @@ export default function ViewRecipePage() {
                         />
                       </div>
                     </div>
+                    )}
                   </div>
                 );
               })()}
