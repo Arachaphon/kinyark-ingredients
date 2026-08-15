@@ -82,8 +82,6 @@ model Recipe {
 
   storePosts         StorePost[]
 
-  storePosts         StorePost[]
-
   @@index([userId])
   @@index([visibility])
   @@index([createdAt])
