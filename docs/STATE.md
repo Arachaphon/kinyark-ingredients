@@ -16,12 +16,12 @@ _Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 K
 | Iteration | Period | Tasks | STATUS |
 |---|---|---|---|
 | Iteration 0 | Week 1–2 (Jul 14–24) | W1-1 → W1-8, W2-1 → W2-10 | 13 Complete/Done, 1 InProgress, 5 ToDO |
-| Iteration 01 | Week 1–2 (Aug 3–13) | W1-1 → W1-10, W2-1 → W2-6 | W1-1/W1-2 Done, W1-3/W1-6 Complete, W1-5 Testing, W1-10 Done; ที่เหลือ ToDO |
+| Iteration 01 | Week 2 (Jul 20–24) | W1-1 → W1-10 (Iteration 01 columns) | All ToDO (not yet started) |
 | Iteration 02 | Week 3 (Jul 27–31) | W3-1 → W3-10 | 2 Done (W3-2 Upload Profile Image, W3-5 Delete Account), 8 ToDO |
 | Iteration 03 | Week 4 (—) | W4-1 → W4-10 | All ToDO (unassigned, no features defined) |
 
 **Completed in Iteration 0:** UI Review, User Registration, Login/Logout, Profile (GET), Password Change, Integration stubs
-**Current Focus:** Iteration 01 Recipe CRUD: W1-1 Create & W1-2 Get ✅ Done, W1-5 Update 🔶 Testing (PR #34 CONFLICTING), W1-10 Connect Create API ✅ Done; backend เหลือ W1-7 Delete, W1-9 Ingredients, W2-1 Validate, W2-4 Upload Recipe Image
+**Current Focus:** W2-5 Update Profile (Done), W3-2 Upload Profile Image (Done), W3-1/W3-3/W3-4/W3-6 (ToDO)
 
 ## 4. Phase Status Summary
 
@@ -29,7 +29,7 @@ _Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 K
 |---|---|
 | Phase 1: DB & Security | DONE (RLS unverifiable from code) |
 | Phase 2: Auth & Proxy | IN_PROGRESS (W2-1 Logout User ✅ Done, W2-3 Get Profile ✅ Done; W2-5 Update Profile 🔶 InProgress; W2-8 Change Password ✅ Done; register bug) |
-| Phase 3: Recipe CRUD & Storage | IN_PROGRESS (W1-1 Create ✅, W1-2 Get ✅, W1-5 Update 🔶 Testing — PR #34 CONFLICTING; W1-7 Delete, W1-9 Ingredients, W2-1 Validate, W2-4 Upload Image ❌ ToDO) |
+| Phase 3: Recipe CRUD & Storage | IN_PROGRESS (W3-2 Upload Profile Image ✅ Done, W3-5 Delete Account ✅ Done; W3-1, W3-3, W3-4, W3-6 ❌ ToDO) |
 | Phase 4: AI Matching Engine | NOT_STARTED (W2-2, W2-6, W2-7, W2-9 ❌ ToDO) |
 | Phase 5: Testing & Deployment | IN_PROGRESS (W3-5 ✅ Done; W4 cross-iteration tasks partial) |
 

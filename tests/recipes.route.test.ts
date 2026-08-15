@@ -10,6 +10,7 @@ const mockPrisma = {
   },
   storePost: {
     findMany: jest.fn(),
+    count: jest.fn(),
   },
   user: {
     findUnique: jest.fn(),
@@ -39,6 +40,7 @@ describe('GET /api/recipes', () => {
     mockPrisma.recipe.findMany.mockResolvedValue(mockRecipes)
     mockPrisma.recipe.count.mockResolvedValue(3)
     mockPrisma.storePost.findMany.mockResolvedValue([])
+    mockPrisma.storePost.count.mockResolvedValue(0)
     mockPrisma.user.findUnique.mockResolvedValue({ role: 'USER' })
     mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
   })

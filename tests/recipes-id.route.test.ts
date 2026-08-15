@@ -12,12 +12,12 @@ const mockPrisma = {
   favorite: { findUnique: jest.fn(), deleteMany: jest.fn() },
   $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
   reviewLike: { deleteMany: jest.fn() },
-  review: { deleteMany: jest.fn() },
-  recipeIngredient: { deleteMany: jest.fn() },
-  recipeEquipment: { deleteMany: jest.fn() },
-  recipeImage: { deleteMany: jest.fn() },
-  recipeVideo: { deleteMany: jest.fn() },
-  storePost: { deleteMany: jest.fn() },
+  review: { findMany: jest.fn(), deleteMany: jest.fn() },
+  recipeIngredient: { findMany: jest.fn(), deleteMany: jest.fn() },
+  recipeEquipment: { findMany: jest.fn(), deleteMany: jest.fn() },
+  recipeImage: { findMany: jest.fn(), deleteMany: jest.fn() },
+  recipeVideo: { findMany: jest.fn(), deleteMany: jest.fn() },
+  storePost: { findMany: jest.fn(), deleteMany: jest.fn() },
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
@@ -43,10 +43,10 @@ const mockRecipe = {
   recipeIngredients: [
     { id: 'ri-1', quantity: 2, unit: 'ฟอง', ingredient: { id: 1, name: 'ไข่', categoryId: null } },
   ],
-  equipmentItems: [{ id: 'eq-1', name: 'กระทะ' }],
-  images: [{ id: 'img-1', imageUrl: 'https://example.com/img.jpg' }],
+  equipmentItems: [],
+  images: [{ id: 'img-1', imageUrl: 'https://example.com/img-1.jpg' }],
   videos: [],
-  reviews: [{ id: 'rv-1', userId: 'user-1', rating: 5, comment: 'ดีมาก', isAnonymous: false, user: { id: 'user-1', username: 'John', avatarUrl: null } }],
+  reviews: [],
   storePosts: [],
 }
 
@@ -56,6 +56,12 @@ describe('GET /api/recipes/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockPrisma.recipe.findUnique.mockResolvedValue(mockRecipe)
+    mockPrisma.recipeIngredient.findMany.mockResolvedValue(mockRecipe.recipeIngredients)
+    mockPrisma.recipeEquipment.findMany.mockResolvedValue(mockRecipe.equipmentItems)
+    mockPrisma.recipeImage.findMany.mockResolvedValue(mockRecipe.images)
+    mockPrisma.recipeVideo.findMany.mockResolvedValue(mockRecipe.videos)
+    mockPrisma.review.findMany.mockResolvedValue(mockRecipe.reviews)
+    mockPrisma.storePost.findMany.mockResolvedValue(mockRecipe.storePosts)
     mockPrisma.favorite.findUnique.mockResolvedValue(null)
     mockSupabaseAuth.getUser.mockResolvedValue({ data: { user: null }, error: null })
   })

@@ -13,15 +13,14 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient()
+  const userId = request.headers.get("x-user-id")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const user = { id: userId }
+  const supabase = await createClient()
 
   const { id: rawId } = await params
 

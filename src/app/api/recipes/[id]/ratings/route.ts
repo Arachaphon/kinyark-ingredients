@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { recipeIdParamSchema } from "@/lib/validations/recipe.schema"
+import { cache, TTL_RATINGS } from "@/lib/cache"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,14 @@ export async function GET(
     }
 
     const recipeId = parsed.data.id
+
+    const cacheKey = `ratings:${recipeId}`
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json({ data: cached })
+      }
+    }
 
     const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId },
@@ -46,14 +55,18 @@ export async function GET(
       }
     })
 
-    return Response.json({
-      data: {
-        recipeId,
-        averageRating: recipe.rating,
-        totalReviews: recipe.reviewCount,
-        breakdown,
-      },
-    })
+    const responseData = {
+      recipeId,
+      averageRating: recipe.rating,
+      totalReviews: recipe.reviewCount,
+      breakdown,
+    }
+
+    if (process.env.NODE_ENV !== 'test') {
+      cache.set(cacheKey, responseData, TTL_RATINGS)
+    }
+
+    return Response.json({ data: responseData })
   } catch (error) {
     console.error("GET /api/recipes/[id]/ratings error:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })

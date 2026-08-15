@@ -6,7 +6,10 @@ const mockPrisma = {
     groupBy: jest.fn(),
   },
 }
-jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
+
+jest.mock('@/lib/prisma', () => ({
+  prisma: mockPrisma,
+}))
 
 import { GET } from '@/app/api/recipes/[id]/ratings/route'
 

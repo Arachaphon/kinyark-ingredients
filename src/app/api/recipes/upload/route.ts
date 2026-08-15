@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId } from '@/lib/auth-user'
 import {
   validateImageFile,
   validateVideoFile,
@@ -11,11 +12,12 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const userId = await getAuthUserId(request)
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const user = { id: userId }
+    const supabase = await createClient()
 
     let formData: FormData
     try {

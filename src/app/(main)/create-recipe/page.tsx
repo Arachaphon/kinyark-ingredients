@@ -1674,6 +1674,59 @@ export default function CreateRecipePage() {
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg>
                             </div>
+
+                            {/* 🌟 ช่องกรอกชื่อวัตถุดิบพร้อมระบบ Autocomplete */}
+                            <div className="relative w-full sm:w-[190px]">
+                              <input 
+                                id={`ingredient-name-${ing.id}`}
+                                type="text" 
+                                placeholder="เช่น อกไก่, แครอท" 
+                                value={ing.name} 
+                                onChange={(e) => handleIngredientChange(ing.id, "name", e.target.value)}
+                                onFocus={() => setFocusedIngredientId(ing.id)}
+                                onBlur={() => {
+                                  setFocusedIngredientId(null);
+                                  handleIngredientNameBlur(ing.category, ing.name);
+                                }}
+                                autoComplete="off"
+                                className="w-full py-2 px-3 border border-[#71B254] rounded-md focus:outline-none focus:ring-1 focus:ring-[#71B254] text-gray-700 placeholder-gray-300 bg-white shadow-inner text-sm"
+                              />
+                              
+                              {/* Dropdown แสดงผลการค้นหาวัตถุดิบ */}
+                              {focusedIngredientId === ing.id && ing.category && ing.name.trim() !== "" && (
+                                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#71B254] rounded-md shadow-lg max-h-48 overflow-y-auto z-50 scrollbar-thin">
+                                  {suggestions.length > 0 ? (
+                                    suggestions.map((s, idx) => (
+                                      <div
+                                        key={idx}
+                                        onMouseDown={(e) => {
+                                          e.preventDefault(); // ป้องกันช่องกรอกเสีย Focus ก่อนคลิก
+                                          handleIngredientChange(ing.id, "name", s);
+                                          setFocusedIngredientId(null);
+                                          handleIngredientNameBlur(ing.category, s);
+                                        }}
+                                        className="px-3 py-2 text-sm text-gray-700 hover:bg-[#F4FAF1] hover:text-[#71B254] cursor-pointer transition-colors border-b border-gray-50 last:border-b-0"
+                                      >
+                                        {s}
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div className="px-3 py-3 text-sm text-gray-400 italic text-center">
+                                      ไม่พบในหมวดหมู่นี้
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {ingredients.length > 1 && (
+                              <button type="button" id={`remove-ingredient-btn-${ing.id}`} onClick={() => removeIngredient(ing.id)} className="text-red-400 hover:text-red-600 p-1 transition-colors shrink-0">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                              </button>
+                            )}
                           </div>
 
                           <div className="relative w-full sm:w-[190px]">
@@ -1940,7 +1993,6 @@ export default function CreateRecipePage() {
               />
             </div>
           </div>
-
 
           <div className="mb-10 relative z-20">
             <div className="flex items-center gap-3 mb-4">

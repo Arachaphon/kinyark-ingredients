@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const mockSupabaseAuth = { getUser: jest.fn() }
 jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => ({ auth: mockSupabaseAuth })),
 }))
 
-const mockPrisma = {
+const mockPrisma: any = {
   recipe: {
     findUnique: jest.fn(),
     update: jest.fn(),
@@ -13,7 +14,7 @@ const mockPrisma = {
     create: jest.fn(),
     aggregate: jest.fn(),
   },
-  $transaction: jest.fn((callback) => callback(mockPrisma)),
+  $transaction: jest.fn((callback: any) => callback(mockPrisma)),
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 

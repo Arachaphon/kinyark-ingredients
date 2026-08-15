@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -43,6 +44,7 @@ model Ingredient {
   category          Category?          @relation(fields: [categoryId], references: [id])
   recipeIngredients RecipeIngredient[]
 
+  @@index([categoryId])
   @@map("ingredients")
 }
 
@@ -80,6 +82,13 @@ model Recipe {
 
   storePosts         StorePost[]
 
+  storePosts         StorePost[]
+
+  @@index([userId])
+  @@index([visibility])
+  @@index([createdAt])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@index([favoriteCount(sort: Desc)])
   @@map("recipes")
 }
 
@@ -101,6 +110,9 @@ model StorePost {
   images           StorePostImage[]
   videos           StorePostVideo[]
 
+  @@index([userId])
+  @@index([recipeId])
+  @@index([createdAt])
   @@map("store_posts")
 }
 
@@ -135,6 +147,7 @@ model RecipeIngredient {
   ingredient Ingredient @relation(fields: [ingredientId], references: [id])
 
   @@unique([recipeId, ingredientId])
+  @@index([ingredientId])
   @@map("recipe_ingredients")
 }
 
@@ -144,6 +157,7 @@ model RecipeImage {
   imageUrl    String
   createdAt DateTime @default(now()) @db.Timestamptz
   recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@index([recipeId])
   @@map("recipe_images")
 }
 
@@ -153,6 +167,7 @@ model RecipeVideo {
   videoUrl    String
   createdAt DateTime @default(now()) @db.Timestamptz
   recipe      Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@index([recipeId])
   @@map("recipe_videos")
 }
 
@@ -172,9 +187,10 @@ model Favorite {
   createdAt DateTime @default(now()) @db.Timestamptz
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, recipeId])
+  @@index([userId, createdAt(sort: Desc)])
   @@map("favorites")
 }
 
@@ -187,6 +203,8 @@ model SearchHistory {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([createdAt])
   @@map("search_histories")
 }
 
@@ -203,6 +221,8 @@ model Review {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviewLikes ReviewLike[]
 
+  @@index([recipeId])
+  @@index([userId])
   @@map("reviews")
 }
 
