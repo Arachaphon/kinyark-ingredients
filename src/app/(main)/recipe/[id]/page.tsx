@@ -170,6 +170,7 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
+  // 🌟 ปรับเป็น Optimistic UI: เปลี่ยนสีหัวใจและตัวเลขทันทีไม่ต้องรอ API
   const toggleFavorite = async () => {
     if (!recipe || isFavoriting) return;
 
