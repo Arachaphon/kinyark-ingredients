@@ -128,21 +128,22 @@ const mockSearchResults: RecipeItem[] = [
 // 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
 // =========================================
 const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
-  const aiRecipes = dataList.filter((item) => item.isAi);
+  const aiRecipes = dataList.filter((item) => Boolean(item.isAi));
   const userRecipes = dataList.filter((item) => !item.isAi);
 
-  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  userRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  // Safe numeric comparison for ratings (including 0 rating)
+  aiRecipes.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  userRecipes.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
 
   return [
-    ...aiRecipes.slice(0, 2),
-    ...userRecipes.slice(0, 3)
+    ...aiRecipes,
+    ...userRecipes
   ];
 };
 
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
+  const queryTitle = searchParams.get("query") || searchParams.get("q") || searchParams.get("ingredients") || "";
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
@@ -161,6 +162,13 @@ function ResultsContent() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!queryTitle.trim()) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     const fetchResults = async () => {
@@ -173,7 +181,7 @@ function ResultsContent() {
 
         const data: ApiRecipeItem[] = await response.json();
 
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           const formattedData: RecipeItem[] = data.map((item) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
             const recipeTitle = item.recipeName || item.title || "";
@@ -200,27 +208,16 @@ function ResultsContent() {
             };
           });
 
-          const sortedAndSlicedData = formatAndSortResults(formattedData);
-
           if (isMounted) {
-            setResults(sortedAndSlicedData);
-            setupFavorites(sortedAndSlicedData);
+            setResults(formattedData);
+            setupFavorites(formattedData);
           }
-        } else {
-          throw new Error("Real data is empty, using fallback");
         }
-
       } catch (error) {
-        console.warn("Using mock data fallback:", error);
+        console.warn("API Search Error:", error);
         if (!isMounted) return;
 
-        if (queryTitle.toLowerCase().includes("ไม่มี") || queryTitle.toLowerCase().includes("empty")) {
-          setResults([]);
-        } else {
-          const sortedMockData = formatAndSortResults(mockSearchResults);
-          setResults(sortedMockData);
-          setupFavorites(sortedMockData);
-        }
+        setResults([]);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -228,10 +225,9 @@ function ResultsContent() {
       }
     };
 
-    const timer = setTimeout(fetchResults, 800);
+    fetchResults();
     return () => { 
       isMounted = false; 
-      clearTimeout(timer);
     };
   }, [queryTitle]);
 

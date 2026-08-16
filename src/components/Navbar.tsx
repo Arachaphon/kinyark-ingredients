@@ -21,27 +21,54 @@ export interface UserProfile {
   avatarUrl?: string | null;
 }
 
-// ข้อมูลจำลองสำหรับระบบค้นหา
-const searchData = [
-  "สลัดผักสวนครัว",
-  "สลัดผลไม้",
-  "ส้มตำไทยรสจัด",
-  "สลัดไก่",
-  "ต้มยำกุ้ง",
-  "ผัดไทย",
-];
-
 export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestLoading, setIsSuggestLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
-  const filteredResults = searchData.filter((item) =>
-    item.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch real recipe suggestions from the DB (debounced 300ms).
+  useEffect(() => {
+    const term = searchTerm.trim();
+    if (!term) {
+      setSuggestions([]);
+      setIsSuggestLoading(false);
+      return;
+    }
+
+    setIsSuggestLoading(true);
+    const controller = new AbortController();
+    const debounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("Search failed");
+        const data: { recipeName?: string }[] = await res.json();
+        const names = Array.from(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((item) => item.recipeName)
+              .filter((n): n is string => Boolean(n))
+          )
+        ).slice(0, 8);
+        if (!controller.signal.aborted) setSuggestions(names);
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") setSuggestions([]);
+      } finally {
+        if (!controller.signal.aborted) setIsSuggestLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(debounce);
+    };
+  }, [searchTerm]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -147,8 +174,12 @@ export default function Navbar() {
           {/* กล่องเด้งแนะแนวคำค้นหา (Dropdown Suggestions) */}
           {isDropdownOpen && searchTerm.length > 0 && (
             <div className="absolute top-[110%] left-0 w-full bg-white rounded-[24px] shadow-lg border border-gray-100 py-4 z-10 animate-fade-in overflow-hidden">
-              {filteredResults.length > 0 ? (
-                filteredResults.map((item, index) => (
+              {isSuggestLoading && suggestions.length === 0 ? (
+                <div className="px-8 py-3 text-gray-400 italic text-lg">
+                  กำลังค้นหา...
+                </div>
+              ) : suggestions.length > 0 ? (
+                suggestions.map((item, index) => (
                   <div
                     key={index}
                     className="px-8 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-4 text-gray-700 transition"
@@ -175,7 +206,7 @@ export default function Navbar() {
                 ))
               ) : (
                 <div className="px-8 py-3 text-gray-400 italic text-lg">
-                  ไม่พบสูตรอาหารสำหรับ &quot;{searchTerm}&quot;
+                  ไม่พบสูตรอาหารสำหรับ &quot;{searchTerm}&quot; ลองกดป้อนเพื่อค้นหาทั้งหมด
                 </div>
               )}
             </div>
