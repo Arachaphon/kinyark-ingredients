@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
@@ -26,7 +27,6 @@ function CheckEmailContent() {
     setResendMessage("");
 
     try {
-      // 🌟 ใช้ Supabase Client สั่งส่งอีเมลโดยตรงแทนการใช้ fetch API เพื่อแก้ปัญหา JSON Error
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/resetpassword`,
       });
