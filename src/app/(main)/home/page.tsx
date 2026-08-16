@@ -199,6 +199,7 @@ function MenuCarousel({
     fetchRecipes();
   }, [apiEndpoint, page, hasMore, isUsingMock]);
 
+  // ระบบ Pagination: ซ่อนอยู่ในการกดดูรูป ถ้ารูปใกล้หมดและไม่ได้ใช้ Mock อยู่ ให้เรียกหน้าต่อไปมารอ
   const handleNext = useCallback(() => {
     setCurrentIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
