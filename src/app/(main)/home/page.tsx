@@ -52,7 +52,6 @@ const mockDeepseekRecipes: RecipeData[] = [
 ];
 
 export default function HomePage() {
-  // 🌟 ลบตัวแปร error ออกแล้ว เพื่อแก้ Lint Warning (no-unused-vars)
   const { data: featuredData } = useSWR("/api/recipes/featured", fetcher);
   
   const isApiReady = featuredData?.data && featuredData.data.length > 0;
@@ -268,11 +267,19 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
+// 🎨 ตะกร้าเก็บสีทั้งหมดที่ระบบอนุญาต (บังคับให้ Tailwind รู้จักสีพวกนี้ทั้งหมด)
 const SAFE_BG_CLASSES = [
-  "bg-[#6F62E4]", "bg-[#FF8585]", "bg-[#3AC9B5]", "bg-[#63D04C]",
-  "bg-[#F58D38]", "bg-[#D05C5C]", "bg-[#E6C229]", "bg-[#4285F4]"
+  "bg-[#6F62E4]", // ม่วง
+  "bg-[#FF8585]", // ชมพู/แดงอ่อน
+  "bg-[#3AC9B5]", // มิ้นท์
+  "bg-[#63D04C]", // เขียวสด
+  "bg-[#F58D38]", // ส้ม
+  "bg-[#D05C5C]", // แดงเข้ม
+  "bg-[#E6C229]", // เหลือง
+  "bg-[#4285F4]"  // ฟ้า
 ];
 
+// 🌟 ปรับปรุง RecipeCard: บังคับความสูงเท่ากันเป๊ะ (Fixed Height = 340px)
 function RecipeCard({ 
   id, 
   bgColor, 
@@ -326,17 +333,24 @@ function RecipeCard({
 
   return (
     <div 
+      // ⚠️ เพิ่ม h-[340px] บังคับความสูงตายตัว และ justify-between เพื่อกระจายช่องว่างให้เท่ากัน
       className={`${cardBgClass} w-full max-w-[280px] sm:w-[280px] h-[340px] rounded-[36px] flex flex-col items-center justify-between relative pt-28 pb-8 shadow-lg transition hover:-translate-y-2 overflow-visible`}
     >
+      
+      {/* ส่วนรูปภาพ */}
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
       </div>
 
+      {/* ส่วนเนื้อหา ชื่อ + ดาวเรตติ้ง (จับรวมกลุ่มกัน) */}
       <div className="flex flex-col items-center w-full px-4">
+        
+        {/* ⚠️ min-h-[64px] ล็อคความสูงของกรอบชื่ออาหาร ให้กินพื้นที่ 2 บรรทัดเสมอ (ป้องกันการ์ดหดตัว) */}
         <div className="flex items-center justify-center gap-3 w-full relative z-30 min-h-[64px] mb-3">
           <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%] line-clamp-2">
             {title}
           </span>
+          
           <div 
             onClick={toggleFavorite}
             className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
@@ -353,12 +367,14 @@ function RecipeCard({
           </div>
         </div>
 
+        {/* ดาว */}
         <div className="flex items-center gap-2 relative z-30">
           <span className="text-[#F1C40F] text-xl">★</span>
           <span className="font-semibold text-white text-lg">{rating ? rating.toFixed(1) : "5.0"}</span>
         </div>
       </div>
 
+      {/* ปุ่มกด (จะถูกดันลงมาอยู่ล่างสุดเสมอเพราะใส่ justify-between ไว้) */}
       <Link 
         href={`/recipe/${id}`}
         className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center"
