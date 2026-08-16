@@ -201,8 +201,8 @@ export default function ViewRecipePage() {
 
     setIsSubmitting(true);
 
-    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว
-    const newReview = {
+    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว (เติม : any เพื่อแก้ปัญหา TypeScript)
+    const newReview: any = {
       id: `temp-${Date.now()}`,
       user: {
         username: "คุณ", // หรือดึงชื่อผู้ใช้จริงถ้ามี Auth
