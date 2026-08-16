@@ -286,13 +286,54 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-function RecipeCard({ id, bgColor, title, image, rating }: { id: string | number, bgColor: string, title: string, image: string, rating: number }) {
-  const [isFavorite, setIsFavorite] = useState(false);
+// 🌟 ปรับปรุง RecipeCard ให้เชื่อมต่อ API และมี Optimistic UI ทันทีไม่ต้องรอโหลด
+function RecipeCard({ 
+  id, 
+  bgColor, 
+  title, 
+  image, 
+  rating,
+  initialIsFavorite = false 
+}: { 
+  id: string | number, 
+  bgColor: string, 
+  title: string, 
+  image: string, 
+  rating: number,
+  initialIsFavorite?: boolean 
+}) {
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isLiking, setIsLiking] = useState(false);
 
-  const toggleFavorite = (e: React.MouseEvent) => {
+  const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault(); 
+    
+    // ป้องกันการกดย้ำๆ รัวๆ ระหว่างรอ API
+    if (isLiking) return;
+
+    // 1. Optimistic UI: เปลี่ยนสถานะหัวใจให้ผู้ใช้เห็นทันทีแบบ Real-time
     setIsFavorite(!isFavorite);
+    setIsLiking(true);
+
+    try {
+      // 2. ยิง API ไปหลังบ้านเพื่อบันทึกหรือยกเลิกการบันทึก
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId: id }),
+      });
+
+      if (!res.ok) {
+        // หาก API ขัดข้อง (ในบริบท Hybrid นี้เราจะปล่อยให้ UI จำลองทำงานต่อไปเพื่อให้ทดสอบได้ลื่นไหล)
+        console.warn("Favorite API failed or not ready yet. Simulating UI state.");
+      }
+    } catch (error) {
+      console.error("Network error toggling favorite:", error);
+      // Fallback: จำลอง UI ต่อไป
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
@@ -309,14 +350,14 @@ function RecipeCard({ id, bgColor, title, image, rating }: { id: string | number
         
         <div 
           onClick={toggleFavorite}
-          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
+          className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
         >
           {isFavorite ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none transition-all duration-300 scale-110">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-all duration-300 pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           )}
