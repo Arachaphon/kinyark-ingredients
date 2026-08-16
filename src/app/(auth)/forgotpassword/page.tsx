@@ -19,12 +19,14 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    
+    // ยิง API ขอรีเซ็ตรหัสผ่าน (ปล่อยให้มันทำงานเบื้องหลัง)
+    await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/resetpassword`,
     });
-    if (!error) {
-      router.push(`/check-email?email=${encodeURIComponent(email)}`);
-    }
+    
+    // 🌟 บังคับเปลี่ยนไปหน้า check-email ทันทีโดยไม่ต้องรอเช็ค error
+    router.push(`/check-email?email=${encodeURIComponent(email)}`);
   };
 
   return (
