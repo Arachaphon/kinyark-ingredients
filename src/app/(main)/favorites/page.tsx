@@ -53,6 +53,27 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [fetchFavorites]);
 
+  // 🌟 ฟังก์ชันยกเลิกการบันทึกสูตรอาหาร (Optimistic UI - การ์ดหายทันที)
+  const handleRemoveFavorite = async (recipeId: string) => {
+    // 1. อัปเดต UI ทันที: กรองเอาการ์ดสูตรอาหารที่กดออกไปจากหน้าจอ
+    setFavorites((prev) => prev.filter((item) => item.recipe.id !== recipeId));
+
+    try {
+      // 2. ยิง API สลับสถานะ (Toggle) เพื่อยกเลิกการบันทึกในฐานข้อมูล
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      if (!res.ok) {
+        console.warn("Failed to remove favorite on server. API might not be ready.");
+      }
+    } catch (error) {
+      console.error("Network error removing favorite:", error);
+    }
+  };
+
   const favoritesCount = favorites.length;
 
   return (
@@ -167,7 +188,16 @@ export default function FavoritesPage() {
 
                       <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
                         <div className="flex flex-col items-end gap-3 w-full">
-                          <div className="flex items-center gap-4">
+                          
+                          {/* 🌟 เปลี่ยนไอคอนหัวใจให้กดลบได้ พร้อม Effect */}
+                          <div 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleRemoveFavorite(recipe.id);
+                            }}
+                            className="flex items-center gap-4 cursor-pointer group p-1 -mr-1"
+                            title="ยกเลิกการบันทึกสูตรนี้"
+                          >
                             <svg
                               width="20"
                               height="20"
@@ -177,10 +207,11 @@ export default function FavoritesPage() {
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
+                              className="group-hover:scale-110 group-active:scale-95 transition-transform"
                             >
                               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
-                            <span className="font-medium text-gray-700 text-lg">
+                            <span className="font-medium text-gray-700 text-lg group-hover:text-red-500 transition-colors">
                               {recipe.favoriteCount}
                             </span>
                           </div>
@@ -215,7 +246,7 @@ export default function FavoritesPage() {
                   );
                 })
               ) : (
-                <div className="text-center py-20 text-gray-400 italic text-lg">
+                <div className="text-center py-20 text-gray-400 italic text-lg animate-fade-in">
                   คุณยังไม่ได้กดถูกใจสูตรอาหารใด ๆ
                 </div>
               )}
