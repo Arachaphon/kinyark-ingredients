@@ -1,7 +1,8 @@
 "use client";
+
+import Image from "next/image";
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
-import Image from "next/image";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import useSWR from "swr";
@@ -40,6 +41,7 @@ export default function PostsFeedPage() {
   const fetchPosts = (targetPage: number) => {
     setPage(targetPage);
   };
+
 
 
   const renderStars = (rating: number) => {

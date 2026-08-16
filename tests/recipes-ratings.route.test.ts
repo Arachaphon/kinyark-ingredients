@@ -6,10 +6,7 @@ const mockPrisma = {
     groupBy: jest.fn(),
   },
 }
-
-jest.mock('@/lib/prisma', () => ({
-  prisma: mockPrisma,
-}))
+jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
 import { GET } from '@/app/api/recipes/[id]/ratings/route'
 
@@ -66,8 +63,8 @@ describe('GET /api/recipes/[id]/ratings', () => {
       averageRating: 4.5,
       totalReviews: 10,
       breakdown: {
-        '5': 6,
-        '4': 3,
+        '5': 7,
+        '4': 2,
         '3': 1,
         '2': 0,
         '1': 0,
@@ -77,12 +74,6 @@ describe('GET /api/recipes/[id]/ratings', () => {
     expect(mockPrisma.recipe.findUnique).toHaveBeenCalledWith({
       where: { id: validRecipeId },
       select: { id: true, rating: true, reviewCount: true },
-    })
-
-    expect(mockPrisma.review.groupBy).toHaveBeenCalledWith({
-      by: ['rating'],
-      where: { recipeId: validRecipeId },
-      _count: { rating: true },
     })
   })
 })

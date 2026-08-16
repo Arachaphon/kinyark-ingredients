@@ -116,12 +116,10 @@ export async function GET(request?: Request) {
     const userId = await getAuthUserId(request)
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-    if (process.env.NODE_ENV !== 'test') {
-      const cacheKey = `favorites:${userId}`
-      const cached = cache.get(cacheKey)
-      if (cached) {
-        return Response.json({ data: cached })
-      }
+    const cacheKey = `favorites:${userId}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      return Response.json({ data: cached })
     }
 
     const favorites = await prisma.favorite.findMany({
@@ -164,9 +162,7 @@ export async function GET(request?: Request) {
       orderBy: { createdAt: "desc" },
     })
 
-    if (process.env.NODE_ENV !== 'test') {
-      cache.set(`favorites:${userId}`, favorites, 30_000)
-    }
+    cache.set(cacheKey, favorites, 30_000)
     return Response.json({ data: favorites })
   } catch (error) {
     console.error("GET /api/favorites error:", error)

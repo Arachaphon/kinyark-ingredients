@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // 2. Prevent duplicate reviews
+
+    // 3. Prevent duplicate reviews
     const existingReview = await prisma.review.findFirst({
       where: { recipeId, userId: userId },
     })
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "You have already reviewed this recipe" }, { status: 409 })
     }
 
-    // 3. Perform database updates in transaction
+    // 4. Perform database updates in transaction
     const review = await prisma.$transaction(async (tx) => {
       const createdReview = await tx.review.create({
         data: {
