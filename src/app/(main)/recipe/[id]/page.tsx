@@ -216,7 +216,7 @@ export default function ViewRecipePage() {
     setIsFavoriting(true);
 
     try {
-      await fetch("/api/favorites", {
+      const res = await fetch("/api/favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipeId: recipe.id }),
