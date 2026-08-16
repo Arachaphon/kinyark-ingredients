@@ -14,7 +14,7 @@ const anuphan = Anuphan({
 });
 
 // =========================================
-// 🍱 Type Interface
+// 🍱 Type Interface อิงตาม Prisma Schema
 // ========================================
 interface RecipeData {
   id: string | number; 
@@ -27,7 +27,7 @@ interface RecipeData {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // =========================================
-// 🎨 Mock Data
+// 🎨 ข้อมูลจำลอง (Mock Data) ใช้ขัดตาทัพระหว่างรอ API
 // ========================================
 const mockFeaturedRecipe: RecipeData = {
   id: "mock-featured",
@@ -61,7 +61,9 @@ export default function HomePage() {
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
-      {/* 2. HERO SECTION */}
+      {/* =========================================
+          2. HERO SECTION
+          ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="md:col-span-5 flex flex-col items-center md:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
@@ -114,7 +116,9 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* 3. DAILY RECOMMENDED MENU SECTION */}
+      {/* =========================================
+          3. DAILY RECOMMENDED MENU SECTION
+          ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           สูตรอาหารแนะนำประจำสัปดาห์
@@ -225,7 +229,7 @@ function MenuCarousel({
       
       <div className="flex flex-col sm:flex-row justify-center items-center gap-24 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
         {item1 && (
-          <div key={`card1-${item1.id}`} className="animate-fade-in relative">
+          <div key={`card1-${item1.id}`} className="animate-fade-in relative flex-1 flex justify-center">
             <RecipeCard 
               id={item1.id} 
               title={item1.recipeName} 
@@ -236,7 +240,7 @@ function MenuCarousel({
           </div>
         )}
         {item2 && (
-          <div key={`card2-${item2.id}`} className="animate-fade-in relative">
+          <div key={`card2-${item2.id}`} className="animate-fade-in relative flex-1 flex justify-center">
             <RecipeCard 
               id={item2.id} 
               title={item2.recipeName} 
@@ -285,7 +289,7 @@ const SAFE_BG_CLASSES = [
   "bg-[#4285F4]"  // ฟ้า
 ];
 
-// 🌟 ปรับปรุง RecipeCard: คืนชีพ Tailwind Class 100% พร้อมตัวแก้บั๊กสีหาย
+// 🌟 ปรับปรุง RecipeCard: บังคับความสูงเท่ากันเป๊ะ (Fixed Height = 340px)
 function RecipeCard({ 
   id, 
   bgColor, 
@@ -304,21 +308,12 @@ function RecipeCard({
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [isLiking, setIsLiking] = useState(false);
 
-  // ฟังก์ชันกลั่นกรองสีให้ Tailwind ใช้งานได้เสมอ ไม่มีการ์ดสีขาว
   const getValidBgClass = () => {
-    // 1. ถ้าส่งมาตรงกับในตะกร้าเป๊ะ (เช่น "bg-[#FF8585]") เอาไปใช้ได้เลย
-    if (bgColor && SAFE_BG_CLASSES.includes(bgColor)) {
-      return bgColor;
-    }
-    
-    // 2. ถ้า API ส่งมาเป็นรหัส Hex เฉยๆ เช่น "#FF8585" ให้เติม bg-[] ให้
+    if (bgColor && SAFE_BG_CLASSES.includes(bgColor)) return bgColor;
     if (bgColor && bgColor.startsWith("#")) {
       const formatted = `bg-[${bgColor}]`;
       if (SAFE_BG_CLASSES.includes(formatted)) return formatted;
     }
-
-    // 3. ท่าไม้ตาย: ถ้า API ส่งสีประหลาดๆ มา, หรือส่งเป็นค่าว่าง 
-    // เราจะเอา ID เมนูอาหารมาสุ่มเลือกสีจากในตะกร้าให้เลย ป้องกันสีขาว 100%
     const charCodeSum = String(id).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return SAFE_BG_CLASSES[charCodeSum % SAFE_BG_CLASSES.length];
   };
@@ -328,9 +323,7 @@ function RecipeCard({
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault(); 
-    
     if (isLiking) return;
-
     setIsFavorite(!isFavorite);
     setIsLiking(true);
 
@@ -340,9 +333,7 @@ function RecipeCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipeId: id }),
       });
-      if (!res.ok) {
-        console.warn("Favorite API failed or not ready yet.");
-      }
+      if (!res.ok) console.warn("Favorite API failed.");
     } catch (error) {
       console.error("Network error toggling favorite:", error);
     } finally {
@@ -352,43 +343,51 @@ function RecipeCard({
 
   return (
     <div 
-      // ⚠️ นำ Tailwind Class ล้วนๆ กลับมาใช้งานแล้ว (ไม่มี inline style)
-      className={`${cardBgClass} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}
+      // ⚠️ เพิ่ม h-[340px] บังคับความสูงตายตัว และ justify-between เพื่อกระจายช่องว่างให้เท่ากัน
+      className={`${cardBgClass} w-full max-w-[280px] sm:w-[280px] h-[340px] rounded-[36px] flex flex-col items-center justify-between relative pt-28 pb-8 shadow-lg transition hover:-translate-y-2 overflow-visible`}
     >
       
+      {/* ส่วนรูปภาพ */}
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
       </div>
 
-      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">
-        <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%] line-clamp-2">
-          {title}
-        </span>
+      {/* ส่วนเนื้อหา ชื่อ + ดาวเรตติ้ง (จับรวมกลุ่มกัน) */}
+      <div className="flex flex-col items-center w-full px-4">
         
-        <div 
-          onClick={toggleFavorite}
-          className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
-        >
-          {isFavorite ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none transition-all duration-300 scale-110">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-all duration-300 pointer-events-none">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          )}
+        {/* ⚠️ min-h-[64px] ล็อคความสูงของกรอบชื่ออาหาร ให้กินพื้นที่ 2 บรรทัดเสมอ (ป้องกันการ์ดหดตัว) */}
+        <div className="flex items-center justify-center gap-3 w-full relative z-30 min-h-[64px] mb-3">
+          <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%] line-clamp-2">
+            {title}
+          </span>
+          
+          <div 
+            onClick={toggleFavorite}
+            className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
+          >
+            {isFavorite ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none transition-all duration-300 scale-110">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-all duration-300 pointer-events-none">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            )}
+          </div>
+        </div>
+
+        {/* ดาว */}
+        <div className="flex items-center gap-2 relative z-30">
+          <span className="text-[#F1C40F] text-xl">★</span>
+          <span className="font-semibold text-white text-lg">{rating ? rating.toFixed(1) : "5.0"}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-8 relative z-30">
-        <span className="text-[#F1C40F] text-xl">★</span>
-        <span className="font-semibold text-white text-lg">{rating ? rating.toFixed(1) : "5.0"}</span>
-      </div>
-
+      {/* ปุ่มกด (จะถูกดันลงมาอยู่ล่างสุดเสมอเพราะใส่ justify-between ไว้) */}
       <Link 
         href={`/recipe/${id}`}
-        className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center shadow-sm"
+        className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center"
       >
         <span>▶</span> ดูเพิ่มเติม
       </Link>
