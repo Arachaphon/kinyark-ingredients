@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
@@ -170,7 +171,6 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
-  // 🌟 ปรับเป็น Optimistic UI: เปลี่ยนสีหัวใจและตัวเลขทันทีไม่ต้องรอ API
   const toggleFavorite = async () => {
     if (!recipe || isFavoriting) return;
 
@@ -202,7 +202,7 @@ export default function ViewRecipePage() {
 
     setIsSubmitting(true);
 
-    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว (เติม : any เพื่อแก้ปัญหา TypeScript)
+    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว
     const newReview: any = {
       id: `temp-${Date.now()}`,
       user: {
@@ -241,7 +241,6 @@ export default function ViewRecipePage() {
 
       if (!res.ok) {
         console.warn("Failed to submit comment to server, but keeping in UI for now.");
-        // (Optional: ถ้ายิงไม่ผ่านจริงๆ สามารถเขียนโค้ดลบคอมเมนต์ออกจาก UI ได้ตรงนี้)
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
@@ -262,7 +261,6 @@ export default function ViewRecipePage() {
     );
   };
 
-  // 🌟 ปรับปรุงการให้คะแนนดาวในช่องพิมพ์คอมเมนต์
   const renderInputStars = () => {
     return (
       <div className="flex items-center gap-1 cursor-pointer">
