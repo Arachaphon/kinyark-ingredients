@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
@@ -119,7 +120,6 @@ function ImageCarousel({
 
   return (
     <div className="flex flex-col gap-3 w-full">
-      {/* 🖼️ กล่องแสดงรูปภาพสไลด์หลัก */}
       <div className="relative w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden shadow-md border border-black/10 group bg-black/5">
         <Image src={images[currentIndex]?.imageUrl || FALLBACK_IMAGE} alt={`${altText} image ${currentIndex + 1}`} fill className="object-cover transition-all duration-300" sizes="(max-width: 1024px) 100vw, 50vw" priority />
         {images.length > 1 && (
@@ -142,7 +142,6 @@ function ImageCarousel({
         )}
       </div>
 
-      {/* 🔍 แถบรูปย่อ */}
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
           {images.map((img, idx) => (
@@ -165,8 +164,13 @@ export default function ViewRecipePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState(false);
+  
+  // States สำหรับระบบ Comment & Post
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [ratingValue, setRatingValue] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchRecipe = useCallback(async () => {
     if (!recipeId) { setNotFound(true); setLoading(false); return; }
@@ -177,7 +181,6 @@ export default function ViewRecipePage() {
       
       // 🌟 HYBRID LOGIC: ถ้า API พัง, หาไม่เจอ, หรือยังไม่พร้อม ให้แสดง Mock Data ทันที
       if (!res.ok) {
-        console.warn("API Error or Not Ready, falling back to mock data");
         setRecipe({ ...mockRecipeDetail, id: recipeId as string });
         setLoading(false);
         return;
@@ -192,7 +195,6 @@ export default function ViewRecipePage() {
         setRecipe({ ...mockRecipeDetail, id: recipeId as string });
       }
     } catch {
-      console.warn("Network Error, falling back to mock data");
       setRecipe({ ...mockRecipeDetail, id: recipeId as string });
     } finally {
       setLoading(false);
@@ -201,11 +203,9 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
-  // 🌟 ปรับเป็น Optimistic UI: เปลี่ยนสีหัวใจและตัวเลขทันทีไม่ต้องรอ API
   const toggleFavorite = async () => {
     if (!recipe || isFavoriting) return;
 
-    // 1. จำลอง UI ทันที
     setRecipe((prev) =>
       prev ? {
         ...prev,
@@ -216,56 +216,72 @@ export default function ViewRecipePage() {
     setIsFavoriting(true);
 
     try {
-      // 2. ยิง API เบื้องหลัง
       const res = await fetch("/api/favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ recipeId: recipe.id }),
       });
 
-      // 🌟 HYBRID LOGIC: ถ้า API แฟลร์จำลองการกดหัวใจให้ UI ขยับไปก่อน
       if (!res.ok) {
-         setRecipe((prev) =>
-          prev
-            ? {
-                ...prev,
-                isFavorite: !prev.isFavorite,
-                favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
-              }
-            : prev,
-        );
-        setIsFavoriting(false);
-        return;
+        console.warn("API Error, relying on optimistic UI state");
       }
-
-      const body = await res.json();
-      const { favorited } = body.data as { favorited: boolean };
-
-      setRecipe((prev) =>
-        prev
-          ? {
-              ...prev,
-              isFavorite: favorited,
-              favoriteCount: Math.max(
-                0,
-                prev.favoriteCount + (favorited ? 1 : -1),
-              ),
-            }
-          : prev,
-      );
     } catch {
-       // network error — จำลอง UI ไปก่อน
-       setRecipe((prev) =>
-        prev
-          ? {
-              ...prev,
-              isFavorite: !prev.isFavorite,
-              favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
-            }
-          : prev,
-      );
+      console.warn("Network error, relying on optimistic UI state");
     } finally {
       setIsFavoriting(false);
+    }
+  };
+
+  // 🌟 ฟังก์ชันจัดการกดส่งคอมเมนต์แบบ Optimistic UI
+  const handleSubmitComment = async () => {
+    if (!commentText.trim() || !recipe || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว
+    const newReview: any = {
+      id: `temp-${Date.now()}`,
+      user: {
+        username: "คุณ", // หรือดึงชื่อผู้ใช้จริงถ้ามี Auth
+        avatarUrl: FALLBACK_AVATAR
+      },
+      isAnonymous: false,
+      rating: ratingValue,
+      comment: commentText.trim()
+    };
+
+    // 1. นำข้อมูลแทรกขึ้นบรรทัดแรกทันทีแบบไม่ต้องรอ API (Optimistic UI)
+    setRecipe(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        reviews: [newReview, ...prev.reviews]
+      };
+    });
+
+    // รีเซ็ตช่องพิมพ์ให้ว่างทันที
+    setCommentText("");
+    setRatingValue(0);
+
+    try {
+      // 2. ยิง API ส่งข้อมูลไปให้หลังบ้านเซฟจริง
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipeId: recipe.id,
+          rating: ratingValue,
+          comment: newReview.comment,
+        }),
+      });
+
+      if (!res.ok) {
+        console.warn("Failed to submit comment to server, but keeping in UI for now.");
+      }
+    } catch (error) {
+      console.error("Error submitting comment:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -281,11 +297,23 @@ export default function ViewRecipePage() {
     );
   };
 
-  const renderEmptyStars = () => {
+  const renderInputStars = () => {
     return (
       <div className="flex items-center gap-1 cursor-pointer">
         {[1, 2, 3, 4, 5].map((star) => (
-          <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#F1C40F] hover:fill-[#F1C40F] transition">
+          <svg 
+            key={star} 
+            onClick={() => setRatingValue(star)}
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill={star <= ratingValue ? "#F1C40F" : "none"} 
+            stroke={star <= ratingValue ? "#F1C40F" : "#A5A5A5"} 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className="hover:stroke-[#F1C40F] hover:fill-[#F1C40F] transition"
+          >
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
         ))}
@@ -338,7 +366,6 @@ export default function ViewRecipePage() {
                   <div className="bg-white border-2 border-[#16A34A] rounded-sm p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
                     <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10"><span>รายละเอียดเซ็ทอาหารร้านค้า</span></div>
                     
-                    {/* โปรไฟล์ร้านค้า + ราคา */}
                     <div className="flex flex-col gap-4 mt-12 md:mt-6 w-full">
                       <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#16A34A]/30 w-full">
                         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
@@ -385,7 +412,6 @@ export default function ViewRecipePage() {
                       </div>
                     </div>
 
-                    {/* Media แกลอรี่ร้านค้า */}
                     {((storeImages && storeImages.length > 0) || (storeVideos && storeVideos.length > 0)) && (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full">
                         {storeImages && storeImages.length > 0 ? (
@@ -403,7 +429,7 @@ export default function ViewRecipePage() {
                       </div>
                     )}
 
-                    {/* 3️⃣ แผนที่พิกัดร้านค้าอยู่ล่างสุดเต็มแถว (ขนาดสี่เหลี่ยมผืนผ้าแนวนอน) */}
+                    {/* แผนที่ร้านค้า */}
                     {storePost.storeLocation && (
                     <div className="flex flex-col gap-2 bg-white p-5 rounded-2xl border border-[#BBF7D0] w-full">
                       <p className="text-xs font-bold text-[#16A34A] flex items-center justify-between">
@@ -423,7 +449,6 @@ export default function ViewRecipePage() {
             <div className="bg-white border border-[#71B254] rounded-sm p-8 relative mb-6 flex flex-col gap-8">
               <div className="absolute top-4 right-4 bg-[#71B254] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10"><span>รายละเอียดสูตรอาหาร</span></div>
 
-              {/* โปรไฟล์คนสร้าง + Engage bar */}
               <div className="flex flex-col gap-4 mt-12 md:mt-6 w-full">
                 <div className="flex flex-col gap-6 bg-white/90 p-6 rounded-2xl border border-[#71B254]/30 w-full">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
@@ -439,7 +464,6 @@ export default function ViewRecipePage() {
                         <h1 className="text-3xl md:text-4xl font-bold text-[#5A9240] leading-tight mt-1">{recipe.recipeName}</h1>
                       </div>
 
-                      {/* Engage Bar (Optimistic UI ถูกนำมาใช้ที่นี่) */}
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
                         <div className="flex items-center gap-2 bg-white border border-[#71B254]/30 px-3.5 py-1.5 rounded-xl cursor-pointer hover:scale-105 active:scale-95 transition-all" onClick={toggleFavorite}>
                           {recipe.isFavorite ? (
@@ -465,7 +489,6 @@ export default function ViewRecipePage() {
                 </div>
               </div>
 
-              {/* Media สูตรอาหาร */}
               {((recipe.images && recipe.images.length > 0) || (recipe.videos && recipe.videos.length > 0)) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start w-full">
                   {recipe.images && recipe.images.length > 0 ? (
@@ -483,7 +506,6 @@ export default function ViewRecipePage() {
                 </div>
               )}
 
-              {/* ส่วนผสม & วิธีทำ */}
               <div className="space-y-6 mt-2 flex flex-col w-full">
                 <div className="w-full p-6 rounded-2xl border border-[#71B254]/30">
                   <h3 className="text-xl font-bold text-[#5A9240] mb-4">{recipe.storePosts && recipe.storePosts.length > 0 ? "ส่วนผสมในเซ็ทขาย" : "ส่วนผสม"}</h3>
@@ -517,34 +539,66 @@ export default function ViewRecipePage() {
               </div>
             </div>
 
-            {/* ส่วนคอมเมนต์ */}
+            {/* ============================================================== */}
+            {/* 💬 ส่วนแสดงความคิดเห็น (Comment Section) */}
+            {/* ============================================================== */}
             {isCommentOpen && (
               <div className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top">
                 <h2 className="text-2xl font-bold text-[#71B254] mb-8">ความคิดเห็น</h2>
-                {recipe.reviews.length > 0 ? (
-                  <div className="flex flex-col gap-6 mb-8">
+                
+                {/* 📝 กล่องพิมพ์คอมเมนต์ (Input & Submit) */}
+                <div className="pb-8 border-b border-gray-100 mb-8 flex gap-4 items-start">
+                  <div className="flex flex-col w-full gap-3">
+                    <span className="font-bold text-gray-900">เขียนความคิดเห็นของคุณ</span>
+                    
+                    {/* ระบบกดให้คะแนนดาว */}
+                    <div className="flex items-center gap-4">
+                      {renderInputStars()}
+                      {ratingValue > 0 && <span className="text-xs text-[#F1C40F] font-bold">ให้ {ratingValue} ดาว</span>}
+                    </div>
+                    
+                    {/* ช่องกรอกข้อความและปุ่มส่ง */}
+                    <div className="relative w-full">
+                      <input 
+                        type="text" 
+                        placeholder="พิมพ์ความคิดเห็นของคุณที่นี่..." 
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
+                        disabled={isSubmitting}
+                        className="w-full py-3 pl-4 pr-12 rounded-md bg-[#EAF5E4] border border-[#d2e8c5] text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#71B254] shadow-inner disabled:opacity-50" 
+                      />
+                      <button 
+                        onClick={handleSubmitComment}
+                        disabled={!commentText.trim() || isSubmitting}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-all ${!commentText.trim() ? 'text-gray-400 cursor-not-allowed' : 'text-[#71B254] hover:text-[#5b9642] hover:scale-110 active:scale-95'}`}
+                      >
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 📋 รายการคอมเมนต์ทั้งหมด (Fetch results) */}
+                {recipe.reviews && recipe.reviews.length > 0 ? (
+                  <div className="flex flex-col gap-6">
                     {recipe.reviews.map((review: any) => (
-                      <div key={review.id} className="flex gap-4">
+                      <div key={review.id} className="flex gap-4 animate-fade-in">
                         <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0" />
                         <div className="flex flex-col w-full">
-                          <div className="flex items-center gap-4"><span className="font-bold text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>{review.rating > 0 && renderStars(review.rating)}</div>
+                          <div className="flex items-center gap-4">
+                            <span className="font-bold text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
+                            {review.rating > 0 && renderStars(review.rating)}
+                          </div>
                           <p className="text-gray-700 mt-1">{review.comment || "ไม่มีความคิดเห็น"}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (<p className="text-gray-500 italic mb-8">ยังไม่มีความคิดเห็น</p>)}
+                ) : (
+                  <p className="text-gray-500 italic">ยังไม่มีความคิดเห็น มารีวิวเป็นคนแรกสิ!</p>
+                )}
 
-                <div className="border-t border-gray-100 pt-6 flex gap-4 items-start">
-                  <div className="flex flex-col w-full gap-3">
-                    <span className="font-bold text-gray-900">คุณ</span>
-                    <div className="flex items-center gap-4">{renderEmptyStars()}</div>
-                    <div className="relative w-full">
-                      <input type="text" placeholder="เขียนความคิดเห็น..." className="w-full py-3 pl-4 pr-12 rounded-md bg-[#EAF5E4] border border-[#d2e8c5] text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#71B254] shadow-inner" />
-                      <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71B254] hover:text-[#5b9642] transition p-1"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg></button>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
           </>
