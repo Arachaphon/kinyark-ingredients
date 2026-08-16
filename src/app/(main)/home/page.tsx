@@ -14,7 +14,7 @@ const anuphan = Anuphan({
 });
 
 // =========================================
-// 🍱 Type Interface อิงตาม Prisma Schema
+// 🍱 Type Interface
 // ========================================
 interface RecipeData {
   id: string | number; 
@@ -27,7 +27,7 @@ interface RecipeData {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // =========================================
-// 🎨 ข้อมูลจำลอง (Mock Data) ใช้ขัดตาทัพระหว่างรอ API
+// 🎨 Mock Data
 // ========================================
 const mockFeaturedRecipe: RecipeData = {
   id: "mock-featured",
@@ -52,10 +52,8 @@ const mockDeepseekRecipes: RecipeData[] = [
 ];
 
 export default function HomePage() {
-  // ดึงข้อมูลสูตรอาหารแนะนำ (Hero Section)
-  const { data: featuredData, error } = useSWR("/api/recipes/featured", fetcher);
+  const { data: featuredData } = useSWR("/api/recipes/featured", fetcher);
   
-  // 🌟 Logic Hybrid: ถ้าได้ข้อมูลจริงมาใช้ข้อมูลจริง ถ้าพังหรือไม่มีข้อมูลให้ใช้ Mock ทันที (ไม่แสดงหน้าโหลด)
   const isApiReady = featuredData?.data && featuredData.data.length > 0;
   const featured: RecipeData = isApiReady ? featuredData.data[0] : mockFeaturedRecipe;
 
@@ -63,9 +61,7 @@ export default function HomePage() {
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
-      {/* =========================================
-          2. HERO SECTION
-          ========================================= */}
+      {/* 2. HERO SECTION */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="md:col-span-5 flex flex-col items-center md:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
@@ -118,16 +114,13 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* =========================================
-          3. DAILY RECOMMENDED MENU SECTION
-          ========================================= */}
+      {/* 3. DAILY RECOMMENDED MENU SECTION */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           สูตรอาหารแนะนำประจำสัปดาห์
         </h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12">
-          {/* ส่ง Mock ไปแสดงก่อน และให้มันแอบยิง API Endpoint ไปพร้อมๆ กัน */}
           <MenuCarousel 
             provider="โดย gemini" 
             apiEndpoint="/api/recipes?aiProvider=gemini" 
@@ -169,14 +162,12 @@ function MenuCarousel({
   apiEndpoint: string;
   fallbackMockData: RecipeData[];
 } ) {
-  // 🌟 เริ่มต้นด้วย Mock Data ทันที (หน้าเว็บจะไม่เกิดจอโหลด)
   const [recipes, setRecipes] = useState<RecipeData[]>(fallbackMockData);
   const [isUsingMock, setIsUsingMock] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // 📡 แอบยิง API: ถ้าตอบกลับมามีข้อมูล จะเตะ Mock Data ทิ้งแล้วสลับเป็นของจริงให้
   useEffect(() => {
     if (!hasMore) return;
     const fetchRecipes = async () => {
@@ -188,10 +179,7 @@ function MenuCarousel({
         
         if (newRecipes.length > 0) {
           setRecipes((prev) => {
-            // ถ้าดึงข้อมูลสำเร็จครั้งแรก ให้ล้าง Mock ทิ้งไปเลย
             if (isUsingMock) return newRecipes; 
-            
-            // สำหรับหน้า 2, 3... ให้นำข้อมูลมาต่อท้าย
             const existingIds = new Set(prev.map(r => r.id));
             const uniqueNew = newRecipes.filter((r: RecipeData) => !existingIds.has(r.id));
             return [...prev, ...uniqueNew];
@@ -207,7 +195,6 @@ function MenuCarousel({
     fetchRecipes();
   }, [apiEndpoint, page, hasMore, isUsingMock]);
 
-  // ระบบ Pagination: ซ่อนอยู่ในการกดดูรูป ถ้ารูปใกล้หมดและไม่ได้ใช้ Mock อยู่ ให้เรียกหน้าต่อไปมารอ
   const handleNext = useCallback(() => {
     setCurrentIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
@@ -242,7 +229,7 @@ function MenuCarousel({
             <RecipeCard 
               id={item1.id} 
               title={item1.recipeName} 
-              bgColor={item1.bgColor || "bg-[#6F62E4]"} 
+              bgColor={item1.bgColor} 
               image={item1.images?.[0]?.imageUrl || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"} 
               rating={item1.rating}
             />
@@ -253,7 +240,7 @@ function MenuCarousel({
             <RecipeCard 
               id={item2.id} 
               title={item2.recipeName} 
-              bgColor={item2.bgColor || "bg-[#FF8585]"} 
+              bgColor={item2.bgColor} 
               image={item2.images?.[0]?.imageUrl || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"} 
               rating={item2.rating}
             />
@@ -286,17 +273,88 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-function RecipeCard({ id, bgColor, title, image, rating }: { id: string | number, bgColor: string, title: string, image: string, rating: number }) {
-  const [isFavorite, setIsFavorite] = useState(false);
+// 🎨 ตะกร้าเก็บสีทั้งหมดที่ระบบอนุญาต (บังคับให้ Tailwind รู้จักสีพวกนี้ทั้งหมด)
+const SAFE_BG_CLASSES = [
+  "bg-[#6F62E4]", // ม่วง
+  "bg-[#FF8585]", // ชมพู/แดงอ่อน
+  "bg-[#3AC9B5]", // มิ้นท์
+  "bg-[#63D04C]", // เขียวสด
+  "bg-[#F58D38]", // ส้ม
+  "bg-[#D05C5C]", // แดงเข้ม
+  "bg-[#E6C229]", // เหลือง
+  "bg-[#4285F4]"  // ฟ้า
+];
 
-  const toggleFavorite = (e: React.MouseEvent) => {
+// 🌟 ปรับปรุง RecipeCard: คืนชีพ Tailwind Class 100% พร้อมตัวแก้บั๊กสีหาย
+function RecipeCard({ 
+  id, 
+  bgColor, 
+  title, 
+  image, 
+  rating,
+  initialIsFavorite = false 
+}: { 
+  id: string | number, 
+  bgColor: string | null, 
+  title: string, 
+  image: string, 
+  rating: number,
+  initialIsFavorite?: boolean 
+}) {
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // ฟังก์ชันกลั่นกรองสีให้ Tailwind ใช้งานได้เสมอ ไม่มีการ์ดสีขาว
+  const getValidBgClass = () => {
+    // 1. ถ้าส่งมาตรงกับในตะกร้าเป๊ะ (เช่น "bg-[#FF8585]") เอาไปใช้ได้เลย
+    if (bgColor && SAFE_BG_CLASSES.includes(bgColor)) {
+      return bgColor;
+    }
+    
+    // 2. ถ้า API ส่งมาเป็นรหัส Hex เฉยๆ เช่น "#FF8585" ให้เติม bg-[] ให้
+    if (bgColor && bgColor.startsWith("#")) {
+      const formatted = `bg-[${bgColor}]`;
+      if (SAFE_BG_CLASSES.includes(formatted)) return formatted;
+    }
+
+    // 3. ท่าไม้ตาย: ถ้า API ส่งสีประหลาดๆ มา, หรือส่งเป็นค่าว่าง 
+    // เราจะเอา ID เมนูอาหารมาสุ่มเลือกสีจากในตะกร้าให้เลย ป้องกันสีขาว 100%
+    const charCodeSum = String(id).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return SAFE_BG_CLASSES[charCodeSum % SAFE_BG_CLASSES.length];
+  };
+
+  const cardBgClass = getValidBgClass();
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault(); 
+    
+    if (isLiking) return;
+
     setIsFavorite(!isFavorite);
+    setIsLiking(true);
+
+    try {
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId: id }),
+      });
+      if (!res.ok) {
+        console.warn("Favorite API failed or not ready yet.");
+      }
+    } catch (error) {
+      console.error("Network error toggling favorite:", error);
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   return (
-    <div className={`${bgColor} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
+    <div 
+      // ⚠️ นำ Tailwind Class ล้วนๆ กลับมาใช้งานแล้ว (ไม่มี inline style)
+      className={`${cardBgClass} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}
+    >
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
@@ -309,14 +367,14 @@ function RecipeCard({ id, bgColor, title, image, rating }: { id: string | number
         
         <div 
           onClick={toggleFavorite}
-          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
+          className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
         >
           {isFavorite ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none transition-all duration-300 scale-110">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors pointer-events-none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-all duration-300 pointer-events-none">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           )}
