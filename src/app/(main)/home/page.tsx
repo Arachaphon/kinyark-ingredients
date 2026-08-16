@@ -61,9 +61,6 @@ export default function HomePage() {
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
-      {/* =========================================
-          2. HERO SECTION
-          ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="md:col-span-5 flex flex-col items-center md:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
@@ -116,9 +113,6 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* =========================================
-          3. DAILY RECOMMENDED MENU SECTION
-          ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           สูตรอาหารแนะนำประจำสัปดาห์
@@ -140,10 +134,6 @@ export default function HomePage() {
     </div>
   );
 }
-
-/* =========================================
-    COMPONENTS ย่อย
-   ========================================= */
 
 function CategoryCard({ emoji, text, category }: { emoji: string; text: string; category: string }) {
   return (
@@ -199,7 +189,6 @@ function MenuCarousel({
     fetchRecipes();
   }, [apiEndpoint, page, hasMore, isUsingMock]);
 
-  // ระบบ Pagination: ซ่อนอยู่ในการกดดูรูป ถ้ารูปใกล้หมดและไม่ได้ใช้ Mock อยู่ ให้เรียกหน้าต่อไปมารอ
   const handleNext = useCallback(() => {
     setCurrentIndex((prevIndex) => {
       const nextIndex = prevIndex + 1;
