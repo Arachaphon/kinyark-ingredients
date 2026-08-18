@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
