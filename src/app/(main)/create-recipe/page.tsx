@@ -8,7 +8,7 @@ import Link from "next/link";
 import type { Map, Marker, LeafletMouseEvent } from "leaflet";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
-import { uploadRecipeMedia } from "@/lib/storage";
+import { uploadRecipeMedia, isVideoFile, validateVideoFile, validateImageFile } from "@/lib/storage";
 
 type LeafletModule = typeof import("leaflet");
 
@@ -47,6 +47,9 @@ type SystemRecipe = {
 type UploadedMedia = {
   file?: File;
   previewUrl: string;
+  url?: string;
+  uploading?: boolean;
+  error?: string;
 };
 
 const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
@@ -91,6 +94,30 @@ export default function CreateRecipePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
+
+  const uploadPromisesRef = useRef<Record<string, Promise<{ url: string | null; error?: string }>>>({});
+
+  const uploadFile = (file: File, cacheKey?: string): Promise<{ url: string | null; error?: string }> => {
+    const key = cacheKey ?? `${file.name}${file.size}`;
+    const existing = uploadPromisesRef.current[key];
+    if (existing) return existing;
+
+    const promise = (async () => {
+      if (!user) return { url: null, error: "ยังไม่ได้ล็อกอิน" };
+      const result = await uploadRecipeMedia(createClient(), file, user.id);
+      if (result.error) return { url: null, error: result.error };
+      return { url: result.url };
+    })();
+
+    uploadPromisesRef.current[key] = promise;
+    return promise;
+  };
+
+  const validateMediaFile = (file: File): string | null => {
+    const validation = isVideoFile(file) ? validateVideoFile(file) : validateImageFile(file);
+    return validation.valid ? null : validation.error;
+  };
+
   const [postAs, setPostAs] = useState<"user" | "store">("user");
   const [userRole, setUserRole] = useState<string>("USER");
 
@@ -416,17 +443,37 @@ export default function CreateRecipePage() {
     if (files.length === 0) return;
     const availableSlots = 4 - shopIngredientImages.length;
     const filesToAdd = files.slice(0, availableSlots);
-    
-    const newMedia = filesToAdd.map(file => ({
-      file,
-      previewUrl: URL.createObjectURL(file)
-    }));
+
+    const newMedia = filesToAdd.map(file => {
+      const fileError = validateMediaFile(file);
+      return {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        uploading: !fileError,
+        error: fileError ?? undefined,
+      } as UploadedMedia;
+    });
 
     setShopIngredientImages(prev => {
       const updated = [...prev, ...newMedia];
       setShopImageIndex(updated.length - 1);
       return updated;
     });
+
+    newMedia.forEach((media) => {
+      if (media.error || !media.file) return;
+      const { previewUrl } = media;
+      uploadFile(media.file, previewUrl).then((res) => {
+        setShopIngredientImages(prev =>
+          prev.map(m =>
+            m.previewUrl === previewUrl
+              ? { ...m, url: res.url ?? undefined, uploading: false, error: res.error }
+              : m
+          )
+        );
+      });
+    });
+
     if (shopImageInputRef.current) shopImageInputRef.current.value = "";
   };
 
@@ -444,7 +491,24 @@ export default function CreateRecipePage() {
 
   const handleShopVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setShopIngredientVideo({ file, previewUrl: URL.createObjectURL(file) });
+    if (!file) return;
+
+    const fileError = validateMediaFile(file);
+    setShopIngredientVideo({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      uploading: !fileError,
+      error: fileError ?? undefined,
+    });
+
+    if (!fileError) {
+      uploadFile(file).then((res) => {
+        setShopIngredientVideo(prev =>
+          prev ? { ...prev, url: res.url ?? undefined, uploading: false, error: res.error } : prev
+        );
+      });
+    }
+
     if (shopVideoInputRef.current) shopVideoInputRef.current.value = "";
   };
 
@@ -622,16 +686,35 @@ export default function CreateRecipePage() {
 
     const availableSlots = 4 - coverImages.length;
     const filesToAdd = files.slice(0, availableSlots);
-    
-    const newMedia = filesToAdd.map(file => ({
-      file,
-      previewUrl: URL.createObjectURL(file)
-    }));
+
+    const newMedia = filesToAdd.map(file => {
+      const fileError = validateMediaFile(file);
+      return {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        uploading: !fileError,
+        error: fileError ?? undefined,
+      } as UploadedMedia;
+    });
 
     setCoverImages(prev => {
       const updated = [...prev, ...newMedia];
-      setCurrentImageIndex(updated.length - 1); 
+      setCurrentImageIndex(updated.length - 1);
       return updated;
+    });
+
+    newMedia.forEach((media) => {
+      if (media.error || !media.file) return;
+      const { previewUrl } = media;
+      uploadFile(media.file, previewUrl).then((res) => {
+        setCoverImages(prev =>
+          prev.map(m =>
+            m.previewUrl === previewUrl
+              ? { ...m, url: res.url ?? undefined, uploading: false, error: res.error }
+              : m
+          )
+        );
+      });
     });
 
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -651,7 +734,24 @@ export default function CreateRecipePage() {
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setVideoFile({ file, previewUrl: URL.createObjectURL(file) });
+    if (!file) return;
+
+    const fileError = validateMediaFile(file);
+    setVideoFile({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      uploading: !fileError,
+      error: fileError ?? undefined,
+    });
+
+    if (!fileError) {
+      uploadFile(file).then((res) => {
+        setVideoFile(prev =>
+          prev ? { ...prev, url: res.url ?? undefined, uploading: false, error: res.error } : prev
+        );
+      });
+    }
+
     if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
@@ -744,28 +844,31 @@ export default function CreateRecipePage() {
         payload.systemRecipeId = pickedRecipe.id;
       }
 
-      // ⚠️ Upload files
-      const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
-        if (!user) return { url: null, error: "ยังไม่ได้ล็อกอิน" };
-        const result = await uploadRecipeMedia(createClient(), file, user.id);
-        if (result.error) return { url: null, error: result.error };
-        return { url: result.url };
+      // ⚠️ Upload files (อัปโหลดพร้อมกัน; ไฟล์ที่อัปโหลดไว้แล้วใช้ URL เดิม)
+      const uploadBatch = async (
+        mediaList: UploadedMedia[],
+        label: string
+      ): Promise<string[] | null> => {
+        const results = await Promise.all(
+          mediaList.map(async (media) => {
+            if (media.url) return { url: media.url, error: null };
+            if (!media.file) return { url: media.previewUrl, error: null };
+            if (media.error) return { url: null, error: media.error };
+            const r = await uploadFile(media.file, media.previewUrl);
+            return { url: r.url ?? null, error: r.error ?? null };
+          })
+        );
+        const failed = results.find((r) => r.error);
+        if (failed) {
+          setSubmitError(`${label}ล้มเหลว: ${failed.error}`);
+          setIsSubmitting(false);
+          return null;
+        }
+        return results.map((r) => r.url).filter((u): u is string => !!u);
       };
 
-      const uploadedRecipeImages: string[] = [];
-      for (const media of coverImages) {
-        if (!media.file) {
-          uploadedRecipeImages.push(media.previewUrl);
-          continue;
-        }
-        const result = await uploadFile(media.file);
-        if (result.error) {
-          setSubmitError(`อัปโหลดรูปภาพสูตรล้มเหลว: ${result.error}`);
-          setIsSubmitting(false);
-          return;
-        }
-        if (result.url) uploadedRecipeImages.push(result.url);
-      }
+      const uploadedRecipeImages = await uploadBatch(coverImages, "อัปโหลดรูปภาพสูตร");
+      if (uploadedRecipeImages === null) return;
 
       if (uploadedRecipeImages.length > 0) {
         payload.featuredImageUrl = uploadedRecipeImages[0];
@@ -774,10 +877,12 @@ export default function CreateRecipePage() {
 
       const uploadedRecipeVideos: string[] = [];
       if (videoFile) {
-        if (!videoFile.file) {
+        if (videoFile.url) {
+          uploadedRecipeVideos.push(videoFile.url);
+        } else if (!videoFile.file) {
           uploadedRecipeVideos.push(videoFile.previewUrl);
         } else {
-          const result = await uploadFile(videoFile.file);
+          const result = await uploadFile(videoFile.file, videoFile.previewUrl);
           if (result.error) {
             setSubmitError(`อัปโหลดวิดีโอสูตรล้มเหลว: ${result.error}`);
             setIsSubmitting(false);
@@ -793,27 +898,17 @@ export default function CreateRecipePage() {
 
       // ข้อมูลเฉพาะร้านค้า (Store)
       if (postAs === "store") {
-        const storeImages: string[] = [];
-        for (const media of shopIngredientImages) {
-          if (!media.file) {
-            storeImages.push(media.previewUrl);
-            continue;
-          }
-          const result = await uploadFile(media.file);
-          if (result.error) {
-            setSubmitError(`อัปโหลดรูปร้านค้าล้มเหลว: ${result.error}`);
-            setIsSubmitting(false);
-            return;
-          }
-          if (result.url) storeImages.push(result.url);
-        }
+        const storeImages = await uploadBatch(shopIngredientImages, "อัปโหลดรูปร้านค้า");
+        if (storeImages === null) return;
 
         const storeVideos: string[] = [];
         if (shopIngredientVideo) {
-          if (!shopIngredientVideo.file) {
+          if (shopIngredientVideo.url) {
+            storeVideos.push(shopIngredientVideo.url);
+          } else if (!shopIngredientVideo.file) {
             storeVideos.push(shopIngredientVideo.previewUrl);
           } else {
-            const result = await uploadFile(shopIngredientVideo.file);
+            const result = await uploadFile(shopIngredientVideo.file, shopIngredientVideo.previewUrl);
             if (result.error) {
               setSubmitError(`อัปโหลดวิดีโอร้านค้าล้มเหลว: ${result.error}`);
               setIsSubmitting(false);
@@ -1153,7 +1248,7 @@ export default function CreateRecipePage() {
                         <span className="text-xs font-bold text-gray-400">{shopIngredientImages.length}/4 รูป</span>
                       </div>
 
-                      <input id="shop-image-file-input" type="file" accept="image/png, image/jpeg" multiple className="hidden" ref={shopImageInputRef} onChange={handleShopImageUpload} />
+                      <input id="shop-image-file-input" type="file" accept="image/png, image/jpeg, image/webp" multiple className="hidden" ref={shopImageInputRef} onChange={handleShopImageUpload} />
 
                       {shopIngredientImages.length === 0 ? (
                         <div 
@@ -1182,6 +1277,25 @@ export default function CreateRecipePage() {
                               alt={`วัตถุดิบ ${shopImageIndex + 1}`}
                               className="w-full h-full object-cover transition-opacity duration-300"
                             />
+                            {(() => {
+                              const current = shopIngredientImages[shopImageIndex];
+                              if (current.uploading) {
+                                return (
+                                  <div className="absolute inset-0 z-10 bg-black/40 flex flex-col items-center justify-center gap-2 text-white">
+                                    <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-xs font-bold">กำลังอัปโหลด...</span>
+                                  </div>
+                                );
+                              }
+                              if (current.error) {
+                                return (
+                                  <div className="absolute bottom-0 inset-x-0 z-10 bg-red-500/90 text-white text-[11px] font-bold px-3 py-1.5 text-center">
+                                    ⚠️ {current.error}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()}
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                               <button type="button" id="remove-shop-img-btn" onClick={() => removeShopImage(shopImageIndex)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-md text-[10px] hover:bg-red-600">
                                 ลบรูปนี้
@@ -1240,6 +1354,17 @@ export default function CreateRecipePage() {
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={shopIngredientVideo.previewUrl} controls preload="metadata" className="w-full h-full object-contain" />
+                          {shopIngredientVideo.uploading && (
+                            <div className="absolute inset-0 z-20 bg-black/40 flex flex-col items-center justify-center gap-2 text-white">
+                              <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span className="text-xs font-bold">กำลังอัปโหลด...</span>
+                            </div>
+                          )}
+                          {shopIngredientVideo.error && (
+                            <div className="absolute bottom-0 inset-x-0 z-20 bg-red-500/90 text-white text-[11px] font-bold px-3 py-1.5 text-center">
+                              ⚠️ {shopIngredientVideo.error}
+                            </div>
+                          )}
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button type="button" id="remove-shop-video-btn" onClick={() => setShopIngredientVideo(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
@@ -1788,7 +1913,7 @@ export default function CreateRecipePage() {
                     <input 
                       id="recipe-image-file-input"
                       type="file" 
-                      accept="image/png, image/jpeg" 
+                      accept="image/png, image/jpeg, image/webp" 
                       multiple 
                       className="hidden" 
                       ref={fileInputRef} 
@@ -1823,6 +1948,25 @@ export default function CreateRecipePage() {
                             alt={`Cover ${currentImageIndex + 1}`} 
                             className="w-full h-full object-cover transition-opacity duration-300" 
                           />
+                          {(() => {
+                            const current = coverImages[currentImageIndex];
+                            if (current.uploading) {
+                              return (
+                                <div className="absolute inset-0 z-10 bg-black/40 flex flex-col items-center justify-center gap-2 text-white">
+                                  <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-xs font-bold">กำลังอัปโหลด...</span>
+                                </div>
+                              );
+                            }
+                            if (current.error) {
+                              return (
+                                <div className="absolute bottom-0 inset-x-0 z-10 bg-red-500/90 text-white text-[11px] font-bold px-3 py-1.5 text-center">
+                                  ⚠️ {current.error}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                           
                           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                             <button type="button" id="remove-cover-img-btn" onClick={() => removeImage(currentImageIndex)} className="bg-red-500 text-white px-3 py-1.5 rounded-md font-bold shadow-md text-[10px] hover:bg-red-600">
@@ -1889,6 +2033,17 @@ export default function CreateRecipePage() {
                       {videoFile ? (
                         <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
                           <video src={videoFile.previewUrl} controls preload="metadata" className="w-full h-full object-contain" />
+                          {videoFile.uploading && (
+                            <div className="absolute inset-0 z-20 bg-black/40 flex flex-col items-center justify-center gap-2 text-white">
+                              <div className="w-7 h-7 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span className="text-xs font-bold">กำลังอัปโหลด...</span>
+                            </div>
+                          )}
+                          {videoFile.error && (
+                            <div className="absolute bottom-0 inset-x-0 z-20 bg-red-500/90 text-white text-[11px] font-bold px-3 py-1.5 text-center">
+                              ⚠️ {videoFile.error}
+                            </div>
+                          )}
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity z-10">
                             <button type="button" id="remove-recipe-video-btn" onClick={() => setVideoFile(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
