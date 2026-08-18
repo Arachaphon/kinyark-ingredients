@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -67,10 +67,13 @@ export default function FavoritesPage() {
       });
 
       if (!res.ok) {
-        console.warn("Failed to remove favorite on server. API might not be ready.");
+        // Server rejected — restore the card so UI stays synced.
+        console.warn("Failed to remove favorite on server, restoring card:", res.status);
+        fetchFavorites();
       }
     } catch (error) {
       console.error("Network error removing favorite:", error);
+      fetchFavorites();
     }
   };
 

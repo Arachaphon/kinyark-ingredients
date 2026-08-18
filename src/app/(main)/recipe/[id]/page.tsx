@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -167,7 +167,6 @@ export default function ViewRecipePage() {
   
   // States สำหรับระบบ Comment & Post
   const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const [isFavoriting, setIsFavoriting] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [ratingValue, setRatingValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -203,33 +202,39 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
-  const toggleFavorite = async () => {
-    if (!recipe || isFavoriting) return;
+  const toggleFavorite = () => {
+    if (!recipe) return;
 
-    setRecipe((prev) =>
-      prev ? {
-        ...prev,
-        isFavorite: !prev.isFavorite,
-        favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
-      } : prev,
-    );
-    setIsFavoriting(true);
+    const flip = () =>
+      setRecipe((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFavorite: !prev.isFavorite,
+              favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
+            }
+          : prev
+      );
 
-    try {
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: recipe.id }),
+    // 1. Optimistic UI: สลับทันที
+    flip();
+
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: recipe.id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          flip();
+        }
+      })
+      .catch(() => {
+        console.warn("Network error, reverting optimistic UI state");
+        flip();
       });
-
-      if (!res.ok) {
-        console.warn("API Error, relying on optimistic UI state");
-      }
-    } catch {
-      console.warn("Network error, relying on optimistic UI state");
-    } finally {
-      setIsFavoriting(false);
-    }
   };
 
   // 🌟 ฟังก์ชันจัดการกดส่งคอมเมนต์แบบ Optimistic UI

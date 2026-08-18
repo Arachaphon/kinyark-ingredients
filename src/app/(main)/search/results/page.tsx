@@ -150,7 +150,6 @@ function ResultsContent() {
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
 
   const setupFavorites = (dataArray: RecipeItem[]) => {
     const initialFavs = dataArray.reduce(
@@ -231,33 +230,28 @@ function ResultsContent() {
     };
   }, [queryTitle]);
 
-  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI
-  const toggleFavorite = async (id: string) => {
-    // ดักไม่ให้กดย้ำๆ ระหว่างที่ API ยังส่งคำขอไม่เสร็จ
-    if (isLiking[id]) return;
-
+  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI (ตอบสนองทันทีทุกคลิก)
+  const toggleFavorite = (id: string) => {
     // 1. Optimistic UI: สลับสถานะหัวใจให้ผู้ใช้เห็นทันที
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-    setIsLiking((prev) => ({ ...prev, [id]: true }));
 
-    try {
-      // 2. ยิง API บันทึกข้อมูลไปหลังบ้าน
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: id }),
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    const revert = () => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          revert();
+        }
+      })
+      .catch((error) => {
+        console.error("Network error toggling favorite:", error);
+        revert();
       });
-
-      if (!res.ok) {
-        // ในกรณีที่หลังบ้านพังหรือรอเชื่อมต่อ เราจะจำลองให้ UI เปลี่ยนต่อไปเพื่อการทดสอบ
-        console.warn("Favorite API failed or not ready yet. Simulating UI state.");
-      }
-    } catch (error) {
-      console.error("Network error toggling favorite:", error);
-    } finally {
-      // ปลดล็อคสถานะโหลด
-      setIsLiking((prev) => ({ ...prev, [id]: false }));
-    }
   };
 
   return (
@@ -326,7 +320,6 @@ function ResultsContent() {
         : (
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
-            const isCurrentlyLiking = isLiking[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
 
             return (
@@ -389,7 +382,7 @@ function ResultsContent() {
                     {/* ยอดกดไลก์หัวใจ (เพิ่ม Animation การตอบสนอง) */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
-                      className={`flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform ${isCurrentlyLiking ? 'opacity-70 cursor-wait' : ''}`}
+                      className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
                     >
                       <svg
                         width="20"

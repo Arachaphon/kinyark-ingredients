@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
@@ -296,7 +296,6 @@ function RecipeCard({
   initialIsFavorite?: boolean 
 }) {
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
-  const [isLiking, setIsLiking] = useState(false);
 
   const getValidBgClass = () => {
     if (bgColor && SAFE_BG_CLASSES.includes(bgColor)) return bgColor;
@@ -310,25 +309,31 @@ function RecipeCard({
 
   const cardBgClass = getValidBgClass();
 
-  const toggleFavorite = async (e: React.MouseEvent) => {
+  const toggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault(); 
-    if (isLiking) return;
-    setIsFavorite(!isFavorite);
-    setIsLiking(true);
+    e.preventDefault();
 
-    try {
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: id }),
+    const revert = () => setIsFavorite((prev) => !prev);
+
+    // 1. Optimistic UI: สลับทันที
+    setIsFavorite((prev) => !prev);
+
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          revert();
+        }
+      })
+      .catch((error) => {
+        console.error("Network error toggling favorite:", error);
+        revert();
       });
-      if (!res.ok) console.warn("Favorite API failed.");
-    } catch (error) {
-      console.error("Network error toggling favorite:", error);
-    } finally {
-      setIsLiking(false);
-    }
   };
 
   return (
@@ -353,7 +358,7 @@ function RecipeCard({
           
           <div 
             onClick={toggleFavorite}
-            className={`bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50 ${isLiking ? 'opacity-70 cursor-wait' : ''}`}
+            className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-all active:scale-90 relative z-50"
           >
             {isFavorite ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none transition-all duration-300 scale-110">

@@ -15,6 +15,7 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
@@ -230,7 +231,10 @@ describe('POST /api/favorites', () => {
 
     expect(res.status).toBe(404)
     expect(body.error).toBe('Recipe not found')
-    expect(mockPrisma.recipe.findUnique).toHaveBeenCalledWith({ where: { id: validRecipeId } })
+    expect(mockPrisma.recipe.findUnique).toHaveBeenCalledWith({
+      where: { id: validRecipeId },
+      select: { id: true },
+    })
   })
 
   test('creates favorite and increments count when not already favorited', async () => {
@@ -267,8 +271,9 @@ describe('POST /api/favorites', () => {
       data: { user: { id: 'user-1' } },
       error: null,
     })
-    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId, recipeName: 'Test' })
-    mockPrisma.favorite.findUnique.mockResolvedValue({ id: 'fav-existing', userId: 'user-1', recipeId: validRecipeId })
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    // Simulate duplicate (userId, recipeId) → unique constraint violation (P2002)
+    mockPrisma.favorite.create.mockRejectedValue({ code: 'P2002' })
     mockPrisma.favorite.delete.mockResolvedValue({ id: 'fav-existing' })
     mockPrisma.recipe.update.mockResolvedValue({ id: validRecipeId, favoriteCount: 0 })
 
@@ -283,7 +288,40 @@ describe('POST /api/favorites', () => {
     expect(res.status).toBe(200)
     expect(body.data).toEqual({ favorited: false })
     expect(mockPrisma.favorite.delete).toHaveBeenCalledWith({
-      where: { id: 'fav-existing' },
+      where: { userId_recipeId: { userId: 'user-1', recipeId: validRecipeId } },
+    })
+    expect(mockPrisma.recipe.update).toHaveBeenCalledWith({
+      where: { id: validRecipeId },
+      data: { favoriteCount: { decrement: 1 } },
+    })
+  })
+
+  test('toggles a recipe that already exists back to unfavorited', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    })
+    mockPrisma.recipe.findUnique.mockResolvedValue({ id: validRecipeId })
+    mockPrisma.favorite.create.mockRejectedValue({
+      code: 'P2002',
+      meta: { target: ['userId_recipeId'] },
+    })
+    mockPrisma.favorite.delete.mockResolvedValue({ id: 'fav-1', userId: 'user-1', recipeId: validRecipeId })
+    mockPrisma.recipe.update.mockResolvedValue({ id: validRecipeId, favoriteCount: 0 })
+
+    const req = new Request('http://localhost/api/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipeId: validRecipeId }),
+    })
+
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data).toEqual({ favorited: false })
+    expect(mockPrisma.favorite.delete).toHaveBeenCalledWith({
+      where: { userId_recipeId: { userId: 'user-1', recipeId: validRecipeId } },
     })
     expect(mockPrisma.recipe.update).toHaveBeenCalledWith({
       where: { id: validRecipeId },
