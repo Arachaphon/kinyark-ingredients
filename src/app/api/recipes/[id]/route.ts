@@ -232,6 +232,7 @@ export async function DELETE(
       await deleteFileByUrl(supabase, url)
     }
 
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: { success: true, id: recipeId } }, { status: 200 })
   } catch (error) {
@@ -526,6 +527,7 @@ export async function PATCH(
       timeout: 30000,
     })
 
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: updatedRecipe })
   } catch (error) {
