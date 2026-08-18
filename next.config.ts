@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  experimental: {
+    proxyClientMaxBodySize: "4mb",
+  },
+
   images: {
     remotePatterns: [
       {

@@ -421,7 +421,7 @@ export default function ViewRecipePage() {
                           <div className="flex flex-col gap-3 w-full"><p className="text-xs font-bold text-[#16A34A]">วิดีโอแนะนำเซ็ทอาหาร:</p>
                             <div className="flex flex-col gap-3 w-full">
                               {storeVideos.map((vid: any, idx: number) => (
-                                <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls className="w-full h-full object-cover" /></div>
+<div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls preload="metadata" poster={storeImages && storeImages.length > 0 ? storeImages[0].imageUrl : undefined} className="w-full h-full object-cover" /></div>
                               ))}
                             </div>
                           </div>
@@ -498,7 +498,7 @@ export default function ViewRecipePage() {
                     <div className="flex flex-col gap-3 w-full"><p className="text-xs font-bold text-[#71B254]">วิดีโอประกอบสูตรอาหาร:</p>
                       <div className="flex flex-col gap-3 w-full">
                         {recipe.videos.map((vid: any, idx: number) => (
-                          <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls className="w-full h-full object-cover" /></div>
+                          <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls preload="metadata" poster={recipe.images && recipe.images.length > 0 ? recipe.images[0].imageUrl : undefined} className="w-full h-full object-cover" /></div>
                         ))}
                       </div>
                     </div>

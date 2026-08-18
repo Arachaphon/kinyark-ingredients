@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
 import type { Map, Marker, LeafletMouseEvent } from "leaflet";
+import { useAuth } from "@/context/AuthContext";
+import { createClient } from "@/lib/supabase/client";
+import { uploadRecipeMedia } from "@/lib/storage";
 
 type LeafletModule = typeof import("leaflet");
 
@@ -86,6 +89,7 @@ const SAMPLE_SYSTEM_RECIPES: SystemRecipe[] = [
 
 export default function CreateRecipePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
   const [postAs, setPostAs] = useState<"user" | "store">("user");
   const [userRole, setUserRole] = useState<string>("USER");
@@ -742,16 +746,10 @@ export default function CreateRecipePage() {
 
       // ⚠️ Upload files
       const uploadFile = async (file: File): Promise<{ url: string | null; error?: string }> => {
-        const fd = new FormData();
-        fd.append("file", file);
-        try {
-          const res = await fetch("/api/recipes/upload", { method: "POST", body: fd });
-          const data = await res.json();
-          if (!res.ok) return { url: null, error: data.error || "เกิดข้อผิดพลาดในการอัปโหลดไฟล์" };
-          return { url: data.url };
-        } catch {
-          return { url: null, error: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์เพื่ออัปโหลดไฟล์ได้" };
-        }
+        if (!user) return { url: null, error: "ยังไม่ได้ล็อกอิน" };
+        const result = await uploadRecipeMedia(createClient(), file, user.id);
+        if (result.error) return { url: null, error: result.error };
+        return { url: result.url };
       };
 
       const uploadedRecipeImages: string[] = [];
@@ -1241,7 +1239,7 @@ export default function CreateRecipePage() {
                       <input id="shop-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={shopVideoInputRef} onChange={handleShopVideoUpload} />
                       {shopIngredientVideo ? (
                         <div className="h-[250px] w-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
-                          <video src={shopIngredientVideo.previewUrl} controls className="w-full h-full object-contain" />
+                          <video src={shopIngredientVideo.previewUrl} controls preload="metadata" className="w-full h-full object-contain" />
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button type="button" id="remove-shop-video-btn" onClick={() => setShopIngredientVideo(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
@@ -1258,7 +1256,7 @@ export default function CreateRecipePage() {
                             <path d="M23 7a2 2 0 0 0-2.45-1.45L16 7V5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2l4.55 1.45A2 2 0 0 0 23 17V7z"></path>
                           </svg>
                           <span className="font-bold text-gray-800 text-[12px]">อัปโหลดวิดีโอวัตถุดิบ</span>
-                          <span className="text-gray-400 text-[10px]">รองรับ MP4, MOV (ไม่บังคับ)</span>
+                          <span className="text-gray-400 text-[10px]">MP4 ≤20MB · แนะนำบีบอัด 720p, 30-60 วินาที</span>
                         </div>
                       )}
                     </div>
@@ -1890,7 +1888,7 @@ export default function CreateRecipePage() {
                       <input id="recipe-video-file-input" type="file" accept="video/mp4, video/quicktime, video/webm" className="hidden" ref={videoInputRef} onChange={handleVideoUpload} />
                       {videoFile ? (
                         <div className="w-full h-full border border-[#71B254] rounded-md overflow-hidden relative group bg-black flex items-center justify-center shadow-sm">
-                          <video src={videoFile.previewUrl} controls className="w-full h-full object-contain" />
+                          <video src={videoFile.previewUrl} controls preload="metadata" className="w-full h-full object-contain" />
                           <div className="absolute top-2 right-2 opacity-80 group-hover:opacity-100 transition-opacity z-10">
                             <button type="button" id="remove-recipe-video-btn" onClick={() => setVideoFile(null)} className="bg-red-500 text-white px-2.5 py-1.5 rounded-md font-bold shadow-sm text-xs hover:bg-red-600">
                               ลบวิดีโอ
@@ -1903,7 +1901,7 @@ export default function CreateRecipePage() {
                             <path d="M23 7a2 2 0 0 0-2.45-1.45L16 7V5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2l4.55 1.45A2 2 0 0 0 23 17V7z"></path>
                           </svg>
                           <span className="font-bold text-gray-800 text-[12px] mb-1">อัปโหลดวิดีโอ</span>
-                          <span className="text-gray-400 text-[10px]">รองรับไฟล์ MP4, MOV</span>
+                          <span className="text-gray-400 text-[10px]">MP4 ≤20MB · แนะนำบีบอัด 720p, 30-60 วินาที</span>
                         </div>
                       )}
                     </div>
