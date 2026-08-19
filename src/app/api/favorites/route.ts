@@ -30,33 +30,47 @@ export async function POST(request: Request) {
 
   const { recipeId } = parsed.data
 
-  const recipe = await prisma.recipe.findUnique({ where: { id: recipeId } })
-  if (!recipe) return Response.json({ error: "Recipe not found" }, { status: 404 })
-
   try {
-    cache.del(`favorites:${userId}`)
+    // Invalidate derived caches so feeds / detail pages reflect the toggle immediately.
     cache.del(`recipe:${recipeId}`)
-    const existing = await prisma.favorite.findUnique({
-      where: { userId_recipeId: { userId: userId, recipeId: recipeId } },
-    })
+    cache.delPrefix("recipes:list")
 
-    if (existing) {
-      await prisma.favorite.delete({ where: { id: existing.id } })
-      await prisma.recipe.update({
-        where: { id: recipeId },
-        data: { favoriteCount: { decrement: 1 } },
-      })
-      return Response.json({ data: { favorited: false } })
-    }
-
-    await prisma.favorite.create({
-      data: { userId: userId, recipeId: recipeId },
-    })
-    await prisma.recipe.update({
+    const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId },
-      data: { favoriteCount: { increment: 1 } },
+      select: { id: true },
     })
-    return Response.json({ data: { favorited: true } }, { status: 201 })
+    if (!recipe) return Response.json({ error: "Recipe not found" }, { status: 404 })
+
+    // Atomic like: create favorite + increment count in 1 transaction.
+    // Rely on the (userId, recipeId) unique constraint as the source of truth —
+    // this is race-safe even when two toggle requests run concurrently.
+    try {
+      await prisma.$transaction([
+        prisma.favorite.create({
+          data: { userId: userId, recipeId: recipeId },
+        }),
+        prisma.recipe.update({
+          where: { id: recipeId },
+          data: { favoriteCount: { increment: 1 } },
+        }),
+      ])
+      return Response.json({ data: { favorited: true } }, { status: 201 })
+    } catch (error) {
+      // P2002 = duplicate (userId, recipeId) → already favorited → unlike.
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        await prisma.$transaction([
+          prisma.favorite.delete({
+            where: { userId_recipeId: { userId: userId, recipeId: recipeId } },
+          }),
+          prisma.recipe.update({
+            where: { id: recipeId },
+            data: { favoriteCount: { decrement: 1 } },
+          }),
+        ])
+        return Response.json({ data: { favorited: false } })
+      }
+      throw error
+    }
   } catch (error) {
     console.error("Error toggling favorite:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
@@ -116,12 +130,7 @@ export async function GET(request?: Request) {
     const userId = await getAuthUserId(request)
     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-    const cacheKey = `favorites:${userId}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      return Response.json({ data: cached })
-    }
-
+    // No caching here: per-user data that can change from any serverless instance.
     const favorites = await prisma.favorite.findMany({
       where: { userId: userId },
       select: {
@@ -162,7 +171,6 @@ export async function GET(request?: Request) {
       orderBy: { createdAt: "desc" },
     })
 
-    cache.set(cacheKey, favorites, 30_000)
     return Response.json({ data: favorites })
   } catch (error) {
     console.error("GET /api/favorites error:", error)

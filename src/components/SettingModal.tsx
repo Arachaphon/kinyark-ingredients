@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from 'next/navigation'
+import { mutate } from "swr";
 
 interface SettingModalProps {
   isOpen: boolean;
@@ -424,6 +425,15 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                         setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
                         return;
                       }
+
+                      const updatedData = await res.json().catch(() => null);
+                      const updatedUser = updatedData?.data?.user;
+
+                      await mutate(
+                        "/api/auth/me",
+                        updatedUser ? { user: updatedUser } : undefined,
+                        { revalidate: true }
+                      );
 
                       setFormPassword("");
                       setFormConfirmPassword("");

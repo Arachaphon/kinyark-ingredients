@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { recipeListItemSelect } from "@/lib/recipes"
+import { upsertRecipeIngredients } from "@/lib/ingredients"
 import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
 import { Prisma } from "@prisma/client"
 import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
@@ -357,26 +358,7 @@ export async function POST(request: Request) {
         });
       }
 
-      const savedIngredients = await Promise.all(
-        ingredients.map(async (ingredient) => {
-          const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
-
-          if (ingredient.category) {
-            const cat = await tx.category.findFirst({
-              where: { name: { equals: ingredient.category, mode: 'insensitive' } }
-            });
-            if (cat) {
-              dataToCreate.categoryId = cat.id;
-            }
-          }
-
-          return tx.ingredient.upsert({
-            where: { name: ingredient.name },
-            update: {},
-            create: dataToCreate,
-          })
-        })
-      );
+      const savedIngredients = await upsertRecipeIngredients(tx, ingredients)
 
       const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
         const requestedIngredient = ingredients[index];

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { upsertRecipeIngredients } from "@/lib/ingredients"
 import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
 import { cache, TTL_RECIPE } from "@/lib/cache"
 import { createClient } from "@/lib/supabase/server"
@@ -231,6 +232,7 @@ export async function DELETE(
       await deleteFileByUrl(supabase, url)
     }
 
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: { success: true, id: recipeId } }, { status: 200 })
   } catch (error) {
@@ -357,24 +359,7 @@ export async function PATCH(
         // Delete old ingredients
         await tx.recipeIngredient.deleteMany({ where: { recipeId } })
         
-        const savedIngredients = await Promise.all(
-          ingredients.map(async (ingredient) => {
-            const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
-            if (ingredient.category) {
-              const cat = await tx.category.findFirst({
-                where: { name: { equals: ingredient.category, mode: 'insensitive' } }
-              });
-              if (cat) {
-                dataToCreate.categoryId = cat.id;
-              }
-            }
-            return tx.ingredient.upsert({
-              where: { name: ingredient.name },
-              update: {},
-              create: dataToCreate,
-            })
-          })
-        );
+        const savedIngredients = await upsertRecipeIngredients(tx, ingredients)
 
         recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
           const requestedIngredient = ingredients[index];
@@ -542,6 +527,7 @@ export async function PATCH(
       timeout: 30000,
     })
 
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
     return Response.json({ data: updatedRecipe })
   } catch (error) {
