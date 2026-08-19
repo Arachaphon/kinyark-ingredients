@@ -143,7 +143,9 @@ const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
 
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("q") || searchParams.get("ingredients") || "";
+  const ingredientsParam = searchParams.get("ingredients");
+  const isIngredientSearch = ingredientsParam !== null;
+  const queryTitle = searchParams.get("query") || searchParams.get("q") || ingredientsParam || "";
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
@@ -173,7 +175,11 @@ function ResultsContent() {
 
     const fetchResults = async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(queryTitle)}`);
+        const response = await fetch(
+          isIngredientSearch
+            ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
+            : `/api/search?q=${encodeURIComponent(queryTitle)}`
+        );
         
         if (!response.ok) {
           throw new Error("Failed to fetch real data");
@@ -229,7 +235,7 @@ function ResultsContent() {
     return () => { 
       isMounted = false; 
     };
-  }, [queryTitle]);
+  }, [queryTitle, isIngredientSearch]);
 
   // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI
   const toggleFavorite = async (id: string) => {
@@ -309,9 +315,13 @@ function ResultsContent() {
         : results.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
             <div className="text-7xl mb-4 opacity-50">🧐</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
+            <h3 className="text-2xl font-black text-gray-900 mb-3">
+              {isIngredientSearch ? "ไม่มีสูตรอาหารที่ตรงกับวัตถุดิบ" : "ไม่พบสูตรอาหารที่ตรงกัน"}
+            </h3>
             <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ &quot;{queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
+              {isIngredientSearch
+                ? "ระบบไม่พบสูตรอาหารที่มีวัตถุดิบครบตามที่เลือก ลองปรับเปลี่ยนหรือลดวัตถุดิบดูนะ"
+                : `ระบบไม่พบสูตรอาหารสำหรับ &quot;${queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ`}
             </p>
             <Link
               href="/search"

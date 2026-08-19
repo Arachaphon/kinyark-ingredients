@@ -31,13 +31,8 @@ function overlapScore(queryGrams: string[], text: string): number {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q") || searchParams.get("query") || searchParams.get("ingredients") || "";
-
-    if (!query.trim()) {
-      return Response.json([]);
-    }
-
-    const cleanQuery = query.trim();
+    const query = searchParams.get("q") || searchParams.get("query") || "";
+    const ingredientsParam = searchParams.get("ingredients");
 
     const userId = await getAuthUserId(request);
     const userRole = request.headers.get("x-user-role");
@@ -52,7 +47,44 @@ export async function GET(request: Request) {
         }
       : { visibility: "public" };
 
-    // Split by spaces or commas (for ?ingredients=หมู,กุ้ง)
+    // Strict ingredient search (?ingredients=วุ้นเส้น,หมู): every selected
+    // ingredient must be present in the recipe (extra recipe ingredients OK).
+    if (ingredientsParam !== null) {
+      const requiredIngredients = ingredientsParam
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      if (requiredIngredients.length === 0) {
+        return Response.json([]);
+      }
+
+      const recipes = await prisma.recipe.findMany({
+        where: {
+          ...recipeVisibility,
+          AND: requiredIngredients.map((name) => ({
+            recipeIngredients: {
+              some: {
+                ingredient: { name: { equals: name } },
+              },
+            },
+          })),
+        },
+        select: recipeListItemSelect({ withUser: true, withIngredients: true }),
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      return Response.json(recipes);
+    }
+
+    if (!query.trim()) {
+      return Response.json([]);
+    }
+
+    const cleanQuery = query.trim();
+
+    // Split by spaces or commas
     const keywords = cleanQuery.split(/[\s,]+/).filter(Boolean);
 
     const recipes = await prisma.recipe.findMany({
