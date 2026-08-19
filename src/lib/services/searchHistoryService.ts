@@ -32,9 +32,17 @@ export async function saveSearchHistory(userId: string, searchQuery: string) {
     });
   });
 
-  // Non-blocking cleanup: Keep only the latest 20 records per user
+  // Non-blocking cleanup: expire entries older than 1 month and keep only
+  // the latest 20 records per user.
   (async () => {
     try {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      await prisma.searchHistory.deleteMany({
+        where: { userId, createdAt: { lt: oneMonthAgo } },
+      });
+
       const allHistories = await prisma.searchHistory.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
@@ -56,8 +64,15 @@ export async function saveSearchHistory(userId: string, searchQuery: string) {
 }
 
 export async function getSearchHistory(userId: string, limit: number = 20) {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  // Never return entries older than 1 month.
   return await prisma.searchHistory.findMany({
-    where: { userId },
+    where: {
+      userId,
+      createdAt: { gte: oneMonthAgo },
+    },
     orderBy: { createdAt: "desc" },
     take: limit,
   });

@@ -88,8 +88,21 @@ export default function Navbar() {
   const userProfile = userData?.user ?? null;
 
   const handleSearchSubmit = (term: string) => {
-    if (!term.trim()) return;
-    router.push(`/search/results?query=${encodeURIComponent(term)}`);
+    const trimmed = term.trim();
+    if (!trimmed) return;
+
+    // Persist search history for logged-in users (ignored for guests).
+    if (userProfile?.id) {
+      fetch("/api/search-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ searchQuery: trimmed }),
+      }).catch(() => {
+        // Best-effort: history saving must never block navigation.
+      });
+    }
+
+    router.push(`/search/results?query=${encodeURIComponent(trimmed)}`);
     setIsDropdownOpen(false);
   };
 
