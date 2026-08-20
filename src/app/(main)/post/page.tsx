@@ -115,12 +115,12 @@ export default function PostsFeedPage() {
               return (
                 <div
                   key={`store-${post.id}`}
-                  className="bg-white border border-[#71B254] rounded-sm p-8 shadow-md mb-4 animate-fade-in relative"
+                  className="bg-white border border-[#71B254] rounded-sm p-6 sm:p-8 shadow-md mb-4 animate-fade-in relative"
                 >
 
 
                   <div className="flex flex-col md:flex-row gap-10">
-                    <div className="w-full md:w-[380px] h-[350px] flex-shrink-0 relative">
+                    <div className="w-full md:w-[380px] h-56 sm:h-80 md:h-[350px] flex-shrink-0 relative">
                       <Image
                         src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                         alt={post.recipeName}
@@ -225,10 +225,10 @@ export default function PostsFeedPage() {
             return (
               <div
                 key={post.id}
-                className="bg-white border-2 border-white rounded-sm p-8 shadow-sm mb-4 animate-fade-in"
+                className="bg-white border-2 border-white rounded-sm p-6 sm:p-8 shadow-sm mb-4 animate-fade-in"
               >
                 <div className="flex flex-col md:flex-row gap-10">
-                  <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
+                  <div className="w-full md:w-[350px] h-56 sm:h-80 md:h-[350px] flex-shrink-0 relative">
                     <Image
                       src={post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                       alt={post.recipeName}

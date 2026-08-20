@@ -354,7 +354,7 @@ export default function ViewRecipePage() {
                 const storeUsername = storePost.user?.username ?? "store";
 
                 return (
-                  <div className="bg-white border-2 border-[#16A34A] rounded-sm p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
+                  <div className="bg-white border-2 border-[#16A34A] rounded-sm p-6 sm:p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
                     <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
                       <span>รายละเอียดเซ็ทอาหารร้านค้า</span>
                     </div>
@@ -562,7 +562,7 @@ export default function ViewRecipePage() {
               })()}
 
             {/* 📖 รายละเอียดสูตรอาหาร */}
-            <div className="bg-white border border-[#71B254] rounded-sm p-8 relative mb-6 flex flex-col gap-8">
+            <div className="bg-white border border-[#71B254] rounded-sm p-6 sm:p-8 relative mb-6 flex flex-col gap-8">
               {/* 🏷️ Badge ขวามือบนสุดของการ์ดสูตรอาหาร */}
               <div className="absolute top-4 right-4 bg-[#71B254] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10">
                 <span>รายละเอียดสูตรอาหาร</span>

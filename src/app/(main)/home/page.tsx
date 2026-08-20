@@ -92,7 +92,7 @@ export default function HomePage() {
         </div>
 
         <div className="md:col-span-7 flex items-center justify-end relative mt-12 md:mt-0">
-          <div className="bg-white rounded-[40px] w-full md:w-[88%] p-12 pr-36 md:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
+          <div className="bg-white rounded-[40px] w-full md:w-[88%] p-6 sm:p-10 md:p-12 pr-24 sm:pr-28 md:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
@@ -191,7 +191,7 @@ function MenuCarousel({
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
       
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-24 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-20 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
           <RecipeCard id={item1.id} title={item1.title} bgColor={item1.color} image={item1.image} />
         </div>

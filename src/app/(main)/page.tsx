@@ -112,7 +112,7 @@ export default function HomePage() {
       {/* =========================================
           1. HEADER & NAVBAR SECTION
           ========================================= */}
-      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
+      <header className="w-[95%] max-w-[1440px] mx-auto px-3 sm:px-4 pt-6 sm:pt-8 mb-8 sm:mb-12 flex flex-col lg:flex-row items-center justify-between gap-6">
         
         {/* โลโก้ขนาดใหญ่ */}
         <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300 relative">
@@ -121,7 +121,7 @@ export default function HomePage() {
 
         {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
-          <div className="flex gap-16 mb-5 text-lg font-bold">
+          <div className="flex flex-wrap justify-center gap-x-4 sm:gap-x-6 md:gap-x-10 lg:gap-16 mb-5 text-sm sm:text-base md:text-lg font-bold">
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
@@ -136,7 +136,7 @@ export default function HomePage() {
         </div>
 
         {/* ปุ่มฝั่งขวา */}
-        <div className="flex-shrink-0 flex items-center gap-4">
+        <div className="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-lg">+ เผยแพร่สูตรอาหาร</button>
           <Link href="/login" className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
@@ -148,8 +148,8 @@ export default function HomePage() {
       {/* =========================================
           2. HERO SECTION
           ========================================= */}
-      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20">
-        <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
+      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 mb-20">
+        <div className="lg:col-span-5 flex flex-col items-center lg:items-start pt-2 lg:pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
             <CategoryCard emoji="🥩" text="เนื้อสัตว์" />
@@ -165,14 +165,14 @@ export default function HomePage() {
             <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" />
             <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" />
             <div className="col-span-2 flex justify-center mt-2">
-              <div className="w-[210px]">
+              <div className="w-full sm:w-[210px]">
                 <CategoryCard emoji="📦" text="อื่นๆ" />
               </div>
             </div>
           </div>
         </div>
-        <div className="xl:col-span-7 flex items-center justify-end relative mt-12 xl:mt-0">
-          <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
+        <div className="lg:col-span-7 flex items-center justify-end relative mt-8 lg:mt-0">
+          <div className="bg-white rounded-[40px] w-full lg:w-[88%] p-6 sm:p-10 pr-24 sm:pr-28 lg:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
             <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
@@ -202,7 +202,7 @@ export default function HomePage() {
               )}
             </div>
           </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-10 md:translate-x-16 w-36 h-36 sm:w-52 sm:h-52 md:w-72 md:h-72 lg:w-80 lg:h-80 drop-shadow-2xl z-20 pointer-events-none">
             <Image src={featuredImage} alt={featuredTitle} fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
           </div>
         </div>
@@ -222,7 +222,7 @@ export default function HomePage() {
             <p className="text-gray-600 font-bold text-lg">กำลังจัดเตรียมเมนูแนะนำสุดละมุนตานะคร้าบ... 🍳</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12">
             <MenuCarousel provider="" recipes={geminiToDisplay} />
             <MenuCarousel provider="" recipes={deepseekToDisplay} />
           </div>
@@ -262,11 +262,11 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length] || item1;
   return (
-    <div className={`bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
+    <div className={`bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
 
-      <div className="flex justify-center gap-6 mt-12 px-4 relative">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-6 mt-24 sm:mt-12 px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
           <RecipeCard
             title={item1.menu_name}
@@ -306,7 +306,7 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${isLeft ? "-left-7" : "-right-7"
+      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${isLeft ? "left-2 sm:-left-7" : "right-2 sm:-right-7"
         }`}
     >
       {isLeft ? (
@@ -320,7 +320,7 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
 
 function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title: string, image: string, rating?: number }) {
   return (
-    <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
+    <div className={`${bgColor} w-full max-w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
         <Image
