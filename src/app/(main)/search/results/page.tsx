@@ -58,98 +58,15 @@ const getAiImageUrl = (recipeName: string) => {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
 };
 
-// =========================================
-// 🍱 ข้อมูลจำลองเมนู (Mock Data)
-// =========================================
-const mockSearchResults: RecipeItem[] = [
-  {
-    id: "mock-1",
-    title: "สลัดซีซาร์สวนผัก",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
-    tags: ["มะเขือเทศ", "หัวหอมหวาน", "พริกไทย", "กะหล่ำปลี"],
-    author: "Alice",
-    authorAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    likes: 22,
-    rating: 3.0,
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-2",
-    title: "สลัด (ง่ายและสดใหม่)",
-    image: getAiImageUrl("สลัด ง่ายและสดใหม่"),
-    tags: ["แตงกวา", "มะเขือเทศ", "แครอท", "ผักสลัด"],
-    author: "Deep Seek", 
-    authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80", 
-    likes: 52,
-    rating: 4.5,
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-3",
-    title: "สลัดผลไม้สดชื่น",
-    image: getAiImageUrl("สลัดผลไม้สดชื่น"),
-    tags: ["สับปะรด", "สตรอว์เบอร์รี", "องุ่น", "ส้ม", "กีวี"],
-    author: "Gemini", 
-    authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
-    likes: 65,
-    rating: 4.8, 
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-4",
-    title: "สลัดอกไก่ย่างคลีนๆ",
-    image: "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?auto=format&fit=crop&w=300&q=80",
-    tags: ["อกไก่", "ผักกาดหอม", "แครอท", "น้ำสลัดงา"],
-    author: "Chef_Pond",
-    authorAvatar: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=150&q=80",
-    likes: 120,
-    rating: 4.9, 
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-5",
-    title: "สลัดอะโวคาโดกุ้งย่าง",
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=300&q=80",
-    tags: ["อะโวคาโด", "กุ้ง", "มะนาว", "ผักร็อกเก็ต"],
-    author: "HealthyGirl",
-    authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-    likes: 85,
-    rating: 4.2,
-    initialFavorite: false,
-    isAi: false, 
-  },
-];
-
-// =========================================
-// 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
-// =========================================
-const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
-  const aiRecipes = dataList.filter((item) => item.isAi);
-  const userRecipes = dataList.filter((item) => !item.isAi);
-
-  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  userRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-  return [
-    ...aiRecipes.slice(0, 2),
-    ...userRecipes.slice(0, 3)
-  ];
-};
-
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
+  const queryTitle = searchParams.get("query") || searchParams.get("q") || searchParams.get("ingredients") || "";
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
 
   const setupFavorites = (dataArray: RecipeItem[]) => {
     const initialFavs = dataArray.reduce(
@@ -161,6 +78,13 @@ function ResultsContent() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!queryTitle.trim()) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     const fetchResults = async () => {
@@ -173,7 +97,7 @@ function ResultsContent() {
 
         const data: ApiRecipeItem[] = await response.json();
 
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           const formattedData: RecipeItem[] = data.map((item) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
             const recipeTitle = item.recipeName || item.title || "";
@@ -200,27 +124,16 @@ function ResultsContent() {
             };
           });
 
-          const sortedAndSlicedData = formatAndSortResults(formattedData);
-
           if (isMounted) {
-            setResults(sortedAndSlicedData);
-            setupFavorites(sortedAndSlicedData);
+            setResults(formattedData);
+            setupFavorites(formattedData);
           }
-        } else {
-          throw new Error("Real data is empty, using fallback");
         }
-
       } catch (error) {
-        console.warn("Using mock data fallback:", error);
+        console.warn("API Search Error:", error);
         if (!isMounted) return;
 
-        if (queryTitle.toLowerCase().includes("ไม่มี") || queryTitle.toLowerCase().includes("empty")) {
-          setResults([]);
-        } else {
-          const sortedMockData = formatAndSortResults(mockSearchResults);
-          setResults(sortedMockData);
-          setupFavorites(sortedMockData);
-        }
+        setResults([]);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -228,40 +141,34 @@ function ResultsContent() {
       }
     };
 
-    const timer = setTimeout(fetchResults, 800);
+    fetchResults();
     return () => { 
       isMounted = false; 
-      clearTimeout(timer);
     };
   }, [queryTitle]);
 
-  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI
-  const toggleFavorite = async (id: string) => {
-    // ดักไม่ให้กดย้ำๆ ระหว่างที่ API ยังส่งคำขอไม่เสร็จ
-    if (isLiking[id]) return;
-
+  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI (ตอบสนองทันทีทุกคลิก)
+  const toggleFavorite = (id: string) => {
     // 1. Optimistic UI: สลับสถานะหัวใจให้ผู้ใช้เห็นทันที
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-    setIsLiking((prev) => ({ ...prev, [id]: true }));
 
-    try {
-      // 2. ยิง API บันทึกข้อมูลไปหลังบ้าน
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: id }),
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    const revert = () => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          revert();
+        }
+      })
+      .catch((error) => {
+        console.error("Network error toggling favorite:", error);
+        revert();
       });
-
-      if (!res.ok) {
-        // ในกรณีที่หลังบ้านพังหรือรอเชื่อมต่อ เราจะจำลองให้ UI เปลี่ยนต่อไปเพื่อการทดสอบ
-        console.warn("Favorite API failed or not ready yet. Simulating UI state.");
-      }
-    } catch (error) {
-      console.error("Network error toggling favorite:", error);
-    } finally {
-      // ปลดล็อคสถานะโหลด
-      setIsLiking((prev) => ({ ...prev, [id]: false }));
-    }
   };
 
   return (
@@ -330,7 +237,6 @@ function ResultsContent() {
         : (
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
-            const isCurrentlyLiking = isLiking[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
 
             return (
@@ -393,7 +299,7 @@ function ResultsContent() {
                     {/* ยอดกดไลก์หัวใจ (เพิ่ม Animation การตอบสนอง) */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
-                      className={`flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform ${isCurrentlyLiking ? 'opacity-70 cursor-wait' : ''}`}
+                      className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
                     >
                       <svg
                         width="20"

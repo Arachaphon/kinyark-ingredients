@@ -22,14 +22,21 @@ const FALLBACK_AVATAR = "/photo/default-avatar.svg";
 // =========================================
 // 🎨 ข้อมูลจำลอง (Mock Data) สำหรับทดสอบ UI 
 // ========================================
-const mockRecipeDetail: any = {
+const mockRecipeDetail: RecipeDetail = {
   id: "mock-recipe-id",
+  userId: "mock-user-id",
   recipeName: "สปาเก็ตตี้คาโบนาร่าสูตรต้นตำรับ",
   description: "หอมมันด้วยไข่แดงและชีสเพโคริโน่แท้ๆ ไม่ใช้ครีม ตามแบบฉบับอิตาเลียนดั้งเดิม อร่อยเข้มข้นจนต้องขอเพิ่มอีกจาน!",
   rating: 4.9,
+  reviewCount: 2,
   favoriteCount: 342,
+  bgColor: null,
+  aiProvider: null,
+  visibility: "PUBLIC",
+  createdAt: "2026-08-16T00:00:00.000Z",
   isFavorite: false,
   user: {
+    id: "u-mock-1",
     username: "ItalianChef_BKK",
     avatarUrl: "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=150&q=80",
   },
@@ -38,26 +45,34 @@ const mockRecipeDetail: any = {
     { id: "img2", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80" }
   ],
   videos: [],
+  equipmentItems: [],
   recipeIngredients: [
-    { id: "ri1", ingredient: { name: "เส้นสปาเก็ตตี้" }, quantity: 200, unit: "g" },
-    { id: "ri2", ingredient: { name: "กวนชาเล่ (แก้มหมูหมัก)" }, quantity: 100, unit: "g" },
-    { id: "ri3", ingredient: { name: "ไข่แดง" }, quantity: 3, unit: "ฟอง" },
-    { id: "ri4", ingredient: { name: "ชีสเพโคริโน่ โรมาโน่" }, quantity: 50, unit: "g" },
-    { id: "ri5", ingredient: { name: "พริกไทยดำ" }, quantity: 1, unit: "tsp" },
+    { id: "ri1", quantity: 200, unit: "g", ingredient: { id: 1, name: "เส้นสปาเก็ตตี้", categoryId: null } },
+    { id: "ri2", quantity: 100, unit: "g", ingredient: { id: 2, name: "กวนชาเล่ (แก้มหมูหมัก)", categoryId: null } },
+    { id: "ri3", quantity: 3, unit: "ฟอง", ingredient: { id: 3, name: "ไข่แดง", categoryId: null } },
+    { id: "ri4", quantity: 50, unit: "g", ingredient: { id: 4, name: "ชีสเพโคริโน่ โรมาโน่", categoryId: null } },
+    { id: "ri5", quantity: 1, unit: "tsp", ingredient: { id: 5, name: "พริกไทยดำ", categoryId: null } },
   ],
   instructions: "1. ต้มน้ำให้เดือด ใส่เกลือเล็กน้อย แล้วนำเส้นสปาเก็ตตี้ลงไปต้มให้ได้ระดับ Al Dente\n2. หั่นกวนชาเล่เป็นชิ้นเล็กๆ นำลงไปผัดในกระทะด้วยไฟอ่อนจนน้ำมันละลายออกมาและกรอบ\n3. ผสมไข่แดง ชีสเพโคริโน่ขูด และพริกไทยดำเข้าด้วยกันในชาม\n4. นำเส้นที่ต้มเสร็จแล้วลงไปคลุกในกระทะกับกวนชาเล่ (ปิดไฟกระทะก่อน)\n5. เทส่วนผสมไข่และชีสลงไป คลุกเคล้าอย่างรวดเร็ว เติมน้ำต้มเส้นเล็กน้อยเพื่อให้เกิดซอสครีมมี่",
   storePosts: [
     {
       id: "sp1",
+      userId: "sp-user-1",
+      recipeId: "mock-recipe-id",
       storeName: "Pasta Lovers Shop",
       sellingPrice: 259,
       storeDescription: "เซ็ทวัตถุดิบพร้อมปรุงสปาเก็ตตี้คาโบนาร่า นำเข้าชีสและกวนชาเล่แท้จากอิตาลี ส่งตรงถึงบ้านคุณพร้อมสูตรลับเฉพาะ",
       storeLocation: "ตึก Empire Tower สาทร กรุงเทพมหานคร",
       contactInfo: "Line: @pastalovers\nโทร: 089-999-9999",
+      visibility: "PUBLIC",
+      createdAt: "2026-08-16T00:00:00.000Z",
       user: {
+        id: "sp-user-1",
         username: "Pasta Lovers Shop",
         avatarUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80"
       },
+      images: [],
+      videos: [],
       setIngredients: [
         { name: "เส้นสปาเก็ตตี้ (อิตาลี)", quantity: 200, unit: "g" },
         { name: "กวนชาเล่หั่นเต๋า", quantity: 100, unit: "g" },
@@ -68,14 +83,18 @@ const mockRecipeDetail: any = {
   reviews: [
     {
       id: "rv1",
-      user: { username: "FoodieGirl", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" },
+      userId: "rv-user-1",
+      createdAt: "2026-08-16T00:00:00.000Z",
+      user: { id: "rv-user-1", username: "FoodieGirl", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" },
       isAnonymous: false,
       rating: 5,
       comment: "ทำตามแล้วอร่อยมากค่ะ ซอสครีมมี่สุดๆ ไม่ต้องใช้ครีมเลย"
     },
     {
       id: "rv2",
-      user: { username: "SecretChef", avatarUrl: "" },
+      userId: "rv-user-2",
+      createdAt: "2026-08-16T00:00:00.000Z",
+      user: { id: "rv-user-2", username: "SecretChef", avatarUrl: null },
       isAnonymous: true,
       rating: 4,
       comment: "เซ็ทอาหารส่งไว วัตถุดิบดีมากครับ กลิ่นชีสหอมสุดๆ"
@@ -83,7 +102,15 @@ const mockRecipeDetail: any = {
   ]
 };
 
-function ImageCarousel({ images, altText, themeColor = "#71B254" }: { images: Array<{ id: string; imageUrl: string }>; altText: string; themeColor?: string; }) {
+function ImageCarousel({
+  images,
+  altText,
+  themeColor = "#71B254",
+}: {
+  images: Array<{ id: string; imageUrl: string }>;
+  altText: string;
+  themeColor?: string;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!images || images.length === 0) return null;
@@ -140,7 +167,6 @@ export default function ViewRecipePage() {
   
   // States สำหรับระบบ Comment & Post
   const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const [isFavoriting, setIsFavoriting] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [ratingValue, setRatingValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,12 +177,17 @@ export default function ViewRecipePage() {
 
     try {
       const res = await fetch(`/api/recipes/${recipeId}`);
+      
+      // 🌟 HYBRID LOGIC: ถ้า API พัง, หาไม่เจอ, หรือยังไม่พร้อม ให้แสดง Mock Data ทันที
       if (!res.ok) {
         setRecipe({ ...mockRecipeDetail, id: recipeId as string });
         setLoading(false);
         return;
       }
+      
       const body = await res.json();
+      
+      // ถ้ามีข้อมูลจริง ให้ใช้ข้อมูลจริง
       if (body.data) {
         setRecipe(body.data as RecipeDetail);
       } else {
@@ -171,29 +202,39 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
-  const toggleFavorite = async () => {
-    if (!recipe || isFavoriting) return;
+  const toggleFavorite = () => {
+    if (!recipe) return;
 
-    setRecipe((prev) =>
-      prev ? {
-        ...prev,
-        isFavorite: !prev.isFavorite,
-        favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
-      } : prev,
-    );
-    setIsFavoriting(true);
+    const flip = () =>
+      setRecipe((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFavorite: !prev.isFavorite,
+              favoriteCount: Math.max(0, prev.favoriteCount + (!prev.isFavorite ? 1 : -1)),
+            }
+          : prev
+      );
 
-    try {
-      await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: recipe.id }),
+    // 1. Optimistic UI: สลับทันที
+    flip();
+
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: recipe.id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          flip();
+        }
+      })
+      .catch(() => {
+        console.warn("Network error, reverting optimistic UI state");
+        flip();
       });
-    } catch {
-      console.warn("Network error toggling favorite");
-    } finally {
-      setIsFavoriting(false);
-    }
   };
 
   // 🌟 ฟังก์ชันจัดการกดส่งคอมเมนต์แบบ Optimistic UI
@@ -385,7 +426,7 @@ export default function ViewRecipePage() {
                           <div className="flex flex-col gap-3 w-full"><p className="text-xs font-bold text-[#16A34A]">วิดีโอแนะนำเซ็ทอาหาร:</p>
                             <div className="flex flex-col gap-3 w-full">
                               {storeVideos.map((vid: any, idx: number) => (
-                                <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls className="w-full h-full object-cover" /></div>
+<div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls preload="metadata" poster={storeImages && storeImages.length > 0 ? storeImages[0].imageUrl : undefined} className="w-full h-full object-cover" /></div>
                               ))}
                             </div>
                           </div>
@@ -393,6 +434,7 @@ export default function ViewRecipePage() {
                       </div>
                     )}
 
+                    {/* แผนที่ร้านค้า */}
                     {storePost.storeLocation && (
                     <div className="flex flex-col gap-2 bg-white p-5 rounded-2xl border border-[#BBF7D0] w-full">
                       <p className="text-xs font-bold text-[#16A34A] flex items-center justify-between">
@@ -461,7 +503,7 @@ export default function ViewRecipePage() {
                     <div className="flex flex-col gap-3 w-full"><p className="text-xs font-bold text-[#71B254]">วิดีโอประกอบสูตรอาหาร:</p>
                       <div className="flex flex-col gap-3 w-full">
                         {recipe.videos.map((vid: any, idx: number) => (
-                          <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls className="w-full h-full object-cover" /></div>
+                          <div key={vid.id || idx} className="w-full h-72 sm:h-80 md:h-96 rounded-2xl overflow-hidden border border-black/10 bg-black flex items-center justify-center"><video src={vid.videoUrl} controls preload="metadata" poster={recipe.images && recipe.images.length > 0 ? recipe.images[0].imageUrl : undefined} className="w-full h-full object-cover" /></div>
                         ))}
                       </div>
                     </div>
