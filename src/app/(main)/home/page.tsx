@@ -5,7 +5,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
-// 🌟 เปลี่ยนมาอิมพอร์ตฟอนต์ Anuphan ที่ตัวผอมโปร่ง มีหัวกลมสวยตรงตามรูปเป๊ะๆ ครับ
 import { Anuphan } from "next/font/google";
 
 const anuphan = Anuphan({
@@ -22,6 +21,7 @@ interface WeeklyMenuRecipe {
   title: string;
   color: string;
   image: string;
+  rating?: number;
 }
 interface FeaturedRecipe {
   id: string;
@@ -31,17 +31,17 @@ interface FeaturedRecipe {
 }
 
 const geminiRecipes: WeeklyMenuRecipe[] = [
-  { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" },
-  { id: 2, title: "ไข่เจียวหมูสับ", color: "bg-[#FF8585]", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" },
-  { id: 3, title: "ต้มจืดเต้าหู้", color: "bg-[#3AC9B5]", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" },
-  { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" },
+  { id: 1, title: "แกงเขียวหวาน", color: "bg-[#6F62E4]", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80", rating: 5.0 },
+  { id: 2, title: "ไข่เจียวหมูสับ", color: "bg-[#FF8585]", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80", rating: 4.8 },
+  { id: 3, title: "ต้มจืดเต้าหู้", color: "bg-[#3AC9B5]", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80", rating: 4.9 },
+  { id: 4, title: "ผัดไทยกุ้งสด", color: "bg-[#63D04C]", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", rating: 5.0 },
 ];
 
 const deepseekRecipes: WeeklyMenuRecipe[] = [
-  { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
-  { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
-  { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" },
-  { id: 4, title: "กะเพราไก่ไข่ดาว", color: "bg-[#4285F4]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" },
+  { id: 1, title: "ต้มยำกุ้ง", color: "bg-[#F58D38]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80", rating: 5.0 },
+  { id: 2, title: "ส้มตำไทย", color: "bg-[#D05C5C]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80", rating: 4.7 },
+  { id: 3, title: "ข้าวผัดหมู", color: "bg-[#E6C229]", image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80", rating: 4.5 },
+  { id: 4, title: "กะเพราไก่ไข่ดาว", color: "bg-[#4285F4]", image: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80", rating: 5.0 },
 ];
 
 export default function HomePage() {
@@ -55,19 +55,14 @@ export default function HomePage() {
     "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
 
   return (
-    // 🌟 ผูกคลาสฟอนต์ Anuphan เข้าที่นี่ มิติเลย์เอาต์ทุกอย่างจะเป๊ะ ไม่ขยับเขยื้อนแน่นอนครับ
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       
       <Navbar />
 
-      {/* =========================================
-          2. HERO SECTION
-          ========================================= */}
       <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 md:grid-cols-12 gap-12 mb-20 mt-8">
         <div className="md:col-span-5 flex flex-col items-center md:items-start pt-2 pl-4">
           <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
           
-          {/* 🛠️ แก้ไขตรงนี้: จอมือถือเล็กสุดเรียงแถวตรงลงมา (grid-cols-1) พอเริ่มกว้างขึ้น (sm:) จะสลับเป็น 2 คอลัมน์เหมือนเดิม ทำให้ตัวหนังสือไม่เบียดตกขอบ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-[450px]">
             <CategoryCard emoji="🥩" text="เนื้อสัตว์" category="Meat" />
             <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" category="Kitchen Tools" />
@@ -82,7 +77,6 @@ export default function HomePage() {
             <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" category="Fats & Oils" />
             <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" category="Liquids & Beverages" />
             
-            {/* 🛠️ จัดตำแหน่งกล่อง "อื่นๆ": จอมือถือเรียงเต็มแถวปกติ (col-span-1) พอจอใหญ่ขึ้นกลับไปกว้าง 210px ตรงกลางเหมือนเดิม */}
             <div className="sm:col-span-2 flex justify-center mt-2 w-full">
               <div className="w-full sm:w-[210px]">
                 <CategoryCard emoji="📦" text="อื่นๆ" category="Others" />
@@ -126,10 +120,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* =========================================
-          3. DAILY RECOMMENDED MENU SECTION
-          ========================================= */}
-      <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
+      <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12 overflow-hidden">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           สูตรอาหารแนะนำประจำสัปดาห์
         </h2>
@@ -164,39 +155,45 @@ function MenuCarousel({
   recipes 
 }: {
   provider: string; 
-  recipes:WeeklyMenuRecipe[]
+  recipes: WeeklyMenuRecipe[]
 } ) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleNext = useCallback(() => {
+    if (recipes.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
   }, [recipes.length]);
 
   const handlePrev = useCallback(() => {
+    if (recipes.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex - 1 + recipes.length) % recipes.length);
   }, [recipes.length]);
 
   useEffect(() => {
+    if (recipes.length === 0) return;
     const timer = setInterval(() => {
       handleNext();
     }, 3500);
     return () => clearInterval(timer);
-  }, [currentIndex, handleNext]);
+  }, [currentIndex, handleNext, recipes.length]);
+
+  if (recipes.length === 0) return null;
 
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length];
 
   return (
-    <div className="bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[340px] sm:max-w-[650px]">
+    <div className="bg-white rounded-[40px] p-4 pt-12 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[95%] sm:max-w-[650px]">
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
       
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-20 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-14 sm:gap-6 mt-4 sm:mt-12 px-2 sm:px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative">
-          <RecipeCard id={item1.id} title={item1.title} bgColor={item1.color} image={item1.image} />
+          {/* ✅ เพิ่ม rating เข้าไปเพื่อแก้บั๊ก TS2741 */}
+          <RecipeCard id={item1.id} title={item1.title} bgColor={item1.color} image={item1.image} rating={item1.rating || 5.0} />
         </div>
         <div key={`card2-${item2.id}`} className="animate-fade-in relative">
-          <RecipeCard id={item2.id} title={item2.title} bgColor={item2.color} image={item2.image} />
+          <RecipeCard id={item2.id} title={item2.title} bgColor={item2.color} image={item2.image} rating={item2.rating || 5.0} />
         </div>
       </div>
       
@@ -212,20 +209,29 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgb(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
+      className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 sm:w-14 sm:h-14 bg-white rounded-full shadow-[0_3px_15px_rgb(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
         isLeft ? "left-1 sm:-left-7" : "right-1 sm:-right-7"
       }`}
     >
       {isLeft ? (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
       ) : (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <svg className="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
       )}
     </button>
   );
 }
 
-function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string, title: string, image: string }) {
+// ✅ อัปเดต Interface ของ Props ให้รับ type ต่างๆ ครบถ้วน เพื่อแก้ TS Errors
+function RecipeCard({ 
+  id, bgColor, title, image, rating = 5.0 
+}: { 
+  id: number | string, 
+  bgColor: string, 
+  title: string, 
+  image: string, 
+  rating?: number 
+}) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -235,41 +241,41 @@ function RecipeCard({ id, bgColor, title, image }: { id: number, bgColor: string
   };
 
   return (
-    <div className={`${bgColor} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
+    <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-20 sm:pt-28 pb-8 sm:pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
+      <div className="absolute -top-12 sm:-top-16 left-1/2 -translate-x-1/2 w-28 h-28 sm:w-40 sm:h-40 z-20 hover:rotate-6 transition duration-300 overflow-visible">
+        <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[6px] sm:border-[10px] border-white" sizes="(max-width: 640px) 112px, 160px" />
       </div>
 
-      <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">
-        <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
+      <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-5 mt-2 px-4 w-full relative z-30">
+        <span className="font-bold text-lg sm:text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%]">
           {title}
         </span>
         
         <div 
           onClick={toggleFavorite}
-          className="bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
+          className="bg-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50 transition-colors active:scale-90 relative z-50"
         >
           {isFavorite ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-fade-in pointer-events-none">
+            <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px] animate-fade-in pointer-events-none" viewBox="0 0 24 24" fill="#FF4747" stroke="#FF4747" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-[#FF4747] transition-colors pointer-events-none">
+            <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px] hover:stroke-[#FF4747] transition-colors pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="#A5A5A5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-8 relative z-30">
+      <div className="flex items-center gap-2 mb-6 sm:mb-8 relative z-30">
         <span className="text-[#F1C40F] text-xl">★</span>
-        <span className="font-semibold text-white text-lg">5.0</span>
+        <span className="font-semibold text-white text-base sm:text-lg">{rating.toFixed(1)}</span>
       </div>
 
       <Link 
         href={`/recipe/${id}`}
-        className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center shadow-sm"
+        className="bg-white text-gray-800 text-xs sm:text-sm font-bold px-6 py-2.5 sm:px-8 sm:py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5 relative z-30 block text-center shadow-sm"
       >
         <span>▶</span> ดูเพิ่มเติม
       </Link>
