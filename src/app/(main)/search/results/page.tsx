@@ -95,7 +95,7 @@ const mockSearchResults: RecipeItem[] = [
     authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
     likes: 65,
     rating: 4.8, 
-    initialFavorite: true,
+    initialFavorite: false,
     isAi: true, 
   },
   {
@@ -146,7 +146,10 @@ function ResultsContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
+  
+  // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
 
   const setupFavorites = (dataArray: RecipeItem[]) => {
     const initialFavs = dataArray.reduce(
@@ -232,8 +235,33 @@ function ResultsContent() {
     };
   }, [queryTitle]);
 
-  const toggleFavorite = (id: string) => {
+  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI
+  const toggleFavorite = async (id: string) => {
+    // ดักไม่ให้กดย้ำๆ ระหว่างที่ API ยังส่งคำขอไม่เสร็จ
+    if (isLiking[id]) return;
+
+    // 1. Optimistic UI: สลับสถานะหัวใจให้ผู้ใช้เห็นทันที
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    setIsLiking((prev) => ({ ...prev, [id]: true }));
+
+    try {
+      // 2. ยิง API บันทึกข้อมูลไปหลังบ้าน
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId: id }),
+      });
+
+      if (!res.ok) {
+        // ในกรณีที่หลังบ้านพังหรือรอเชื่อมต่อ เราจะจำลองให้ UI เปลี่ยนต่อไปเพื่อการทดสอบ
+        console.warn("Favorite API failed or not ready yet. Simulating UI state.");
+      }
+    } catch (error) {
+      console.error("Network error toggling favorite:", error);
+    } finally {
+      // ปลดล็อคสถานะโหลด
+      setIsLiking((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   return (
@@ -302,6 +330,7 @@ function ResultsContent() {
         : (
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
+            const isCurrentlyLiking = isLiking[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
 
             return (
@@ -361,10 +390,10 @@ function ResultsContent() {
                 {/* ขวา: สถิติจำนวนคนกดใจ, ดาวคะแนน และปุ่ม View Recipe */}
                 <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
                   <div className="flex flex-col items-end gap-3 w-full">
-                    {/* ยอดกดไลก์หัวใจ */}
+                    {/* ยอดกดไลก์หัวใจ (เพิ่ม Animation การตอบสนอง) */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
-                      className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
+                      className={`flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform ${isCurrentlyLiking ? 'opacity-70 cursor-wait' : ''}`}
                     >
                       <svg
                         width="20"
@@ -375,6 +404,7 @@ function ResultsContent() {
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        className={isLiked ? "animate-fade-in transition-all duration-300 scale-110" : "hover:stroke-[#FF0000] transition-all duration-300"}
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                       </svg>
