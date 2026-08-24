@@ -30,11 +30,14 @@ export async function POST(request: Request) {
 
   const { recipeId } = parsed.data
 
-  try {
-    // Invalidate derived caches so feeds / detail pages reflect the toggle immediately.
+  // Invalidate derived caches only AFTER a successful write; deleting beforehand
+  // lets a concurrent GET repopulate the cache with stale counts.
+  const invalidateCaches = () => {
     cache.del(`recipe:${recipeId}`)
     cache.delPrefix("recipes:list")
+  }
 
+  try {
     const recipe = await prisma.recipe.findUnique({
       where: { id: recipeId },
       select: { id: true },
@@ -54,7 +57,9 @@ export async function POST(request: Request) {
           data: { favoriteCount: { increment: 1 } },
         }),
       ])
-      return Response.json({ data: { favorited: true } }, { status: 201 })
+      const favoriteCount = await prisma.favorite.count({ where: { recipeId } })
+      invalidateCaches()
+      return Response.json({ data: { favorited: true, favoriteCount } }, { status: 201 })
     } catch (error) {
       // P2002 = duplicate (userId, recipeId) → already favorited → unlike.
       if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
@@ -67,7 +72,9 @@ export async function POST(request: Request) {
             data: { favoriteCount: { decrement: 1 } },
           }),
         ])
-        return Response.json({ data: { favorited: false } })
+        const favoriteCount = await prisma.favorite.count({ where: { recipeId } })
+        invalidateCaches()
+        return Response.json({ data: { favorited: false, favoriteCount } })
       }
       throw error
     }

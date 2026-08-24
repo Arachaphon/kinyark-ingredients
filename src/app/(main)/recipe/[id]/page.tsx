@@ -2,7 +2,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
@@ -211,8 +211,10 @@ export default function ViewRecipePage() {
 
   useEffect(() => { fetchRecipe(); }, [fetchRecipe]);
 
+  const favPendingRef = useRef(false);
   const toggleFavorite = () => {
-    if (!recipe) return;
+    if (!recipe || favPendingRef.current) return;
+    favPendingRef.current = true;
 
     const flip = () =>
       setRecipe((prev) =>
@@ -228,21 +230,35 @@ export default function ViewRecipePage() {
     // 1. Optimistic UI: สลับทันที
     flip();
 
-    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    // 2. ยิง API; sync เลขจริงจาก server / revert เมื่อถูกปฏิเสธ
     fetch("/api/favorites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ recipeId: recipe.id }),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
-          console.warn("Favorite API failed, reverting UI state:", res.status);
+          if (res.status === 401) {
+            window.alert("กรุณาเข้าสู่ระบบก่อนกดถูกใจ");
+          } else {
+            console.warn("Favorite API failed, reverting UI state:", res.status);
+          }
           flip();
+          return;
+        }
+        const json = await res.json();
+        const favorited: unknown = json?.data?.favorited;
+        const favoriteCount: unknown = json?.data?.favoriteCount;
+        if (typeof favorited === "boolean" && typeof favoriteCount === "number") {
+          setRecipe((prev) => (prev ? { ...prev, isFavorite: favorited, favoriteCount } : prev));
         }
       })
       .catch(() => {
         console.warn("Network error, reverting optimistic UI state");
         flip();
+      })
+      .finally(() => {
+        favPendingRef.current = false;
       });
   };
 
