@@ -44,6 +44,8 @@ const CATEGORY_META: Record<string, { name: string; emoji: string }> = {
   'Others':                 { name: 'อื่นๆ',                  emoji: '📦' },
 };
 
+const thaiCollator = new Intl.Collator("th");
+
 type CategoryItem = { id: string; name: string; emoji: string; ingredients: string[] };
 
 
@@ -181,13 +183,13 @@ function SearchContent() {
         id,
         name: CATEGORY_META[id]?.name ?? id,
         emoji: CATEGORY_META[id]?.emoji ?? '🟡',
-        ingredients: grouped[id].sort((a, b) => a.localeCompare(b, 'th')),
+        ingredients: grouped[id].sort((a, b) => thaiCollator.compare(a, b)),
       }));
 
     // เพิ่มหมวดที่ไม่อยู่ใน ORDER
     for (const [id, names] of Object.entries(grouped)) {
       if (!ORDER.includes(id)) {
-        result.push({ id, name: CATEGORY_META[id]?.name ?? id, emoji: CATEGORY_META[id]?.emoji ?? '🟡', ingredients: names.sort((a, b) => a.localeCompare(b, 'th')) });
+        result.push({ id, name: CATEGORY_META[id]?.name ?? id, emoji: CATEGORY_META[id]?.emoji ?? '🟡', ingredients: names.sort((a, b) => thaiCollator.compare(a, b)) });
       }
     }
 

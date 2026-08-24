@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { recipeListItemSelect } from "@/lib/recipes"
+import { upsertRecipeIngredients } from "@/lib/ingredients"
 import { createRecipeSchema, recipeListQuerySchema } from "@/lib/validations/recipe.schema"
 import { Prisma } from "@prisma/client"
+import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
+import { getAuthUserId } from "@/lib/auth-user"
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +28,19 @@ export async function GET(request: Request) {
 
     const { page, limit, mine, publicOnly } = parsed.data
 
-    if (mine) {
-      const supabase = await createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const userId = await getAuthUserId(request)
+    const userRole = request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
 
+    if (mine) {
       if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 })
+      }
+
+      const cacheKey = `recipes:mine:${userId}:${page}:${limit}`
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json(cached)
       }
 
       const userRecipesWhere: Prisma.RecipeWhereInput = {
@@ -43,29 +50,33 @@ export async function GET(request: Request) {
         ],
       }
 
-      const [total, recipes] = await Promise.all([
-        prisma.recipe.count({ where: userRecipesWhere }),
-        prisma.recipe.findMany({
-          where: userRecipesWhere,
-          select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
+      const [
+        [total, recipes],
+        orphanedStorePosts
+      ] = await Promise.all([
+        Promise.all([
+          prisma.recipe.count({ where: userRecipesWhere }),
+          prisma.recipe.findMany({
+            where: userRecipesWhere,
+            select: recipeListItemSelect({ withUser: true, withIngredients: true, storePostUserId: user.id }),
+            orderBy: { createdAt: "desc" },
+            skip: (page - 1) * limit,
+            take: limit,
+          }),
+        ]),
+        prisma.storePost.findMany({
+          where: {
+            userId: user.id,
+            recipeId: null,
+          },
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+            images: { orderBy: { createdAt: "asc" } },
+            videos: { orderBy: { createdAt: "asc" } },
+          },
           orderBy: { createdAt: "desc" },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
+        })
       ])
-
-      const orphanedStorePosts = await prisma.storePost.findMany({
-        where: {
-          userId: user.id,
-          recipeId: null,
-        },
-        include: {
-          user: { select: { id: true, username: true, avatarUrl: true } },
-          images: { orderBy: { createdAt: "asc" } },
-          videos: { orderBy: { createdAt: "asc" } },
-        },
-        orderBy: { createdAt: "desc" },
-      })
 
       const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
         id: `orphan-${sp.id}`,
@@ -100,10 +111,12 @@ export async function GET(request: Request) {
       const totalCount = total + orphanedStorePosts.length
       const totalPages = Math.max(1, Math.ceil(totalCount / limit))
 
-      return Response.json({
+      const mineResponse = {
         data: combinedData,
         meta: { page, limit, total: totalCount, totalPages, userId: user.id },
-      })
+      }
+      cache.set(`recipes:mine:${userId}:${page}:${limit}`, mineResponse, TTL_RECIPES_MINE)
+      return Response.json(mineResponse)
     }
 
     // Determine visibility filter based on user role
@@ -113,17 +126,8 @@ export async function GET(request: Request) {
     if (publicOnly) {
       visibilityFilter = { visibility: "public" };
     } else {
-      // Check if logged-in user has STORE role
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
       if (user) {
-        const profile = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
-        });
-
-        if (profile?.role === "STORE") {
+        if (userRole === "STORE") {
           // Store users cannot see protected recipes, unless they own the recipe
           visibilityFilter = {
             OR: [
@@ -147,30 +151,21 @@ export async function GET(request: Request) {
 
     const where: Prisma.RecipeWhereInput = visibilityFilter;
 
-    const [total, recipes] = await Promise.all([
-      prisma.recipe.count({ where }),
-      prisma.recipe.findMany({
-        where,
-        select: recipeListItemSelect({ withUser: true, withIngredients: true }),
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-    ])
+    const cacheKey = `recipes:list:${page}:${limit}`
+    if (process.env.NODE_ENV !== 'test') {
+      const cached = cache.get(cacheKey)
+      if (cached) {
+        return Response.json(cached)
+      }
+    }
 
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
     };
     
     // Check auth for visibility filtering of orphaned store posts
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const profile = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (profile?.role === "STORE") {
+      if (userRole === "STORE") {
         storePostVisibilityConditions.OR = [
           { visibility: "public" },
           { userId: user.id }
@@ -185,15 +180,37 @@ export async function GET(request: Request) {
       storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
     }
 
-    const orphanedStorePosts = await prisma.storePost.findMany({
-      where: storePostVisibilityConditions,
-      include: {
-        user: { select: { id: true, username: true, avatarUrl: true } },
-        images: { orderBy: { createdAt: "asc" } },
-        videos: { orderBy: { createdAt: "asc" } },
-      },
-      orderBy: { createdAt: "desc" },
-    })
+    const [
+      [total, recipes],
+      [orphanedStorePosts, totalOrphanedStorePosts]
+    ] = await Promise.all([
+      Promise.all([
+        prisma.recipe.count({ where }),
+        prisma.recipe.findMany({
+          where,
+          select: recipeListItemSelect({ withUser: true, withIngredients: true }),
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+      ]),
+      Promise.all([
+        prisma.storePost.findMany({
+          where: storePostVisibilityConditions,
+          include: {
+            user: { select: { id: true, username: true, avatarUrl: true } },
+            images: { orderBy: { createdAt: "asc" } },
+            videos: { orderBy: { createdAt: "asc" } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.storePost.count({
+          where: storePostVisibilityConditions,
+        }),
+      ])
+    ])
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
       id: `orphan-${sp.id}`,
@@ -225,13 +242,15 @@ export async function GET(request: Request) {
     }))
 
     const combinedData = [...recipes, ...dummyRecipesForOrphans]
-    const totalWithOrphans = total + orphanedStorePosts.length
+    const totalWithOrphans = total + totalOrphanedStorePosts
     const totalPages = Math.max(1, Math.ceil(totalWithOrphans / limit))
 
-    return Response.json({
+    const listResponse = {
       data: combinedData,
       meta: { page, limit, total: totalWithOrphans, totalPages },
-    })
+    }
+    cache.set(cacheKey, listResponse, TTL_RECIPES_LIST)
+    return Response.json(listResponse)
   } catch (error) {
     console.error("Error fetching recipes:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
@@ -239,18 +258,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
+  const userId = await getAuthUserId(request)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!userId) {
     return Response.json(
       { error: "Unauthorized" },
       { status: 401 }
     )
   }
+  const user = { id: userId }
 
   const body = await request.json()
 
@@ -342,26 +358,7 @@ export async function POST(request: Request) {
         });
       }
 
-      const savedIngredients = await Promise.all(
-        ingredients.map(async (ingredient) => {
-          const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
-
-          if (ingredient.category) {
-            const cat = await tx.category.findFirst({
-              where: { name: { equals: ingredient.category, mode: 'insensitive' } }
-            });
-            if (cat) {
-              dataToCreate.categoryId = cat.id;
-            }
-          }
-
-          return tx.ingredient.upsert({
-            where: { name: ingredient.name },
-            update: {},
-            create: dataToCreate,
-          })
-        })
-      );
+      const savedIngredients = await upsertRecipeIngredients(tx, ingredients)
 
       const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
         const requestedIngredient = ingredients[index];
@@ -440,6 +437,9 @@ export async function POST(request: Request) {
       maxWait: 15000,
       timeout: 30000,
     });
+
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix(`recipes:mine:${userId}:`)
 
     return Response.json(
       {

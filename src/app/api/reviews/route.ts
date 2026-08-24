@@ -1,45 +1,88 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 import { createReviewSchema } from "@/lib/validations/review.schema"
+import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function POST(request: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getAuthUserId(request)
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  const body = await request.json()
-  const parsed = createReviewSchema.safeParse(body)
-  if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
+  const parsed = createReviewSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
+
+  const { recipeId, rating, comment, isAnonymous } = parsed.data
+
   try {
-    const review = await prisma.review.create({
-      data: {
-        recipeId: parsed.data.recipeId,
-        userId: user.id,
-        rating: parsed.data.rating,
-        comment: parsed.data.comment,
-        isAnonymous: parsed.data.isAnonymous,
-      },
+    // 1. Verify recipe exists and get owner id
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: recipeId },
     })
 
-    await prisma.recipe.update({
-      where: { id: parsed.data.recipeId },
-      data: {
-        reviewCount: { increment: 1 },
-      },
+    if (!recipe) {
+      return Response.json({ error: "Recipe not found" }, { status: 404 })
+    }
+
+
+    // 3. Prevent duplicate reviews
+    const existingReview = await prisma.review.findFirst({
+      where: { recipeId, userId: userId },
     })
 
-    // Recalculate average rating
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: parsed.data.recipeId },
-      _avg: { rating: true },
+    if (existingReview) {
+      return Response.json({ error: "You have already reviewed this recipe" }, { status: 409 })
+    }
+
+    // 4. Perform database updates in transaction
+    const review = await prisma.$transaction(async (tx) => {
+      const createdReview = await tx.review.create({
+        data: {
+          recipeId,
+          userId: userId,
+          rating,
+          comment,
+          isAnonymous,
+        },
+        // Return the joined user so clients can swap the optimistic
+        // placeholder name for the real username without a refetch.
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+        },
+      })
+
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: {
+          reviewCount: { increment: 1 },
+        },
+      })
+
+      const agg = await tx.review.aggregate({
+        where: { recipeId },
+        _avg: { rating: true },
+      })
+
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+      await tx.recipe.update({
+        where: { id: recipeId },
+        data: { rating: newRating },
+      })
+
+      return createdReview
     })
-    await prisma.recipe.update({
-      where: { id: parsed.data.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
-    })
+
+    cache.del(`recipe:${recipeId}`)
 
     return Response.json({ data: review }, { status: 201 })
   } catch (error) {

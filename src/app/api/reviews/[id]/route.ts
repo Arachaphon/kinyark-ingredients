@@ -1,45 +1,64 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
-import { createReviewSchema } from "@/lib/validations/review.schema"
+import { updateReviewSchema } from "@/lib/validations/review.schema"
+import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getAuthUserId(request)
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
-  if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
-  const body = await request.json()
-  const parsed = createReviewSchema.safeParse(body)
-  if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 })
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 })
   }
 
+  const parsed = updateReviewSchema.safeParse(body)
+  if (!parsed.success) {
+    return Response.json(
+      { error: parsed.error.issues.map((issue) => issue.message).join("; ") },
+      { status: 400 }
+    )
+  }
+
+  const { rating, comment, isAnonymous } = parsed.data
+
   try {
-    const updated = await prisma.review.update({
-      where: { id },
-      data: {
-        rating: parsed.data.rating,
-        comment: parsed.data.comment,
-        isAnonymous: parsed.data.isAnonymous,
-      },
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedReview = await tx.review.update({
+        where: { id },
+        data: {
+          ...(rating !== undefined && { rating }),
+          ...(comment !== undefined && { comment }),
+          ...(isAnonymous !== undefined && { isAnonymous }),
+        },
+      })
+
+      const agg = await tx.review.aggregate({
+        where: { recipeId: existing.recipeId },
+        _avg: { rating: true },
+      })
+
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: { rating: newRating },
+      })
+
+      return updatedReview
     })
 
-    // Recalculate recipe rating
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: existing.recipeId },
-      _avg: { rating: true },
-    })
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
-    })
+    cache.del(`recipe:${existing.recipeId}`)
 
     return Response.json({ data: updated })
   } catch (error) {
@@ -49,36 +68,42 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await getAuthUserId(request)
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
-  if (existing.userId !== user.id) return Response.json({ error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   try {
-    await prisma.review.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.review.delete({ where: { id } })
 
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: {
-        reviewCount: { decrement: 1 },
-      },
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: {
+          reviewCount: { decrement: 1 },
+        },
+      })
+
+      const agg = await tx.review.aggregate({
+        where: { recipeId: existing.recipeId },
+        _avg: { rating: true },
+      })
+
+      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+
+      await tx.recipe.update({
+        where: { id: existing.recipeId },
+        data: { rating: newRating },
+      })
     })
 
-    const agg = await prisma.review.aggregate({
-      where: { recipeId: existing.recipeId },
-      _avg: { rating: true },
-    })
-    await prisma.recipe.update({
-      where: { id: existing.recipeId },
-      data: { rating: agg._avg.rating ?? 0 },
-    })
+    cache.del(`recipe:${existing.recipeId}`)
 
     return Response.json({ data: { id } })
   } catch (error) {
