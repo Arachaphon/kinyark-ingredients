@@ -37,15 +37,39 @@ export async function GET(request: Request) {
     const userId = await getAuthUserId(request);
     const userRole = request.headers.get("x-user-role");
 
-    // Respect visibility so private/draft recipes are not exposed to others.
-    const recipeVisibility: Prisma.RecipeWhereInput = userId
-      ? {
-          OR:
-            userRole === "STORE"
-              ? [{ visibility: "public" }, { userId }]
-              : [{ visibility: { in: ["public", "protected"] } }, { userId }],
-        }
-      : { visibility: "public" };
+    let actualRole = userRole;
+    if (userId) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+      if (dbUser?.role) {
+        actualRole = dbUser.role;
+      }
+    }
+
+    const isStore = actualRole === "STORE";
+
+    // Respect visibility so private/draft recipes are not exposed incorrectly.
+    // - draft: forbidden for everyone in search (even owner)
+    // - STORE role: public, or private (if owned by store). protected is strictly forbidden.
+    // - Non-STORE role: public or protected, or private (if owned by user).
+    const recipeVisibility: Prisma.RecipeWhereInput = {
+      AND: [
+        { visibility: { not: "draft" } },
+        {
+          OR: isStore
+            ? [
+                { visibility: "public" },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ]
+            : [
+                { visibility: { in: ["public", "protected"] } },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ],
+        },
+      ],
+    };
 
     // Strict ingredient search (?ingredients=วุ้นเส้น,หมู): every selected
     // ingredient must be present in the recipe (extra recipe ingredients OK).
@@ -61,14 +85,16 @@ export async function GET(request: Request) {
 
       const recipes = await prisma.recipe.findMany({
         where: {
-          ...recipeVisibility,
-          AND: requiredIngredients.map((name) => ({
-            recipeIngredients: {
-              some: {
-                ingredient: { name: { equals: name } },
+          AND: [
+            ...(Array.isArray(recipeVisibility.AND) ? recipeVisibility.AND : [recipeVisibility]),
+            ...requiredIngredients.map((name) => ({
+              recipeIngredients: {
+                some: {
+                  ingredient: { name: { equals: name } },
+                },
               },
-            },
-          })),
+            })),
+          ],
         },
         select: recipeListItemSelect({ withUser: true, withIngredients: true }),
         orderBy: { createdAt: "desc" },
@@ -169,14 +195,22 @@ export async function GET(request: Request) {
     }
 
     // Search orphaned Store Posts (not linked to a Recipe), respecting visibility.
-    const storeVisibility = userId
-      ? ({
-          OR:
-            userRole === "STORE"
-              ? [{ visibility: "public" }, { userId }]
-              : [{ visibility: { in: ["public", "protected"] } }, { userId }],
-        } satisfies Prisma.StorePostWhereInput)
-      : { visibility: "public" };
+    const storeVisibility: Prisma.StorePostWhereInput = {
+      AND: [
+        { visibility: { not: "draft" } },
+        {
+          OR: isStore
+            ? [
+                { visibility: "public" },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ]
+            : [
+                { visibility: { in: ["public", "protected"] } },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ],
+        },
+      ],
+    };
 
     // setIngredients is a JSON array of `{ name, amount }`. Prisma cannot do an
     // exact name match inside the JSON array, so we pull a candidate pool and
