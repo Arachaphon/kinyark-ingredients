@@ -361,10 +361,10 @@ Phase 3.2 Score: 0/20 ❌
 
 ### 3.4 Supabase Storage
 Phase 3.4 Score: 5/6 ✅
-- [ ] Create bucket `recipe-images` (authenticated upload, public read)
+- [x] Create bucket `recipes` (authenticated upload, public read) — SQL provided in `supabase/migrations/20260810_create_recipes_bucket.sql`
 - [x] Create bucket `avatars` (authenticated upload, public read) — SQL provided in `supabase/migrations/20260722_create_avatars_bucket.sql`
 - [x] File path pattern: `avatars/{user_id}/{uuid}.{ext}` — implemented in `src/lib/storage.ts`
-- [ ] File path pattern: `recipe-images/{user_id}/{uuid}.jpg`
+- [x] File path pattern: `recipes/{user_id}/{uuid}.{ext}` — implemented in `src/lib/storage.ts`
 - [x] Enforce max file size: 5MB per image — implemented in `src/lib/storage.ts`
 - [x] Validate MIME type: `image/jpeg`, `image/png`, `image/webp` only — implemented in `src/lib/storage.ts`
 

@@ -1,21 +1,19 @@
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/lib/supabase/server"
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: reviewId } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = request.headers.get("x-user-id")
+  if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
   const review = await prisma.review.findUnique({ where: { id: reviewId } })
   if (!review) return Response.json({ error: "Review not found" }, { status: 404 })
 
   try {
     const existing = await prisma.reviewLike.findUnique({
-      where: { reviewId_userId: { reviewId, userId: user.id } },
+      where: { reviewId_userId: { reviewId, userId: userId } },
     })
 
     if (existing) {
@@ -24,7 +22,7 @@ export async function POST(
     }
 
     await prisma.reviewLike.create({
-      data: { reviewId, userId: user.id },
+      data: { reviewId, userId: userId },
     })
     return Response.json({ data: { liked: true } }, { status: 201 })
   } catch (error) {

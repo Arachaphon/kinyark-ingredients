@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
+import useSWR from "swr";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -90,42 +91,12 @@ const fallbackDeepseek: RecommendedRecipe[] = [
 ];
 
 export default function HomePage() {
-  const [geminiRecipes, setGeminiRecipes] = useState<RecommendedRecipe[]>([]);
-  const [deepseekRecipes, setDeepseekRecipes] = useState<RecommendedRecipe[]>([]);
-  const [featured, setFeatured] = useState<FeaturedRecipe | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: recommendedData } = useSWR("/api/recipes/recommended");
+  const { data: featuredData, isLoading } = useSWR("/api/recipes/featured");
 
-  useEffect(() => {
-    const fetchRecommendedMenu = async () => {
-      try {
-        const res = await fetch("/api/recipes/recommended");
-        if (res.ok) {
-          const data = await res.json();
-          setGeminiRecipes(data.gemini || []);
-          setDeepseekRecipes(data.deepseek || []);
-        }
-      } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการโหลดข้อมูลเมนูแนะนำ:", error);
-      }
-    };
-
-    const fetchFeatured = async () => {
-      try {
-        const res = await fetch("/api/recipes/featured");
-        if (res.ok) {
-          const data = await res.json();
-          setFeatured(data.data?.[0] ?? null);
-        }
-      } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการโหลดเมนูเด่น:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecommendedMenu();
-    fetchFeatured();
-  }, []);
+  const geminiRecipes: RecommendedRecipe[] = recommendedData?.gemini || [];
+  const deepseekRecipes: RecommendedRecipe[] = recommendedData?.deepseek || [];
+  const featured: FeaturedRecipe | null = featuredData?.data?.[0] ?? null;
 
   const featuredTitle = featured?.recipeName ?? "สลัด";
   const featuredRating = featured?.rating ?? 5.0;
@@ -207,7 +178,7 @@ export default function HomePage() {
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              {loading ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="w-9 h-9 border-4 border-[#3AC9B5] border-t-transparent rounded-full animate-spin"></div>
                 </div>
@@ -242,10 +213,10 @@ export default function HomePage() {
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
-          เมนูแนะนำประจำสัปดาห์
+          สูตรแนะนำประจำสัปดาห์
         </h2>
 
-        {loading ? (
+        {isLoading ? (
           <div className="w-full text-center py-12 flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
             <p className="text-gray-600 font-bold text-lg">กำลังจัดเตรียมเมนูแนะนำสุดละมุนตานะคร้าบ... 🍳</p>

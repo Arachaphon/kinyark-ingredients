@@ -58,94 +58,16 @@ const getAiImageUrl = (recipeName: string) => {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
 };
 
-// =========================================
-// 🍱 ข้อมูลจำลองเมนู (Mock Data)
-// =========================================
-const mockSearchResults: RecipeItem[] = [
-  {
-    id: "mock-1",
-    title: "สลัดซีซาร์สวนผัก",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
-    tags: ["มะเขือเทศ", "หัวหอมหวาน", "พริกไทย", "กะหล่ำปลี"],
-    author: "Alice",
-    authorAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    likes: 22,
-    rating: 3.0,
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-2",
-    title: "สลัด (ง่ายและสดใหม่)",
-    image: getAiImageUrl("สลัด ง่ายและสดใหม่"),
-    tags: ["แตงกวา", "มะเขือเทศ", "แครอท", "ผักสลัด"],
-    author: "Deep Seek", 
-    authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80", 
-    likes: 52,
-    rating: 4.5,
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-3",
-    title: "สลัดผลไม้สดชื่น",
-    image: getAiImageUrl("สลัดผลไม้สดชื่น"),
-    tags: ["สับปะรด", "สตรอว์เบอร์รี", "องุ่น", "ส้ม", "กีวี"],
-    author: "Gemini", 
-    authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
-    likes: 65,
-    rating: 4.8, 
-    initialFavorite: true,
-    isAi: true, 
-  },
-  {
-    id: "mock-4",
-    title: "สลัดอกไก่ย่างคลีนๆ",
-    image: "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?auto=format&fit=crop&w=300&q=80",
-    tags: ["อกไก่", "ผักกาดหอม", "แครอท", "น้ำสลัดงา"],
-    author: "Chef_Pond",
-    authorAvatar: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=150&q=80",
-    likes: 120,
-    rating: 4.9, 
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-5",
-    title: "สลัดอะโวคาโดกุ้งย่าง",
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=300&q=80",
-    tags: ["อะโวคาโด", "กุ้ง", "มะนาว", "ผักร็อกเก็ต"],
-    author: "HealthyGirl",
-    authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-    likes: 85,
-    rating: 4.2,
-    initialFavorite: false,
-    isAi: false, 
-  },
-];
-
-// =========================================
-// 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
-// =========================================
-const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
-  const aiRecipes = dataList.filter((item) => item.isAi);
-  const userRecipes = dataList.filter((item) => !item.isAi);
-
-  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  userRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-  return [
-    ...aiRecipes.slice(0, 2),
-    ...userRecipes.slice(0, 3)
-  ];
-};
-
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
+  const ingredientsParam = searchParams.get("ingredients");
+  const isIngredientSearch = ingredientsParam !== null;
+  const queryTitle = searchParams.get("query") || searchParams.get("q") || ingredientsParam || "";
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
+  
+  // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   const setupFavorites = (dataArray: RecipeItem[]) => {
@@ -158,11 +80,22 @@ function ResultsContent() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!queryTitle.trim()) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     const fetchResults = async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(queryTitle)}`);
+        const response = await fetch(
+          isIngredientSearch
+            ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
+            : `/api/search?q=${encodeURIComponent(queryTitle)}`
+        );
         
         if (!response.ok) {
           throw new Error("Failed to fetch real data");
@@ -170,7 +103,7 @@ function ResultsContent() {
 
         const data: ApiRecipeItem[] = await response.json();
 
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data)) {
           const formattedData: RecipeItem[] = data.map((item) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
             const recipeTitle = item.recipeName || item.title || "";
@@ -197,27 +130,16 @@ function ResultsContent() {
             };
           });
 
-          const sortedAndSlicedData = formatAndSortResults(formattedData);
-
           if (isMounted) {
-            setResults(sortedAndSlicedData);
-            setupFavorites(sortedAndSlicedData);
+            setResults(formattedData);
+            setupFavorites(formattedData);
           }
-        } else {
-          throw new Error("Real data is empty, using fallback");
         }
-
       } catch (error) {
-        console.warn("Using mock data fallback:", error);
+        console.warn("API Search Error:", error);
         if (!isMounted) return;
 
-        if (queryTitle.toLowerCase().includes("ไม่มี") || queryTitle.toLowerCase().includes("empty")) {
-          setResults([]);
-        } else {
-          const sortedMockData = formatAndSortResults(mockSearchResults);
-          setResults(sortedMockData);
-          setupFavorites(sortedMockData);
-        }
+        setResults([]);
       } finally {
         if (isMounted) {
           setIsLoading(false);
@@ -225,15 +147,34 @@ function ResultsContent() {
       }
     };
 
-    const timer = setTimeout(fetchResults, 800);
+    fetchResults();
     return () => { 
       isMounted = false; 
-      clearTimeout(timer);
     };
-  }, [queryTitle]);
+  }, [queryTitle, isIngredientSearch]);
 
+  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI (ตอบสนองทันทีทุกคลิก)
   const toggleFavorite = (id: string) => {
+    // 1. Optimistic UI: สลับสถานะหัวใจให้ผู้ใช้เห็นทันที
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    const revert = () => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          revert();
+        }
+      })
+      .catch((error) => {
+        console.error("Network error toggling favorite:", error);
+        revert();
+      });
   };
 
   return (
@@ -285,9 +226,13 @@ function ResultsContent() {
         : results.length === 0 ? (
           <div className="py-16 flex flex-col items-center justify-center text-center">
             <div className="text-7xl mb-4 opacity-50">🧐</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
+            <h3 className="text-2xl font-black text-gray-900 mb-3">
+              {isIngredientSearch ? "ไม่มีสูตรอาหารที่ตรงกับวัตถุดิบ" : "ไม่พบสูตรอาหารที่ตรงกัน"}
+            </h3>
             <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ &quot;{queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
+              {isIngredientSearch
+                ? "ระบบไม่พบสูตรอาหารที่มีวัตถุดิบครบตามที่เลือก ลองปรับเปลี่ยนหรือลดวัตถุดิบดูนะ"
+                : `ระบบไม่พบสูตรอาหารสำหรับ &quot;${queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ`}
             </p>
             <Link
               href="/search"
@@ -361,7 +306,7 @@ function ResultsContent() {
                 {/* ขวา: สถิติจำนวนคนกดใจ, ดาวคะแนน และปุ่ม View Recipe */}
                 <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
                   <div className="flex flex-col items-end gap-3 w-full">
-                    {/* ยอดกดไลก์หัวใจ */}
+                    {/* ยอดกดไลก์หัวใจ (เพิ่ม Animation การตอบสนอง) */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
                       className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
@@ -375,6 +320,7 @@ function ResultsContent() {
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
+                        className={isLiked ? "animate-fade-in transition-all duration-300 scale-110" : "hover:stroke-[#FF0000] transition-all duration-300"}
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                       </svg>

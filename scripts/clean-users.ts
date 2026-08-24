@@ -100,6 +100,13 @@ async function cleanupUser(userId: string, email: string) {
       console.log(`  └─ Deleted ${filePaths.length} files from Storage Bucket (avatars)`)
     }
 
+    const { data: recipeFiles } = await supabaseAdmin.storage.from('recipes').list(userId)
+    if (recipeFiles && recipeFiles.length > 0) {
+      const filePaths = recipeFiles.map((f) => `${userId}/${f.name}`)
+      await supabaseAdmin.storage.from('recipes').remove(filePaths)
+      console.log(`  └─ Deleted ${filePaths.length} files from Storage Bucket (recipes)`)
+    }
+
     return true
   } catch (err) {
     console.error(`❌ Error cleaning up user ${email}:`, err)

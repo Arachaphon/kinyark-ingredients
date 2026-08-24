@@ -118,9 +118,14 @@ async function main() {
   
   console.log('🧹 Cleaned up existing recipes and store posts for simulation users.')
 
-  // Fetch some ingredients for linkage
-  const pork = await prisma.ingredient.findFirst({ where: { name: 'หมูสับ' } })
-  const shrimp = await prisma.ingredient.findFirst({ where: { name: 'กุ้ง' } })
+  // Resolve ingredient ids from names at runtime (only real per-recipe ingredients).
+  const ingredientIdsByName = async (names: string[]): Promise<number[]> => {
+    const rows = await prisma.ingredient.findMany({
+      where: { name: { in: names } },
+      select: { id: true },
+    })
+    return rows.map((i) => i.id)
+  }
 
   // Define 20 recipes with pre-calculated distributions:
   // 1. Role (50/50): 10 USER recipes, 10 STORE recipes
@@ -134,6 +139,7 @@ async function main() {
       description: 'ต้มยำกุ้งน้ำข้นรสจัดจ้านแบบไทยดั้งเดิม หอมเครื่องสมุนไพรสดและพริกเผา',
       visibility: 'public', // 1/8 public
       imageKey: 'tomyum',   // 1/10 with image
+      ingredients: ['กุ้ง', 'ตะไคร้', 'ข่า', 'ใบมะกรูด', 'พริกขี้หนู'],
     },
     {
       userId: user1Id,
@@ -141,6 +147,7 @@ async function main() {
       description: 'แกงเขียวหวานไก่รสเข้มข้น กลมกล่อม หอมกลิ่นมะพร้าวสดและพริกแกงใต้',
       visibility: 'private', // 1/4 private
       imageKey: null,         // 1/10 no image
+      ingredients: ['ไก่', 'กะทิกล่อง', 'ใบมะกรูด', 'พริก'],
     },
     {
       userId: user1Id,
@@ -148,6 +155,7 @@ async function main() {
       description: 'ไข่เจียวหมูสับทอดในน้ำมันร้อนจัด ฟูกรอบ ไม่อมน้ำมัน ทานง่ายสำหรับทุกมื้อ',
       visibility: 'public', // 2/8 public
       imageKey: 'larb',      // 2/10 with image (reused larb as fallback/mock)
+      ingredients: ['ไข่ไก่', 'หมูสับ'],
     },
     {
       userId: user1Id,
@@ -155,6 +163,7 @@ async function main() {
       description: 'ต้มจืดเต้าหู้ไข่เนื้อนุ่ม ซดร้อนๆ คล่องคอ ดีต่อสุขภาพ',
       visibility: 'protected', // 1/5 protected
       imageKey: null,          // 2/10 no image
+      ingredients: ['เต้าหู้ขาว', 'หมูสับ', 'สาหร่าย'],
     },
     {
       userId: user2Id,
@@ -162,6 +171,7 @@ async function main() {
       description: 'ผัดไทยเส้นเหนียวนุ่ม รสชาติกลมกล่อม ห่อด้วยไข่บางกรอบสวยงาม',
       visibility: 'protected', // 2/5 protected
       imageKey: 'padthai',    // 3/10 with image
+      ingredients: ['กุ้ง', 'ไข่ไก่', 'ถั่วงอก', 'มะนาวเขียว', 'เส้นก๋วยเตี๋ยวเส้นเล็ก'],
     },
     {
       userId: user2Id,
@@ -169,6 +179,7 @@ async function main() {
       description: 'ข้าวผัดปูแห้งหอมกลิ่นกระทะ เนื้อปูก้อนตู้มๆ เมล็ดข้าวสวยร่วน',
       visibility: 'draft',    // 1/3 draft
       imageKey: 'crabfriedrice', // 4/10 with image
+      ingredients: ['ข้าวหอมมะลิ', 'ปู', 'ไข่ไก่'],
     },
     {
       userId: user2Id,
@@ -176,6 +187,7 @@ async function main() {
       description: 'เส้นใหญ่เหนียวนุ่ม ผัดกับไข่ คะน้า และหมูหมักนุ่มๆ รสชาติเข้มข้น',
       visibility: 'private',  // 2/4 private
       imageKey: null,         // 3/10 no image
+      ingredients: ['เส้นก๋วยเตี๋ยวเส้นใหญ่', 'หมู', 'ไข่ไก่', 'ผักคะน้า', 'ซีอิ๊วขาว'],
     },
     {
       userId: user3Id,
@@ -183,6 +195,7 @@ async function main() {
       description: 'ส้มตำมะละกอกรอบ รสชาติเปรี้ยวหวานเค็มเผ็ดสะใจ ทานคู่ไข่เค็มมันๆ',
       visibility: 'public',   // 3/8 public
       imageKey: 'somtum',     // 5/10 with image
+      ingredients: ['มะละกอ', 'ไข่เค็ม', 'มะเขือเทศ', 'พริกขี้หนู', 'มะนาวเขียว'],
     },
     {
       userId: user3Id,
@@ -190,6 +203,7 @@ async function main() {
       description: 'ลาบหมูคั่วหอมกลิ่นมะแขว่นและเครื่องเทศล้านนา รสชาติเป็นเอกลักษณ์',
       visibility: 'private',  // 3/4 private
       imageKey: 'larb',       // 6/10 with image
+      ingredients: ['หมู', 'ข้าวคั่ว', 'พริก', 'หอมแดง', 'ใบมะกรูด'],
     },
     {
       userId: user3Id,
@@ -197,6 +211,7 @@ async function main() {
       description: 'ยำวุ้นเส้นรสจัดจ้าน ครบเครื่องซีฟู้ดสดใหม่ เผ็ดเปรี้ยวหวานลงตัว',
       visibility: 'public',   // 4/8 public
       imageKey: null,         // 4/10 no image
+      ingredients: ['วุ้นเส้น', 'กุ้ง', 'ปลาหมึก', 'มะนาวเขียว', 'พริกขี้หนู'],
     },
 
     // --- 10 RECIPES BY STORE ROLE ---
@@ -206,6 +221,7 @@ async function main() {
       description: 'เนื้อหมูย่างพริกไทยดำ นุ่มชุ่มฉ่ำ หมักซอสพริกไทยดำเข้มข้นสะใจ',
       visibility: 'public',   // 5/8 public
       imageKey: 'porksteak',  // 7/10 with image
+      ingredients: ['หมู', 'พริกไทยดำ', 'ซอสพริกไทยดำ', 'เนยจืด'],
     },
     {
       userId: store1Id,
@@ -213,6 +229,7 @@ async function main() {
       description: 'ผัดกะเพราหมูสับแบบแห้งๆ เผ็ดร้อนด้วยพริกขี้หนูสวนและพริกแห้ง',
       visibility: 'public',   // 6/8 public
       imageKey: null,         // 5/10 no image
+      ingredients: ['หมูสับ', 'ใบกะเพรา', 'พริก', 'กระเทียม', 'ข้าวหอมมะลิ'],
     },
     {
       userId: store1Id,
@@ -220,6 +237,7 @@ async function main() {
       description: 'ข้าวไข่ข้นเนื้อเยิ้มๆ นุ่มละมุน เสิร์ฟคู่กับกุ้งผัดกระเทียมราดซอสหอมกรุ่น',
       visibility: 'protected', // 3/5 protected
       imageKey: null,          // 6/10 no image
+      ingredients: ['ไข่ไก่', 'กุ้ง', 'กระเทียม', 'ข้าวหอมมะลิ'],
     },
     {
       userId: store1Id,
@@ -227,6 +245,7 @@ async function main() {
       description: 'หมูชิ้นผัดซอสกระเทียมพริกไทย หอมกระเทียมเจียวกรอบ โรยพริกไทยดำป่น',
       visibility: 'draft',     // 2/3 draft
       imageKey: null,          // 7/10 no image
+      ingredients: ['หมู', 'กระเทียม', 'ข้าวหอมมะลิ'],
     },
     {
       userId: store2Id,
@@ -234,6 +253,7 @@ async function main() {
       description: 'แกงส้มกุ้งสดรสเปรี้ยวเผ็ดร้อน หอมน้ำแกงส้มใต้เข้มข้น ทานกับไข่เจียวชะอม',
       visibility: 'protected', // 4/5 protected
       imageKey: 'tomyum',      // 8/10 with image
+      ingredients: ['กุ้ง', 'ชะอม', 'มะนาวเขียว'],
     },
     {
       userId: store2Id,
@@ -241,6 +261,7 @@ async function main() {
       description: 'หมูป่าผัดเผ็ดพริกแกงใต้รสร้อนแรง ใส่หน่อไม้ดองและมะเขือพวง',
       visibility: 'private',   // 4/4 private
       imageKey: null,          // 8/10 no image
+      ingredients: ['หมู', 'พริก', 'หน่อไม้ดอง', 'ใบมะกรูด', 'มะเขือพวง'],
     },
     {
       userId: store2Id,
@@ -248,6 +269,7 @@ async function main() {
       description: 'หมูสามชั้นเจียวน้ำมันออกจนกรอบ คั่วพริกขี้หนู กระเทียมสด และเกลือปรุงรส',
       visibility: 'public',    // 7/8 public
       imageKey: null,          // 9/10 no image
+      ingredients: ['หมู', 'พริกขี้หนู', 'กระเทียม', 'เกลือป่น'],
     },
     {
       userId: store3Id,
@@ -255,6 +277,7 @@ async function main() {
       description: 'ต้มข่าไก่สูตรกะทิสด อมเปรี้ยวมะนาวแป้นเล็กน้อย กลมกล่อมละมุนลิ้น',
       visibility: 'public',    // 8/8 public
       imageKey: 'tomkhakai',  // 9/10 with image
+      ingredients: ['ไก่', 'ข่า', 'กะทิกล่อง', 'ตะไคร้', 'ใบมะกรูด'],
     },
     {
       userId: store3Id,
@@ -262,6 +285,7 @@ async function main() {
       description: 'ต้มยำขาไก่เปื่อยนุ่ม ซุปเปอร์รสเปรี้ยวเผ็ดร้อน พริกขี้หนูสวนทุบเต็มหม้อ',
       visibility: 'protected', // 5/5 protected
       imageKey: null,          // 10/10 no image
+      ingredients: ['ไก่', 'ข่า', 'ตะไคร้', 'พริกขี้หนู', 'มะนาวเขียว'],
     },
     {
       userId: store3Id,
@@ -269,12 +293,17 @@ async function main() {
       description: 'ข้าวผัดซอสมะเขือเทศ ลูกเกด เมล็ดถั่ว เสิร์ฟพร้อมน่องไก่ทอด ไข่ดาว และไส้กรอก',
       visibility: 'draft',     // 3/3 draft
       imageKey: 'crabfriedrice', // 10/10 with image
+      ingredients: ['ข้าวหอมมะลิ', 'ซอสมะเขือเทศ', 'ลูกเกด', 'ไก่', 'ไข่ไก่', 'ไส้กรอก'],
     },
   ]
 
   // Create all 20 recipes
   const createdRecipes = []
   for (const rData of recipeDataList) {
+    const ingredientIds = rData.ingredients?.length
+      ? await ingredientIdsByName(rData.ingredients)
+      : []
+
     const recipe = await prisma.recipe.create({
       data: {
         userId: rData.userId,
@@ -287,11 +316,12 @@ async function main() {
           create: [{ imageUrl: getMappedImage(rData.imageKey) }]
         } : undefined,
         recipeIngredients: {
-          create: [
-            ...(pork ? [{ ingredientId: pork.id, quantity: 150, unit: 'กรัม' }] : []),
-            ...(shrimp ? [{ ingredientId: shrimp.id, quantity: 100, unit: 'กรัม' }] : []),
-          ]
-        }
+          create: ingredientIds.map((ingredientId) => ({
+            ingredient: { connect: { id: ingredientId } },
+            quantity: 150,
+            unit: 'กรัม',
+          })),
+        },
       }
     })
     createdRecipes.push(recipe)

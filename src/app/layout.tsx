@@ -26,11 +26,15 @@ export const metadata: Metadata = {
   },
 };
 
+import { SWRProvider } from "@/components/SWRProvider";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <SWRProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </SWRProvider>
       </body>
     </html>
   );
