@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { createReviewSchema } from "@/lib/validations/review.schema"
 import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function POST(request: Request) {
   const userId = await getAuthUserId(request)
@@ -53,6 +54,11 @@ export async function POST(request: Request) {
           comment,
           isAnonymous,
         },
+        // Return the joined user so clients can swap the optimistic
+        // placeholder name for the real username without a refetch.
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+        },
       })
 
       await tx.recipe.update({
@@ -75,6 +81,8 @@ export async function POST(request: Request) {
 
       return createdReview
     })
+
+    cache.del(`recipe:${recipeId}`)
 
     return Response.json({ data: review }, { status: 201 })
   } catch (error) {

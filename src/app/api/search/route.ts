@@ -31,13 +31,8 @@ function overlapScore(queryGrams: string[], text: string): number {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q") || searchParams.get("query") || searchParams.get("ingredients") || "";
-
-    if (!query.trim()) {
-      return Response.json([]);
-    }
-
-    const cleanQuery = query.trim();
+    const query = searchParams.get("q") || searchParams.get("query") || "";
+    const ingredientsParam = searchParams.get("ingredients");
 
     const userId = await getAuthUserId(request);
     const userRole = request.headers.get("x-user-role");
@@ -52,23 +47,58 @@ export async function GET(request: Request) {
         }
       : { visibility: "public" };
 
-    // Split by spaces or commas (for ?ingredients=หมู,กุ้ง)
+    // Strict ingredient search (?ingredients=วุ้นเส้น,หมู): every selected
+    // ingredient must be present in the recipe (extra recipe ingredients OK).
+    if (ingredientsParam !== null) {
+      const requiredIngredients = ingredientsParam
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      if (requiredIngredients.length === 0) {
+        return Response.json([]);
+      }
+
+      const recipes = await prisma.recipe.findMany({
+        where: {
+          ...recipeVisibility,
+          AND: requiredIngredients.map((name) => ({
+            recipeIngredients: {
+              some: {
+                ingredient: { name: { equals: name } },
+              },
+            },
+          })),
+        },
+        select: recipeListItemSelect({ withUser: true, withIngredients: true }),
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      });
+
+      return Response.json(recipes);
+    }
+
+    if (!query.trim()) {
+      return Response.json([]);
+    }
+
+    const cleanQuery = query.trim();
+
+    // Split by spaces or commas
     const keywords = cleanQuery.split(/[\s,]+/).filter(Boolean);
 
     const recipes = await prisma.recipe.findMany({
       where: {
         ...recipeVisibility,
         OR: [
-          // Match full query string
+          // Match full query string: recipe name only (contains), plus
+          // ingredient names that match exactly (searching "หมู" should hit
+          // "หมู" but not "หมูสับ"). description/instructions are excluded.
           { recipeName: { contains: cleanQuery, mode: "insensitive" } },
-          { description: { contains: cleanQuery, mode: "insensitive" } },
-          { instructions: { contains: cleanQuery, mode: "insensitive" } },
           {
             recipeIngredients: {
               some: {
                 ingredient: {
-                  // Ingredient names must match exactly:
-                  // searching "หมู" should hit "หมู" but not "หมูสับ".
                   name: { equals: cleanQuery },
                 },
               },
@@ -77,8 +107,6 @@ export async function GET(request: Request) {
           // Match individual keywords
           ...keywords.flatMap((kw) => [
             { recipeName: { contains: kw, mode: "insensitive" as const } },
-            { description: { contains: kw, mode: "insensitive" as const } },
-            { instructions: { contains: kw, mode: "insensitive" as const } },
             {
               recipeIngredients: {
                 some: {
@@ -91,10 +119,7 @@ export async function GET(request: Request) {
             {
               storePosts: {
                 some: {
-                  OR: [
-                    { storeName: { contains: kw, mode: "insensitive" as const } },
-                    { storeDescription: { contains: kw, mode: "insensitive" as const } },
-                  ],
+                  storeName: { contains: kw, mode: "insensitive" as const },
                 },
               },
             },
@@ -110,24 +135,21 @@ export async function GET(request: Request) {
 
     // Thai has no word separators, so exact-phrase `contains` often misses
     // queries like "ข้าวผัดกระเพรา" vs a recipe named "ข้าวกะเพราหมูสับ".
-    // When the strict query returns nothing, fall back to a bigram overlap match.
+    // When the strict query returns nothing, fall back to a bigram overlap
+    // match on the recipe name only.
     if (searchResults.length === 0 && cleanQuery.length >= 2) {
       const queryGrams = bigrams(cleanQuery);
 
       const candidates = await prisma.recipe.findMany({
         where: recipeVisibility,
-        select: { id: true, recipeName: true, description: true },
+        select: { id: true, recipeName: true },
         take: 300,
       });
 
       const scored = candidates
         .map((recipe) => ({
           id: recipe.id,
-          score:
-            Math.max(
-              overlapScore(queryGrams, recipe.recipeName),
-              overlapScore(queryGrams, recipe.description ?? "")
-            ),
+          score: overlapScore(queryGrams, recipe.recipeName),
         }))
         .filter((entry) => entry.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -156,18 +178,25 @@ export async function GET(request: Request) {
         } satisfies Prisma.StorePostWhereInput)
       : { visibility: "public" };
 
-    const orphanedStorePosts = await prisma.storePost.findMany({
+    // setIngredients is a JSON array of `{ name, amount }`. Prisma cannot do an
+    // exact name match inside the JSON array, so we pull a candidate pool and
+    // filter in JS by storeName (contains) OR exact ingredient name.
+    const matchesStorePost = (sp: {
+      setIngredients: unknown;
+      storeName: string;
+    }) => {
+      const items = Array.isArray(sp.setIngredients)
+        ? (sp.setIngredients as Array<{ name?: string }>)
+        : [];
+      return (term: string) =>
+        sp.storeName.toLowerCase().includes(term.toLowerCase()) ||
+        items.some((item) => item.name === term);
+    };
+
+    const orphanStorePosts = await prisma.storePost.findMany({
       where: {
         recipeId: null,
         ...storeVisibility,
-        OR: [
-          { storeName: { contains: cleanQuery, mode: "insensitive" } },
-          { storeDescription: { contains: cleanQuery, mode: "insensitive" } },
-          ...keywords.flatMap((kw) => [
-            { storeName: { contains: kw, mode: "insensitive" as const } },
-            { storeDescription: { contains: kw, mode: "insensitive" as const } },
-          ]),
-        ],
       },
       include: {
         user: { select: { id: true, username: true, avatarUrl: true } },
@@ -175,8 +204,15 @@ export async function GET(request: Request) {
         videos: { orderBy: { createdAt: "asc" } },
       },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 200,
     });
+
+    const orphanedStorePosts = orphanStorePosts
+      .filter((sp) => {
+        const matches = matchesStorePost(sp);
+        return matches(cleanQuery) || keywords.some((kw) => matches(kw));
+      })
+      .slice(0, 50);
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
       id: `orphan-${sp.id}`,

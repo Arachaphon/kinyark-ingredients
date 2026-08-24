@@ -36,94 +36,101 @@ export async function GET(
     const userRole = _request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
 
-    // Cache key = recipe body only (shared for all users)
-    // isFavorite is user-specific so it is always fetched fresh
     const cacheKey = `recipe:${recipeId}`
+
+    // Reviews are NEVER cached — always fetched fresh per request so that
+    // newly created/edited/deleted reviews show up immediately.
+    const fetchFreshReviews = () =>
+      prisma.review.findMany({
+        where: { recipeId },
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+
+    let cachedBase: Record<string, unknown> | undefined
     if (process.env.NODE_ENV !== 'test') {
-      const cached = cache.get<object>(cacheKey)
-
-      if (cached) {
-        // isFavorite still needs a fresh DB lookup per user
-        const isFavorite = user
-          ? !!(await prisma.favorite.findUnique({
-              where: { userId_recipeId: { userId: user.id, recipeId } },
-            }))
-          : false
-        return Response.json({ data: { ...cached, isFavorite } }, { status: 200 })
-      }
+      cachedBase = cache.get<Record<string, unknown>>(cacheKey)
     }
 
-    const [recipe, recipeIngredients, equipmentItems, images, videos, reviews, storePosts] =
-      await Promise.all([
-        prisma.recipe.findUnique({
-          where: { id: recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-          },
-        }),
-        prisma.recipeIngredient.findMany({
-          where: { recipeId },
-          include: { ingredient: { include: { category: true } } },
-          orderBy: { ingredient: { name: "asc" } },
-        }),
-        prisma.recipeEquipment.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.recipeImage.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.recipeVideo.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.review.findMany({
-          where: { recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.storePost.findMany({
-          where: { recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-            images: { orderBy: { createdAt: "asc" } },
-            videos: { orderBy: { createdAt: "asc" } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-      ])
+    let base: Record<string, unknown>
+    if (cachedBase) {
+      base = cachedBase
+    } else {
+      const [recipe, recipeIngredients, equipmentItems, images, videos, storePosts] =
+        await Promise.all([
+          prisma.recipe.findUnique({
+            where: { id: recipeId },
+            include: {
+              user: { select: { id: true, username: true, avatarUrl: true } },
+            },
+          }),
+          prisma.recipeIngredient.findMany({
+            where: { recipeId },
+            include: { ingredient: { include: { category: true } } },
+            orderBy: { ingredient: { name: "asc" } },
+          }),
+          prisma.recipeEquipment.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.recipeImage.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.recipeVideo.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.storePost.findMany({
+            where: { recipeId },
+            include: {
+              user: { select: { id: true, username: true, avatarUrl: true } },
+              images: { orderBy: { createdAt: "asc" } },
+              videos: { orderBy: { createdAt: "asc" } },
+            },
+            orderBy: { createdAt: "desc" },
+          }),
+        ])
 
-    if (!recipe) {
-      return Response.json({ error: "Recipe not found" }, { status: 404 })
-    }
-
-    const fullRecipe = {
-      ...recipe,
-      recipeIngredients,
-      equipmentItems,
-      images,
-      videos,
-      reviews,
-      storePosts,
-    }
-
-    const isStorePostOwner = user
-       ? storePosts.some((sp) => sp.userId === user.id)
-       : false
-
-    if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
-        recipe.userId !== user?.id && !isStorePostOwner) {
-      return Response.json({ error: "Recipe not found" }, { status: 404 })
-    }
-
-    if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
-      if (user.role === "STORE") {
+      if (!recipe) {
         return Response.json({ error: "Recipe not found" }, { status: 404 })
       }
+
+      const fullRecipe = {
+        ...recipe,
+        recipeIngredients,
+        equipmentItems,
+        images,
+        videos,
+        storePosts,
+      }
+
+      const isStorePostOwner = user
+         ? storePosts.some((sp) => sp.userId === user.id)
+         : false
+
+      if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
+          recipe.userId !== user?.id && !isStorePostOwner) {
+        return Response.json({ error: "Recipe not found" }, { status: 404 })
+      }
+
+      if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
+        if (user.role === "STORE") {
+          return Response.json({ error: "Recipe not found" }, { status: 404 })
+        }
+      }
+
+      base = fullRecipe
+
+      // Cache the recipe body (without reviews/isFavorite) — shared across all users
+      if (process.env.NODE_ENV !== 'test') {
+        cache.set(cacheKey, base, TTL_RECIPE)
+      }
     }
+
+    const reviews = await fetchFreshReviews()
 
     const ratingBreakdown = {
       "5": 0,
@@ -138,14 +145,6 @@ export async function GET(
       }
     })
 
-    const fullRecipeWithBreakdown = {
-      ...fullRecipe,
-      ratingBreakdown,
-    }
-
-    // Cache the recipe body (without isFavorite) — shared across all users
-    cache.set(cacheKey, fullRecipeWithBreakdown, TTL_RECIPE)
-
     const isFavorite = user
       ? !!(await prisma.favorite.findUnique({
           where: { userId_recipeId: { userId: user.id, recipeId } },
@@ -153,7 +152,7 @@ export async function GET(
       : false
 
     return Response.json(
-      { data: { ...fullRecipeWithBreakdown, isFavorite } },
+      { data: { ...base, reviews, ratingBreakdown, isFavorite } },
       { status: 200 }
     )
   } catch (error) {

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { REC_CACHE_PREFIX, FEATURED_SEARCH_MARKER } from "@/lib/cache";
 
 export async function saveSearchHistory(userId: string, searchQuery: string) {
   const trimmedQuery = searchQuery.trim();
@@ -32,11 +33,27 @@ export async function saveSearchHistory(userId: string, searchQuery: string) {
     });
   });
 
-  // Non-blocking cleanup: Keep only the latest 20 records per user
+  // Non-blocking cleanup: expire entries older than 1 month and keep only
+  // the latest 20 records per user (internal markers excluded from the cap).
   (async () => {
     try {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      await prisma.searchHistory.deleteMany({
+        where: { userId, createdAt: { lt: oneMonthAgo } },
+      });
+
       const allHistories = await prisma.searchHistory.findMany({
-        where: { userId },
+        where: {
+          userId,
+          NOT: {
+            OR: [
+              { searchQuery: FEATURED_SEARCH_MARKER },
+              { searchQuery: { startsWith: REC_CACHE_PREFIX } },
+            ],
+          },
+        },
         orderBy: { createdAt: "desc" },
         select: { id: true },
       });
@@ -52,12 +69,36 @@ export async function saveSearchHistory(userId: string, searchQuery: string) {
     }
   })();
 
+  // New search signal → drop the sticky recommendation so it re-picks immediately.
+  (async () => {
+    try {
+      await prisma.searchHistory.deleteMany({
+        where: { userId, searchQuery: { startsWith: REC_CACHE_PREFIX } },
+      });
+    } catch (err) {
+      console.error("Error invalidating recommendation cache:", err);
+    }
+  })();
+
   return createdRecord;
 }
 
 export async function getSearchHistory(userId: string, limit: number = 20) {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+  // Never return entries older than 1 month; hide internal marker rows.
   return await prisma.searchHistory.findMany({
-    where: { userId },
+    where: {
+      userId,
+      createdAt: { gte: oneMonthAgo },
+      NOT: {
+        OR: [
+          { searchQuery: FEATURED_SEARCH_MARKER },
+          { searchQuery: { startsWith: REC_CACHE_PREFIX } },
+        ],
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: limit,
   });

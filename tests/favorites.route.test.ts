@@ -15,6 +15,9 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  searchHistory: {
+    deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+  },
   $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
@@ -246,6 +249,7 @@ describe('POST /api/favorites', () => {
     mockPrisma.favorite.findUnique.mockResolvedValue(null)
     mockPrisma.favorite.create.mockResolvedValue({ id: 'fav-new', userId: 'user-1', recipeId: validRecipeId })
     mockPrisma.recipe.update.mockResolvedValue({ id: validRecipeId, favoriteCount: 1 })
+    mockPrisma.favorite.count.mockResolvedValue(1)
 
     const req = new Request('http://localhost/api/favorites', {
       method: 'POST',
@@ -256,7 +260,10 @@ describe('POST /api/favorites', () => {
     const body = await res.json()
 
     expect(res.status).toBe(201)
-    expect(body.data).toEqual({ favorited: true })
+    expect(body.data).toEqual({ favorited: true, favoriteCount: 1 })
+    expect(mockPrisma.searchHistory.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', searchQuery: { startsWith: '__rec_cache__:' } },
+    })
     expect(mockPrisma.favorite.create).toHaveBeenCalledWith({
       data: { userId: 'user-1', recipeId: validRecipeId },
     })
@@ -276,6 +283,7 @@ describe('POST /api/favorites', () => {
     mockPrisma.favorite.create.mockRejectedValue({ code: 'P2002' })
     mockPrisma.favorite.delete.mockResolvedValue({ id: 'fav-existing' })
     mockPrisma.recipe.update.mockResolvedValue({ id: validRecipeId, favoriteCount: 0 })
+    mockPrisma.favorite.count.mockResolvedValue(0)
 
     const req = new Request('http://localhost/api/favorites', {
       method: 'POST',
@@ -286,7 +294,7 @@ describe('POST /api/favorites', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.data).toEqual({ favorited: false })
+    expect(body.data).toEqual({ favorited: false, favoriteCount: 0 })
     expect(mockPrisma.favorite.delete).toHaveBeenCalledWith({
       where: { userId_recipeId: { userId: 'user-1', recipeId: validRecipeId } },
     })
@@ -308,6 +316,7 @@ describe('POST /api/favorites', () => {
     })
     mockPrisma.favorite.delete.mockResolvedValue({ id: 'fav-1', userId: 'user-1', recipeId: validRecipeId })
     mockPrisma.recipe.update.mockResolvedValue({ id: validRecipeId, favoriteCount: 0 })
+    mockPrisma.favorite.count.mockResolvedValue(0)
 
     const req = new Request('http://localhost/api/favorites', {
       method: 'POST',
@@ -319,7 +328,7 @@ describe('POST /api/favorites', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
-    expect(body.data).toEqual({ favorited: false })
+    expect(body.data).toEqual({ favorited: false, favoriteCount: 0 })
     expect(mockPrisma.favorite.delete).toHaveBeenCalledWith({
       where: { userId_recipeId: { userId: 'user-1', recipeId: validRecipeId } },
     })
