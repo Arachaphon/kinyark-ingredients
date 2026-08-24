@@ -54,6 +54,11 @@ export async function POST(request: Request) {
           comment,
           isAnonymous,
         },
+        // Return the joined user so clients can swap the optimistic
+        // placeholder name for the real username without a refetch.
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+        },
       })
 
       await tx.recipe.update({
