@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { recipeListItemSelect } from "@/lib/recipes"
 import type { Prisma } from "@prisma/client"
-import { cache, TTL_FEATURED } from "@/lib/cache"
+import { cache, TTL_FEATURED, REC_CACHE_PREFIX, FEATURED_SEARCH_MARKER } from "@/lib/cache"
 import { getAuthUserId } from "@/lib/auth-user"
 
 export const dynamic = "force-dynamic";
 
-const FEATURED_MARKER = "__featured__";
-const REC_CACHE_PREFIX = "__rec_cache__:";
 const REC_WINDOW_MS = 3 * 24 * 60 * 60 * 1000; // recompute every 3 days
 
 // 3-day rolling window key (epoch-aligned): the recommendation stays fixed for
@@ -17,8 +15,11 @@ function recWindowKey(): string {
   return new Date(now - (now % REC_WINDOW_MS)).toISOString();
 }
 
-// Pick a single recipe from the user's search history (ingredient + name),
-// favorites, and rating. Returns the recipe id or null.
+// Pick a single recipe using strict priority tiers:
+//   1. Name matches the user's recent searches
+//   2. Shares ingredients with recipes the user favorited
+//   3/4. Global fallback: highest rating, then most favorited
+// Already-favorited recipes and the user's own recipes are never recommended.
 async function pickRecommended(
   user: { id: string; role: string | null },
   visibility: Prisma.RecipeWhereInput
@@ -26,14 +27,14 @@ async function pickRecommended(
   const oneMonthAgo = new Date();
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
 
-  // Signal 1: search history (last month, ignoring internal markers)
+  // Priority signal #1 input: recent search queries (ignoring internal markers)
   const histories = await prisma.searchHistory.findMany({
     where: {
       userId: user.id,
       createdAt: { gte: oneMonthAgo },
       NOT: {
         OR: [
-          { searchQuery: FEATURED_MARKER },
+          { searchQuery: FEATURED_SEARCH_MARKER },
           { searchQuery: { startsWith: REC_CACHE_PREFIX } },
         ],
       },
@@ -51,102 +52,71 @@ async function pickRecommended(
     )
   );
 
-  // Map search queries to matched ingredients (semantic, contains-based).
-  let ingredientIds: number[] = [];
-  if (searchQueries.length > 0) {
-    const matchedIngredients = await prisma.ingredient.findMany({
-      where: {
-        OR: searchQueries.map((q) => ({
-          name: { contains: q, mode: "insensitive" as const },
-        })),
-      },
-      select: { id: true },
-      take: 20,
-    });
-    ingredientIds = matchedIngredients.map((i) => i.id);
-  }
-
-  // Signal 2: user favorites
+  // Priority signal #2 input: the user's favorites
   const favorites = await prisma.favorite.findMany({
     where: { userId: user.id },
     select: { recipeId: true },
   });
-  const favoriteIds = new Set(favorites.map((f) => f.recipeId));
+  const favoriteIds = [...new Set(favorites.map((f) => f.recipeId))];
 
-  // Candidate pool: recipes containing a searched ingredient, recipes whose
-  // name matches a query, and favorites.
-  const candidateFilters: Prisma.RecipeWhereInput[] = [];
-  if (ingredientIds.length > 0) {
-    candidateFilters.push({
-      recipeIngredients: { some: { ingredientId: { in: ingredientIds } } },
-    });
-  }
+  // Within every tier: rating first (priority 3), then favoriteCount (priority 4).
+  const rankOrderBy: Prisma.RecipeOrderByWithRelationInput[] = [
+    { rating: "desc" },
+    { favoriteCount: "desc" },
+  ];
+
+  // Never recommend something the user already favorited or created.
+  const exclusions: Prisma.RecipeWhereInput = {
+    ...(favoriteIds.length > 0 ? { id: { notIn: favoriteIds } } : {}),
+    userId: { not: user.id },
+  };
+
   if (searchQueries.length > 0) {
-    candidateFilters.push(
-      ...searchQueries.map((q) => ({
-        recipeName: { contains: q, mode: "insensitive" as const },
-      }))
-    );
-  }
-  if (favoriteIds.size > 0) {
-    candidateFilters.push({ id: { in: [...favoriteIds] } });
-  }
-
-  const candidates = await prisma.recipe.findMany({
-    where: {
-      ...visibility,
-      OR: candidateFilters,
-    },
-    select: {
-      id: true,
-      recipeName: true,
-      rating: true,
-      favoriteCount: true,
-      reviewCount: true,
-      recipeIngredients: { select: { ingredientId: true } },
-    },
-    take: 50,
-  });
-
-  if (candidates.length === 0) {
-    // No signals yet: fall back to the most liked/rated recipe.
-    const fallback = await prisma.recipe.findMany({
-      where: visibility,
-      orderBy: [{ favoriteCount: "desc" }, { rating: "desc" }],
+    const tier1 = await prisma.recipe.findMany({
+      where: {
+        ...visibility,
+        ...exclusions,
+        OR: searchQueries.map((q) => ({
+          recipeName: { contains: q, mode: "insensitive" as const },
+        })),
+      },
+      orderBy: rankOrderBy,
       select: { id: true },
       take: 1,
     });
-    return fallback[0]?.id ?? null;
+    if (tier1[0]) return tier1[0].id;
   }
 
-  const ingredientSet = new Set(ingredientIds);
-  let best: { id: string; score: number } | null = null;
+  if (favoriteIds.length > 0) {
+    const favIngredients = await prisma.recipeIngredient.findMany({
+      where: { recipeId: { in: favoriteIds } },
+      select: { ingredientId: true },
+    });
+    const ingredientIds = [...new Set(favIngredients.map((ri) => ri.ingredientId))];
 
-  for (const r of candidates) {
-    const nameLower = (r.recipeName ?? "").toLowerCase();
-    let score = 0;
-
-    // Signal 1: search history hits (+20 per matched ingredient, +15 per name hit)
-    const matchedIngredients = r.recipeIngredients.filter((ri) =>
-      ingredientSet.has(ri.ingredientId)
-    ).length;
-    score += matchedIngredients * 20;
-    if (searchQueries.some((q) => nameLower.includes(q))) score += 15;
-
-    // Signal 2: user favorited this recipe
-    if (favoriteIds.has(r.id)) score += 30;
-
-    // Signal 3: rating (max 5 → +50) + popularity tie-break
-    score += (r.rating ?? 0) * 10;
-    score += Math.min(r.favoriteCount ?? 0, 50) * 0.5;
-    score += Math.min(r.reviewCount ?? 0, 50) * 0.5;
-
-    if (best === null || score > best.score) {
-      best = { id: r.id, score };
+    if (ingredientIds.length > 0) {
+      const tier2 = await prisma.recipe.findMany({
+        where: {
+          ...visibility,
+          ...exclusions,
+          recipeIngredients: { some: { ingredientId: { in: ingredientIds } } },
+        },
+        orderBy: rankOrderBy,
+        select: { id: true },
+        take: 1,
+      });
+      if (tier2[0]) return tier2[0].id;
     }
   }
 
-  return best?.id ?? null;
+  // No personal signals yet: fall back to best rated / most liked.
+  const fallback = await prisma.recipe.findMany({
+    where: visibility,
+    orderBy: rankOrderBy,
+    select: { id: true },
+    take: 1,
+  });
+  return fallback[0]?.id ?? null;
 }
 
 export async function GET(request: Request) {
@@ -168,7 +138,7 @@ export async function GET(request: Request) {
         relationLoadStrategy: "join",
         where: { visibility: "public" },
         select: recipeListItemSelect(),
-        orderBy: [{ favoriteCount: "desc" }, { rating: "desc" }],
+        orderBy: [{ rating: "desc" }, { favoriteCount: "desc" }],
         take: 1,
       });
       cache.set(anonKey, anonymous, TTL_FEATURED);

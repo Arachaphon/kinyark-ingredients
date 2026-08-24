@@ -19,10 +19,10 @@ const mockPrisma = {
   recipe: {
     findMany: jest.fn(),
   },
-  ingredient: {
+  favorite: {
     findMany: jest.fn().mockResolvedValue([]),
   },
-  favorite: {
+  recipeIngredient: {
     findMany: jest.fn().mockResolvedValue([]),
   },
   searchHistory: {
@@ -162,6 +162,78 @@ describe('GET /api/recipes/featured', () => {
     expect(body.data[0].id).toBe('recipe-1')
     expect(mockPrisma.searchHistory.create).not.toHaveBeenCalled()
     expect(mockPrisma.searchHistory.update).not.toHaveBeenCalled()
+  })
+
+  test('tier 1: recommends recipe whose name matches a recent search, ranked by rating then favorites', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    })
+    mockPrisma.searchHistory.findMany.mockResolvedValue([{ searchQuery: 'ต้มยำ' }])
+    mockPrisma.searchHistory.findFirst.mockResolvedValue(null)
+    mockPrisma.recipe.findMany.mockImplementation(({ orderBy, take }: any) => {
+      if (orderBy && take === 1) return Promise.resolve([{ id: 'tier1-recipe' }])
+      return Promise.resolve([])
+    })
+
+    const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
+    const res = await GET(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data[0].id).toBe('tier1-recipe')
+    expect(mockPrisma.recipeIngredient.findMany).not.toHaveBeenCalled()
+    expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [{ recipeName: { contains: 'ต้มยำ', mode: 'insensitive' } }],
+        }),
+        orderBy: [{ rating: 'desc' }, { favoriteCount: 'desc' }],
+      })
+    )
+  })
+
+  test('tier 2: falls back to ingredient overlap with favorited recipes when no search match', async () => {
+    mockSupabaseAuth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    })
+    mockPrisma.searchHistory.findMany.mockResolvedValue([]) // no searches → skip tier 1
+    mockPrisma.favorite.findMany.mockResolvedValue([
+      { recipeId: 'fav-a' },
+      { recipeId: 'fav-b' },
+    ])
+    mockPrisma.recipeIngredient.findMany.mockResolvedValue([
+      { ingredientId: 7 },
+      { ingredientId: 9 },
+    ])
+    mockPrisma.searchHistory.findFirst.mockResolvedValue(null)
+    let call = 0
+    mockPrisma.recipe.findMany.mockImplementation(() => {
+      call += 1
+      // first findMany = tier 2 pick, second = unused fallback
+      return Promise.resolve(call === 1 ? [{ id: 'tier2-recipe' }] : [])
+    })
+
+    const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
+    const res = await GET(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data[0].id).toBe('tier2-recipe')
+    expect(mockPrisma.recipeIngredient.findMany).toHaveBeenCalledWith({
+      where: { recipeId: { in: ['fav-a', 'fav-b'] } },
+      select: { ingredientId: true },
+    })
+    expect(mockPrisma.recipe.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        where: expect.objectContaining({
+          recipeIngredients: { some: { ingredientId: { in: [7, 9] } } },
+        }),
+        orderBy: [{ rating: 'desc' }, { favoriteCount: 'desc' }],
+      })
+    )
   })
 
   test('returns 500 on internal server error', async () => {

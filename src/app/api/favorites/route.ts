@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { cache } from "@/lib/cache"
+import { cache, REC_CACHE_PREFIX } from "@/lib/cache"
 import { getAuthUserId } from "@/lib/auth-user"
 
 const favoriteSchema = z.object({
@@ -32,9 +32,13 @@ export async function POST(request: Request) {
 
   // Invalidate derived caches only AFTER a successful write; deleting beforehand
   // lets a concurrent GET repopulate the cache with stale counts.
-  const invalidateCaches = () => {
+  const invalidateCaches = async () => {
     cache.del(`recipe:${recipeId}`)
     cache.delPrefix("recipes:list")
+    // Favorite changed → drop the sticky recommendation so it re-picks with the new signal.
+    await prisma.searchHistory
+      .deleteMany({ where: { userId, searchQuery: { startsWith: REC_CACHE_PREFIX } } })
+      .catch(() => {})
   }
 
   try {
@@ -58,7 +62,7 @@ export async function POST(request: Request) {
         }),
       ])
       const favoriteCount = await prisma.favorite.count({ where: { recipeId } })
-      invalidateCaches()
+      await invalidateCaches()
       return Response.json({ data: { favorited: true, favoriteCount } }, { status: 201 })
     } catch (error) {
       // P2002 = duplicate (userId, recipeId) → already favorited → unlike.
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
           }),
         ])
         const favoriteCount = await prisma.favorite.count({ where: { recipeId } })
-        invalidateCaches()
+        await invalidateCaches()
         return Response.json({ data: { favorited: false, favoriteCount } })
       }
       throw error

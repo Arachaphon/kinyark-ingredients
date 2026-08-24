@@ -15,6 +15,9 @@ const mockPrisma = {
     findUnique: jest.fn(),
     update: jest.fn(),
   },
+  searchHistory: {
+    deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+  },
   $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
@@ -258,6 +261,9 @@ describe('POST /api/favorites', () => {
 
     expect(res.status).toBe(201)
     expect(body.data).toEqual({ favorited: true, favoriteCount: 1 })
+    expect(mockPrisma.searchHistory.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1', searchQuery: { startsWith: '__rec_cache__:' } },
+    })
     expect(mockPrisma.favorite.create).toHaveBeenCalledWith({
       data: { userId: 'user-1', recipeId: validRecipeId },
     })
