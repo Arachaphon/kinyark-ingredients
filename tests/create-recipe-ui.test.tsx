@@ -33,6 +33,16 @@ jest.mock("next/link", () => {
   return MockLink;
 });
 
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: () => ({
+    user: { id: "user-1" },
+    session: null,
+    status: "authenticated",
+    signOut: jest.fn(),
+    refreshUser: jest.fn(),
+  }),
+}));
+
 describe("CreateRecipePage UI Authorization", () => {
   beforeEach(() => {
     global.fetch = jest.fn();

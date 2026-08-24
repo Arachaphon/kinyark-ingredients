@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
-import Navbar from "@/components/Navbar";
+
 import Image from "next/image";
+import React, { useState, useEffect } from "react";
+import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import useSWR from "swr";
@@ -25,6 +26,27 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 
 export default function PostsFeedPage() {
   const [page, setPage] = useState(1);
+  const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
+
+  // Sync initial heart state with the user's real favorites list
+  // so /post and /favorites never disagree on favorite status.
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/favorites")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body) => {
+        if (!isMounted || !body?.data) return;
+        setFavoritedIds(
+          new Set((body.data as Array<{ recipeId: string }>).map((f) => f.recipeId))
+        );
+      })
+      .catch(() => {
+        /* not logged in or API unavailable — leave hearts unseeded */
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const { data, error: isError, isLoading } = useSWR<RecipeListResponse>(
     `/api/recipes?page=${page}&limit=${PAGE_SIZE}`,
@@ -41,6 +63,96 @@ export default function PostsFeedPage() {
     setPage(targetPage);
   };
 
+
+
+  // ❤️ ปุ่มหัวใจแบบ Toggle (Optimistic UI): กดบันทึก/ยกเลิกได้ทันที
+  function FavoriteHeartButton({
+    recipeId,
+    favoriteCount,
+    initialIsFavorite = false,
+  }: {
+    recipeId: string;
+    favoriteCount: number;
+    initialIsFavorite?: boolean;
+  }) {
+    const [favorite, setFavorite] = useState({
+      isFavorite: initialIsFavorite,
+      count: favoriteCount,
+    });
+
+    const flipFavorite = () => {
+      setFavorite((prev) => {
+        const isFavorite = !prev.isFavorite;
+        return {
+          isFavorite,
+          count: Math.max(0, prev.count + (isFavorite ? 1 : -1)),
+        };
+      });
+    };
+
+    const toggleFavorite = () => {
+      // 1. Optimistic UI: สลับทันที
+      flipFavorite();
+
+      // 2. ยิง API; ถ้า server ปฏิเสธ (เช่น 429/500) ให้ revert กลับเพื่อให้ซิงค์เสมอ
+      fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            console.warn("Favorite API failed, reverting UI state:", res.status);
+            flipFavorite();
+          }
+        })
+        .catch((error) => {
+          console.error("Network error toggling favorite:", error);
+          flipFavorite();
+        });
+    };
+
+    return (
+      <div
+        onClick={toggleFavorite}
+        className="flex items-center gap-2 cursor-pointer group"
+        title={favorite.isFavorite ? "ยกเลิกการบันทึกสูตรนี้" : "บันทึกสูตรนี้"}
+      >
+        {favorite.isFavorite ? (
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="#FF0000"
+            stroke="#FF0000"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="group-hover:scale-110 group-active:scale-95 transition-transform"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        ) : (
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#A5A5A5"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="group-hover:stroke-[#FF0000] transition-colors"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        )}
+        <span className="font-bold text-gray-700 text-lg group-hover:text-red-500 transition-colors">
+          {favorite.count}
+        </span>
+      </div>
+    );
+  }
 
   const renderStars = (rating: number) => {
     return (
@@ -268,23 +380,11 @@ export default function PostsFeedPage() {
                     </div>
 
                     <div className="flex items-center gap-8 mt-4">
-                      <div className="flex items-center gap-2">
-                        <svg
-                          width="28"
-                          height="28"
-                          viewBox="0 0 24 24"
-                          fill="#FF0000"
-                          stroke="#FF0000"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                        </svg>
-                        <span className="font-bold text-gray-700 text-lg">
-                          {post.favoriteCount}
-                        </span>
-                      </div>
+                      <FavoriteHeartButton
+                        recipeId={post.id}
+                        favoriteCount={post.favoriteCount}
+                        initialIsFavorite={favoritedIds.has(post.id)}
+                      />
 
                       <div className="flex items-center gap-2">
                         {renderStars(Math.round(post.rating))}

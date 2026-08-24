@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { createReviewSchema } from "@/lib/validations/review.schema"
 import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function POST(request: Request) {
   const userId = await getAuthUserId(request)
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
       return Response.json({ error: "Recipe not found" }, { status: 404 })
     }
 
-    // 2. Prevent duplicate reviews
+
+    // 3. Prevent duplicate reviews
     const existingReview = await prisma.review.findFirst({
       where: { recipeId, userId: userId },
     })
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "You have already reviewed this recipe" }, { status: 409 })
     }
 
-    // 3. Perform database updates in transaction
+    // 4. Perform database updates in transaction
     const review = await prisma.$transaction(async (tx) => {
       const createdReview = await tx.review.create({
         data: {
@@ -51,6 +53,11 @@ export async function POST(request: Request) {
           rating,
           comment,
           isAnonymous,
+        },
+        // Return the joined user so clients can swap the optimistic
+        // placeholder name for the real username without a refetch.
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
         },
       })
 
@@ -74,6 +81,8 @@ export async function POST(request: Request) {
 
       return createdReview
     })
+
+    cache.del(`recipe:${recipeId}`)
 
     return Response.json({ data: review }, { status: 201 })
   } catch (error) {

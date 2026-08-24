@@ -19,7 +19,7 @@ const MIME_EXTENSIONS: Record<AllowedMimeType, string> = {
 }
 
 const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'] as const
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024
+const MAX_VIDEO_SIZE = 20 * 1024 * 1024
 type AllowedVideoMimeType = (typeof ALLOWED_VIDEO_MIME_TYPES)[number]
 
 const VIDEO_MIME_EXTENSIONS: Record<AllowedVideoMimeType, string> = {
@@ -57,7 +57,7 @@ export function validateVideoFile(file: File): { valid: true } | { valid: false;
   }
 
   if (file.size > MAX_VIDEO_SIZE) {
-    return { valid: false, error: 'File too large. Maximum size is 50 MB', status: 413 }
+    return { valid: false, error: 'File too large. Maximum size is 20 MB (compress to ≤720p, ~30-60s for best performance)', status: 413 }
   }
 
   const ext = file.name.split('.').pop()?.toLowerCase()
@@ -107,6 +107,40 @@ export async function validateImageSignature(file: File): Promise<{ valid: true 
   }
 
   return { valid: true }
+}
+
+export function isVideoFile(file: File): boolean {
+  return (
+    file.type.startsWith('video/') ||
+    ['mp4', 'mov', 'webm'].includes(file.name.split('.').pop()?.toLowerCase() || '')
+  )
+}
+
+export async function uploadRecipeMedia(
+  supabase: SupabaseClient,
+  file: File,
+  userId: string,
+): Promise<{ url: string | null; error: string | null }> {
+  const isVideo = isVideoFile(file)
+  const validation = isVideo ? validateVideoFile(file) : validateImageFile(file)
+  if (!validation.valid) {
+    return { url: null, error: validation.error }
+  }
+  if (!isVideo) {
+    const signature = await validateImageSignature(file)
+    if (!signature.valid) {
+      return { url: null, error: signature.error }
+    }
+  }
+  const path = generateStoragePath(userId, file.type, file.name)
+  if (!path) {
+    return { url: null, error: 'Unsupported file type' }
+  }
+  const result = await uploadFileToBucket(supabase, file, path, 'recipes')
+  if (result.error || !result.data) {
+    return { url: null, error: result.error || `Storage error: upload failed` }
+  }
+  return { url: getPublicUrl(supabase, result.data.path, 'recipes'), error: null }
 }
 
 export function generateStoragePath(userId: string, mimeType: string, filename?: string): string | null {

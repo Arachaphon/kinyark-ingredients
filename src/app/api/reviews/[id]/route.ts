@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { updateReviewSchema } from "@/lib/validations/review.schema"
 import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function PATCH(
   request: Request,
@@ -57,6 +58,8 @@ export async function PATCH(
       return updatedReview
     })
 
+    cache.del(`recipe:${existing.recipeId}`)
+
     return Response.json({ data: updated })
   } catch (error) {
     console.error("Error updating review:", error)
@@ -99,6 +102,8 @@ export async function DELETE(
         data: { rating: newRating },
       })
     })
+
+    cache.del(`recipe:${existing.recipeId}`)
 
     return Response.json({ data: { id } })
   } catch (error) {

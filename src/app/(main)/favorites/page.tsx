@@ -53,7 +53,53 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [fetchFavorites]);
 
+  // 🌟 ฟังก์ชันยกเลิกการบันทึกสูตรอาหาร (Optimistic UI - การ์ดหายทันที)
+  const handleRemoveFavorite = async (recipeId: string) => {
+    // 1. อัปเดต UI ทันที: กรองเอาการ์ดสูตรอาหารที่กดออกไปจากหน้าจอ
+    setFavorites((prev) => prev.filter((item) => item.recipe.id !== recipeId));
+
+    try {
+      // 2. ยิง API สลับสถานะ (Toggle) เพื่อยกเลิกการบันทึกในฐานข้อมูล
+      const res = await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId }),
+      });
+
+      if (!res.ok) {
+        // Server rejected — restore the card so UI stays synced.
+        console.warn("Failed to remove favorite on server, restoring card:", res.status);
+        fetchFavorites();
+      }
+    } catch (error) {
+      console.error("Network error removing favorite:", error);
+      fetchFavorites();
+    }
+  };
+
   const favoritesCount = favorites.length;
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <svg
+            key={star}
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill={star <= rating ? "#F1C40F" : "none"}
+            stroke={star <= rating ? "#F1C40F" : "#71B254"}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -117,23 +163,23 @@ export default function FavoritesPage() {
                   return (
                     <div
                       key={item.id}
-                      className="flex flex-col md:flex-row gap-6 p-4 border border-[#71B254] rounded-xl bg-white hover:shadow-md transition-shadow relative"
+                      className="bg-white border-2 border-white rounded-sm p-8 shadow-sm mb-4 animate-fade-in"
                     >
-                      <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
-                        <Image
-                          src={recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                          alt={recipe.recipeName}
-                          fill
-                          className="object-cover rounded-lg"
-                          sizes="180px"
-                        />
-                      </div>
+                      <div className="flex flex-col md:flex-row gap-10">
+                        <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
+                          <Image
+                            src={recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
+                            alt={recipe.recipeName}
+                            fill
+                            className="object-cover rounded-3xl shadow-md"
+                            sizes="350px"
+                          />
+                        </div>
 
-                      <div className="flex-grow flex flex-col justify-between py-1">
-                        <div>
-                          <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                        <div className="flex flex-col justify-center gap-6 min-w-0">
+                          <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
                             {recipe.recipeName}
-                          </h3>
+                          </h1>
 
                           {tags.length > 0 && (
                             <div className="flex flex-wrap gap-2">
@@ -147,75 +193,69 @@ export default function FavoritesPage() {
                               ))}
                             </div>
                           )}
-                        </div>
 
-                        <div className="flex items-center gap-3 mt-4 md:mt-0">
-                          <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100">
+                          <div className="flex items-center gap-3">
                             <Image
                               src={recipe.user?.avatarUrl ?? FALLBACK_AVATAR}
                               alt={recipe.user?.username ?? "ผู้เขียน"}
                               width={32}
                               height={32}
-                              className="object-cover"
+                              className="rounded-full object-cover shrink-0"
                             />
-                          </div>
-                          <span className="font-bold text-gray-800 text-sm">
-                            {recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end justify-between w-full md:w-32 shrink-0 py-1">
-                        <div className="flex flex-col items-end gap-3 w-full">
-                          <div className="flex items-center gap-4">
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="#FF0000"
-                              stroke="#FF0000"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                            <span className="font-medium text-gray-700 text-lg">
-                              {recipe.favoriteCount}
+                            <span className="font-bold text-gray-800 text-lg">
+                              {recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <svg
-                              width="22"
-                              height="22"
-                              fill="#F1C40F"
-                              stroke="#F1C40F"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              viewBox="0 0 24 24"
+                          <div className="flex items-center gap-8 mt-4">
+                            {/* 🌟 หัวใจกดลบได้ (Optimistic UI) */}
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleRemoveFavorite(recipe.id);
+                              }}
+                              className="flex items-center gap-2 cursor-pointer group"
+                              title="ยกเลิกการบันทึกสูตรนี้"
                             >
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                            <span className="font-bold text-gray-900 text-lg">
-                              {recipe.rating.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
+                              <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="#FF0000"
+                                stroke="#FF0000"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="group-hover:scale-110 group-active:scale-95 transition-transform"
+                              >
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                              </svg>
+                              <span className="font-bold text-gray-700 text-lg group-hover:text-red-500 transition-colors">
+                                {recipe.favoriteCount}
+                              </span>
+                            </div>
 
-                        <Link
-                          href={`/recipe/${recipe.id}`}
-                          className="mt-4 md:mt-0 w-full md:w-auto px-5 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition text-center shadow-sm"
-                        >
-                          ดูสูตรอาหาร
-                        </Link>
+                            <div className="flex items-center gap-2">
+                              {renderStars(Math.round(recipe.rating))}
+                              <span className="font-bold text-gray-800 text-lg ml-2">
+                                {recipe.rating.toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+
+                          <Link
+                            href={`/recipe/${recipe.id}`}
+                            className="w-fit px-6 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition shadow-sm"
+                          >
+                            ดูสูตรอาหาร
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="text-center py-20 text-gray-400 italic text-lg">
+                <div className="text-center py-20 text-gray-400 italic text-lg animate-fade-in">
                   คุณยังไม่ได้กดถูกใจสูตรอาหารใด ๆ
                 </div>
               )}

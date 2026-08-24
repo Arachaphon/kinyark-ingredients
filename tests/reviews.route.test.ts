@@ -138,6 +138,11 @@ describe('POST /api/reviews', () => {
       rating: 5,
       comment: 'Delicious!',
       isAnonymous: false,
+      user: {
+        id: 'user-1',
+        username: 'chef-a',
+        avatarUrl: null,
+      },
     }
 
     mockPrisma.review.create.mockResolvedValue(expectedReview)
@@ -166,6 +171,9 @@ describe('POST /api/reviews', () => {
         rating: 5,
         comment: 'Delicious!',
         isAnonymous: false,
+      },
+      include: {
+        user: { select: { id: true, username: true, avatarUrl: true } },
       },
     })
     expect(mockPrisma.recipe.update).toHaveBeenNthCalledWith(1, {
