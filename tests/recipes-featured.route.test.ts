@@ -171,10 +171,8 @@ describe('GET /api/recipes/featured', () => {
     })
     mockPrisma.searchHistory.findMany.mockResolvedValue([{ searchQuery: 'ต้มยำ' }])
     mockPrisma.searchHistory.findFirst.mockResolvedValue(null)
-    mockPrisma.recipe.findMany.mockImplementation(({ orderBy, take }: any) => {
-      if (orderBy && take === 1) return Promise.resolve([{ id: 'tier1-recipe' }])
-      return Promise.resolve([])
-    })
+    // Covers both the tier-1 pick and the final detail load (where.id).
+    mockPrisma.recipe.findMany.mockResolvedValue([{ id: 'tier1-recipe' }])
 
     const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
     const res = await GET(req)
@@ -208,12 +206,8 @@ describe('GET /api/recipes/featured', () => {
       { ingredientId: 9 },
     ])
     mockPrisma.searchHistory.findFirst.mockResolvedValue(null)
-    let call = 0
-    mockPrisma.recipe.findMany.mockImplementation(() => {
-      call += 1
-      // first findMany = tier 2 pick, second = unused fallback
-      return Promise.resolve(call === 1 ? [{ id: 'tier2-recipe' }] : [])
-    })
+    // Covers both the tier-2 pick and the final detail load (where.id).
+    mockPrisma.recipe.findMany.mockResolvedValue([{ id: 'tier2-recipe' }])
 
     const req = new Request('http://localhost/api/recipes/featured', { headers: { 'x-user-id': 'user-1' } })
     const res = await GET(req)
