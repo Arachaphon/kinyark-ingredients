@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { createReviewSchema } from "@/lib/validations/review.schema"
 import { getAuthUserId } from "@/lib/auth-user"
+import { cache } from "@/lib/cache"
 
 export async function POST(request: Request) {
   const userId = await getAuthUserId(request)
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
 
       return createdReview
     })
+
+    cache.del(`recipe:${recipeId}`)
 
     return Response.json({ data: review }, { status: 201 })
   } catch (error) {

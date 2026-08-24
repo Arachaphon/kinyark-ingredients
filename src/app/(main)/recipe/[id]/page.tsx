@@ -2,10 +2,11 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import { useParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { useAuth } from "@/context/AuthContext";
 import type { RecipeDetail } from "@/types/recipes";
 import { translateUnit } from "@/lib/units";
 
@@ -159,6 +160,7 @@ export default function ViewRecipePage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const recipeId = Array.isArray(id) ? id[0] : id;
+  const { user } = useAuth();
 
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,6 +172,13 @@ export default function ViewRecipePage() {
   const [commentText, setCommentText] = useState("");
   const [ratingValue, setRatingValue] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  // รีวิวของผู้ใช้ปัจจุบัน (1 คนรีวิวได้ 1 รีวิว → เข้าโหมดแก้ไข/ลบแทนการสร้างใหม่)
+  const myReview = useMemo(
+    () => (user && recipe ? recipe.reviews.find((r: any) => r.userId === user.id) ?? null : null),
+    [user, recipe]
+  );
 
   const fetchRecipe = useCallback(async () => {
     if (!recipeId) { setNotFound(true); setLoading(false); return; }
@@ -237,32 +246,104 @@ export default function ViewRecipePage() {
       });
   };
 
-  // 🌟 ฟังก์ชันจัดการกดส่งคอมเมนต์แบบ Optimistic UI
-  const handleSubmitComment = async () => {
+  // เติมค่าดาว/ข้อความเดิมเมื่อเข้าโหมดแก้ไขรีวิวของตัวเอง
+  useEffect(() => {
+    if (myReview) {
+      setRatingValue(myReview.rating);
+      setCommentText(myReview.comment ?? "");
+    }
+  }, [myReview?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const thaiReviewError = (status: number, message?: string) => {
+    if (status === 401) return "กรุณาเข้าสู่ระบบก่อนส่งรีวิว";
+    if (status === 409) return "คุณได้รีวิวสูตรนี้ไปแล้ว";
+    if (message?.toLowerCase().includes("rating")) return "กรุณาเลือกคะแนนดาวก่อนส่งรีวิว";
+    return message || "ไม่สามารถส่งรีวิวได้ กรุณาลองใหม่อีกครั้ง";
+  };
+
+  // 🌟 ส่งรีวิว — สร้างใหม่ (Optimistic UI) หรือบันทึกการแก้ไขรีวิวเดิม
+  const submitReview = async () => {
     if (!commentText.trim() || !recipe || isSubmitting) return;
 
-    setIsSubmitting(true);
+    if (!user) {
+      setCommentError("กรุณาเข้าสู่ระบบก่อนส่งรีวิว");
+      return;
+    }
+    if (ratingValue === 0) {
+      setCommentError("กรุณาเลือกคะแนนดาวก่อนส่งรีวิว");
+      return;
+    }
 
-    // สร้างก้อนข้อมูลคอมเมนต์ใหม่แบบชั่วคราว
+    setIsSubmitting(true);
+    setCommentError(null);
+
+    const submittedComment = commentText.trim();
+    const submittedRating = ratingValue;
+
+    // ---------- ✏️ โหมดแก้ไขรีวิวของตัวเอง ----------
+    if (myReview) {
+      try {
+        const res = await fetch(`/api/reviews/${myReview.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: submittedRating, comment: submittedComment }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => null);
+          setCommentError(thaiReviewError(res.status, errBody?.error));
+          return;
+        }
+
+        const body = await res.json();
+        const savedReview: any = body?.data;
+
+        // อัปเดตรีวิวในลิสต์ + คำนวณคะแนนเฉลี่ยใหม่ทันที
+        setRecipe((prev) => {
+          if (!prev) return prev;
+          const count = prev.reviewCount;
+          const avg =
+            count > 0
+              ? Math.round(((prev.rating * count - myReview.rating + submittedRating) / count) * 10) / 10
+              : prev.rating;
+          return {
+            ...prev,
+            rating: avg,
+            reviews: prev.reviews.map((r: any) =>
+              r.id === myReview.id ? { ...r, ...savedReview, user: r.user } : r
+            ),
+          };
+        });
+      } catch (e) {
+        console.error("Error updating review:", e);
+        setCommentError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    // ---------- 🆕 สร้างรีวิวใหม่ (Optimistic UI) ----------
+    const tempId = `temp-${Date.now()}`;
     const newReview: any = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
+      userId: user.id,
       user: {
-        username: "คุณ", // หรือดึงชื่อผู้ใช้จริงถ้ามี Auth
-        avatarUrl: FALLBACK_AVATAR
+        username: user.user_metadata?.username ?? "คุณ",
+        avatarUrl: (user.user_metadata?.avatar_url as string) ?? FALLBACK_AVATAR,
       },
       isAnonymous: false,
-      rating: ratingValue,
-      comment: commentText.trim()
+      rating: submittedRating,
+      comment: submittedComment,
+    };
+
+    // ลบคอมเมนต์ชั่วคราวออกจาก UI เมื่อ server ปฏิเสธ
+    const rollbackTempReview = () => {
+      setRecipe((prev) => (prev ? { ...prev, reviews: prev.reviews.filter((r) => r.id !== tempId) } : prev));
     };
 
     // 1. นำข้อมูลแทรกขึ้นบรรทัดแรกทันทีแบบไม่ต้องรอ API (Optimistic UI)
-    setRecipe(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        reviews: [newReview, ...prev.reviews]
-      };
-    });
+    setRecipe((prev) => (prev ? { ...prev, reviews: [newReview, ...prev.reviews] } : prev));
 
     // รีเซ็ตช่องพิมพ์ให้ว่างทันที
     setCommentText("");
@@ -275,16 +356,83 @@ export default function ViewRecipePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           recipeId: recipe.id,
-          rating: ratingValue,
-          comment: newReview.comment,
+          rating: submittedRating,
+          comment: submittedComment,
         }),
       });
 
       if (!res.ok) {
-        console.warn("Failed to submit comment to server, but keeping in UI for now.");
+        const errBody = await res.json().catch(() => null);
+        rollbackTempReview();
+        setCommentError(thaiReviewError(res.status, errBody?.error));
+        return;
       }
-    } catch (error) {
-      console.error("Error submitting comment:", error);
+
+      const body = await res.json();
+      const savedReview: any = body?.data;
+
+      // 3. แทนที่คอมเมนต์ชั่วคราวด้วยข้อมูลจริงจาก server และอัปเดตคะแนน/จำนวนรีวิว
+      setRecipe((prev) => {
+        if (!prev) return prev;
+        const newCount = prev.reviewCount + 1;
+        const newAvg =
+          newCount > 0
+            ? Math.round(((prev.rating * prev.reviewCount + submittedRating) / newCount) * 10) / 10
+            : prev.rating;
+        return {
+          ...prev,
+          rating: newAvg,
+          reviewCount: newCount,
+          reviews: prev.reviews.map((r: any) =>
+            r.id === tempId ? { ...r, ...savedReview, user: savedReview?.user ?? r.user } : r
+          ),
+        };
+      });
+    } catch (e) {
+      console.error("Error submitting review:", e);
+      rollbackTempReview();
+      setCommentError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 🗑️ ลบรีวิวของตัวเอง
+  const handleDeleteReview = async () => {
+    if (!myReview || !recipe || isSubmitting) return;
+    if (!window.confirm("ยืนยันการลบรีวิวของคุณหรือไม่?")) return;
+
+    setIsSubmitting(true);
+    setCommentError(null);
+
+    try {
+      const res = await fetch(`/api/reviews/${myReview.id}`, { method: "DELETE" });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        setCommentError(thaiReviewError(res.status, errBody?.error));
+        return;
+      }
+
+      setRecipe((prev) => {
+        if (!prev) return prev;
+        const newCount = Math.max(0, prev.reviewCount - 1);
+        const newAvg =
+          newCount > 0
+            ? Math.round(((prev.rating * prev.reviewCount - myReview.rating) / newCount) * 10) / 10
+            : 0;
+        return {
+          ...prev,
+          rating: newAvg,
+          reviewCount: newCount,
+          reviews: prev.reviews.filter((r: any) => r.id !== myReview.id),
+        };
+      });
+      setCommentText("");
+      setRatingValue(0);
+    } catch (e) {
+      console.error("Error deleting review:", e);
+      setCommentError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSubmitting(false);
     }
@@ -308,7 +456,7 @@ export default function ViewRecipePage() {
         {[1, 2, 3, 4, 5].map((star) => (
           <svg 
             key={star} 
-            onClick={() => setRatingValue(star)}
+            onClick={() => { setRatingValue(star); setCommentError(null); }}
             width="16" 
             height="16" 
             viewBox="0 0 24 24" 
@@ -328,6 +476,7 @@ export default function ViewRecipePage() {
 
   const coverImage = recipe?.images[0]?.imageUrl ?? FALLBACK_IMAGE;
   const authorAvatar = recipe?.user?.avatarUrl ?? FALLBACK_AVATAR;
+  const canSubmit = !!commentText.trim() && ratingValue > 0 && !isSubmitting;
 
   return (
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
@@ -554,7 +703,7 @@ export default function ViewRecipePage() {
                 {/* 📝 กล่องพิมพ์คอมเมนต์ (Input & Submit) */}
                 <div className="pb-8 border-b border-gray-100 mb-8 flex gap-4 items-start">
                   <div className="flex flex-col w-full gap-3">
-                    <span className="font-bold text-gray-900">เขียนความคิดเห็นของคุณ</span>
+                    <span className="font-bold text-gray-900">{myReview ? "แก้ไขรีวิวของคุณ" : "เขียนความคิดเห็นของคุณ"}</span>
                     
                     {/* ระบบกดให้คะแนนดาว */}
                     <div className="flex items-center gap-4">
@@ -566,21 +715,40 @@ export default function ViewRecipePage() {
                     <div className="relative w-full">
                       <input 
                         type="text" 
-                        placeholder="พิมพ์ความคิดเห็นของคุณที่นี่..." 
+                        placeholder={myReview ? "แก้ไขความคิดเห็นของคุณที่นี่..." : "พิมพ์ความคิดเห็นของคุณที่นี่..."} 
                         value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
+                        onChange={(e) => { setCommentText(e.target.value); setCommentError(null); }}
+                        onKeyDown={(e) => e.key === 'Enter' && submitReview()}
                         disabled={isSubmitting}
                         className="w-full py-3 pl-4 pr-12 rounded-md bg-[#EAF5E4] border border-[#d2e8c5] text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#71B254] shadow-inner disabled:opacity-50" 
                       />
                       <button 
-                        onClick={handleSubmitComment}
-                        disabled={!commentText.trim() || isSubmitting}
-                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-all ${!commentText.trim() ? 'text-gray-400 cursor-not-allowed' : 'text-[#71B254] hover:text-[#5b9642] hover:scale-110 active:scale-95'}`}
+                        onClick={submitReview}
+                        disabled={!canSubmit}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 transition-all ${!canSubmit ? 'text-gray-400 cursor-not-allowed' : 'text-[#71B254] hover:text-[#5b9642] hover:scale-110 active:scale-95'}`}
                       >
                         <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
                       </button>
                     </div>
+
+                    {/* ⚠️ ข้อความแจ้งเตือน (inline) */}
+                    {commentError && (
+                      <p className="text-sm font-bold text-red-600">{commentError}</p>
+                    )}
+
+                    {/* 🗑️ โซนจัดการรีวิวของตัวเอง */}
+                    {myReview && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-gray-500">คุณรีวิวสูตรนี้ไปแล้ว — สามารถแก้ไขหรือลบรีวิวได้</span>
+                        <button
+                          onClick={handleDeleteReview}
+                          disabled={isSubmitting}
+                          className="shrink-0 px-3 py-1.5 rounded-full border border-red-300 text-red-600 text-xs font-bold hover:bg-red-50 transition disabled:opacity-50"
+                        >
+                          ลบรีวิว
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -591,8 +759,11 @@ export default function ViewRecipePage() {
                       <div key={review.id} className="flex gap-4 animate-fade-in">
                         <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0" />
                         <div className="flex flex-col w-full">
-                          <div className="flex items-center gap-4">
+                                          <div className="flex items-center gap-4 flex-wrap">
                             <span className="font-bold text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
+                            {user && review.userId === user.id && (
+                              <span className="text-[10px] font-bold text-white bg-[#71B254] px-2 py-0.5 rounded-full">คุณ</span>
+                            )}
                             {review.rating > 0 && renderStars(review.rating)}
                           </div>
                           <p className="text-gray-700 mt-1">{review.comment || "ไม่มีความคิดเห็น"}</p>
