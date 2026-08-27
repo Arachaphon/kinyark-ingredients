@@ -2,13 +2,13 @@
 import { NextResponse } from 'next/server';
 import { getUserContext } from '@/lib/ai/recommendation';
 import { buildRecommendationPrompt } from '@/lib/ai/prompts';
-import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 
-// สร้าง instance ของ Groq (ระบบจะดึง GROQ_API_KEY จาก .env.local อัตโนมัติ)
-
-const tempKey = "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";
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || tempKey ,
+// สร้าง instance สำหรับ Groq (ระบบจะดึง GROQ_API_KEY จาก .env.local อัตโนมัติ)
+// ใช้ OpenAI SDK ต่อกับ Groq API ตามที่ repo ติดตั้งไว้แล้ว
+const groq = new OpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export async function POST(req: Request) {

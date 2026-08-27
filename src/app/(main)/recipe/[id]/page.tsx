@@ -20,89 +20,6 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
 const FALLBACK_AVATAR = "/photo/default-avatar.svg";
 
-// =========================================
-// 🎨 ข้อมูลจำลอง (Mock Data) สำหรับทดสอบ UI 
-// ========================================
-const mockRecipeDetail: RecipeDetail = {
-  id: "mock-recipe-id",
-  userId: "mock-user-id",
-  recipeName: "สปาเก็ตตี้คาโบนาร่าสูตรต้นตำรับ",
-  description: "หอมมันด้วยไข่แดงและชีสเพโคริโน่แท้ๆ ไม่ใช้ครีม ตามแบบฉบับอิตาเลียนดั้งเดิม อร่อยเข้มข้นจนต้องขอเพิ่มอีกจาน!",
-  rating: 4.9,
-  reviewCount: 2,
-  favoriteCount: 342,
-  bgColor: null,
-  aiProvider: null,
-  visibility: "PUBLIC",
-  createdAt: "2026-08-16T00:00:00.000Z",
-  isFavorite: false,
-  user: {
-    id: "u-mock-1",
-    username: "ItalianChef_BKK",
-    avatarUrl: "https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=150&q=80",
-  },
-  images: [
-    { id: "img1", imageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=800&q=80" },
-    { id: "img2", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80" }
-  ],
-  videos: [],
-  equipmentItems: [],
-  recipeIngredients: [
-    { id: "ri1", quantity: 200, unit: "g", ingredient: { id: 1, name: "เส้นสปาเก็ตตี้", categoryId: null } },
-    { id: "ri2", quantity: 100, unit: "g", ingredient: { id: 2, name: "กวนชาเล่ (แก้มหมูหมัก)", categoryId: null } },
-    { id: "ri3", quantity: 3, unit: "ฟอง", ingredient: { id: 3, name: "ไข่แดง", categoryId: null } },
-    { id: "ri4", quantity: 50, unit: "g", ingredient: { id: 4, name: "ชีสเพโคริโน่ โรมาโน่", categoryId: null } },
-    { id: "ri5", quantity: 1, unit: "tsp", ingredient: { id: 5, name: "พริกไทยดำ", categoryId: null } },
-  ],
-  instructions: "1. ต้มน้ำให้เดือด ใส่เกลือเล็กน้อย แล้วนำเส้นสปาเก็ตตี้ลงไปต้มให้ได้ระดับ Al Dente\n2. หั่นกวนชาเล่เป็นชิ้นเล็กๆ นำลงไปผัดในกระทะด้วยไฟอ่อนจนน้ำมันละลายออกมาและกรอบ\n3. ผสมไข่แดง ชีสเพโคริโน่ขูด และพริกไทยดำเข้าด้วยกันในชาม\n4. นำเส้นที่ต้มเสร็จแล้วลงไปคลุกในกระทะกับกวนชาเล่ (ปิดไฟกระทะก่อน)\n5. เทส่วนผสมไข่และชีสลงไป คลุกเคล้าอย่างรวดเร็ว เติมน้ำต้มเส้นเล็กน้อยเพื่อให้เกิดซอสครีมมี่",
-  storePosts: [
-    {
-      id: "sp1",
-      userId: "sp-user-1",
-      recipeId: "mock-recipe-id",
-      storeName: "Pasta Lovers Shop",
-      sellingPrice: 259,
-      storeDescription: "เซ็ทวัตถุดิบพร้อมปรุงสปาเก็ตตี้คาโบนาร่า นำเข้าชีสและกวนชาเล่แท้จากอิตาลี ส่งตรงถึงบ้านคุณพร้อมสูตรลับเฉพาะ",
-      storeLocation: "ตึก Empire Tower สาทร กรุงเทพมหานคร",
-      contactInfo: "Line: @pastalovers\nโทร: 089-999-9999",
-      visibility: "PUBLIC",
-      createdAt: "2026-08-16T00:00:00.000Z",
-      user: {
-        id: "sp-user-1",
-        username: "Pasta Lovers Shop",
-        avatarUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80"
-      },
-      images: [],
-      videos: [],
-      setIngredients: [
-        { name: "เส้นสปาเก็ตตี้ (อิตาลี)", quantity: 200, unit: "g" },
-        { name: "กวนชาเล่หั่นเต๋า", quantity: 100, unit: "g" },
-        { name: "ชีสเพโคริโน่ (ขูด)", quantity: 50, unit: "g" },
-      ]
-    }
-  ],
-  reviews: [
-    {
-      id: "rv1",
-      userId: "rv-user-1",
-      createdAt: "2026-08-16T00:00:00.000Z",
-      user: { id: "rv-user-1", username: "FoodieGirl", avatarUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" },
-      isAnonymous: false,
-      rating: 5,
-      comment: "ทำตามแล้วอร่อยมากค่ะ ซอสครีมมี่สุดๆ ไม่ต้องใช้ครีมเลย"
-    },
-    {
-      id: "rv2",
-      userId: "rv-user-2",
-      createdAt: "2026-08-16T00:00:00.000Z",
-      user: { id: "rv-user-2", username: "SecretChef", avatarUrl: null },
-      isAnonymous: true,
-      rating: 4,
-      comment: "เซ็ทอาหารส่งไว วัตถุดิบดีมากครับ กลิ่นชีสหอมสุดๆ"
-    }
-  ]
-};
-
 // 🖼️ คลังรูปสำรองสำหรับสูตรจากหน้าค้นหา (AI Recommendation)
 const FOOD_GALLERY_POOL = [
   "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=800&q=80",
@@ -355,24 +272,28 @@ export default function ViewRecipePage() {
 
     try {
       const res = await fetch(`/api/recipes/${recipeId}`);
-      
-      // 🌟 HYBRID LOGIC: ถ้า API พัง, หาไม่เจอ, หรือยังไม่พร้อม ให้แสดง Mock Data ทันที
-      if (!res.ok) {
-        setRecipe({ ...mockRecipeDetail, id: recipeId as string });
+
+      if (res.status === 404) {
+        setNotFound(true);
         setLoading(false);
         return;
       }
-      
+
+      if (!res.ok) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
       const body = await res.json();
-      
-      // ถ้ามีข้อมูลจริง ให้ใช้ข้อมูลจริง
+
       if (body.data) {
         setRecipe(body.data as RecipeDetail);
       } else {
-        setRecipe({ ...mockRecipeDetail, id: recipeId as string });
+        setError(true);
       }
     } catch {
-      setRecipe({ ...mockRecipeDetail, id: recipeId as string });
+      setError(true);
     } finally {
       setLoading(false);
     }

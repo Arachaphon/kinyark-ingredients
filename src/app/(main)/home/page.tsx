@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link"; 
@@ -36,20 +36,6 @@ const mockFeaturedRecipe: RecipeData = {
   rating: 5.0,
   images: [{ id: "img-1", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }]
 };
-
-const mockGeminiRecipes: RecipeData[] = [
-  { id: "g1", recipeName: "แกงเขียวหวาน", bgColor: "bg-[#6F62E4]", rating: 5, images: [{ id: "i1", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g2", recipeName: "ไข่เจียวหมูสับ", bgColor: "bg-[#FF8585]", rating: 4.5, images: [{ id: "i2", imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g3", recipeName: "ต้มจืดเต้าหู้", bgColor: "bg-[#3AC9B5]", rating: 4.8, images: [{ id: "i3", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g4", recipeName: "ผัดไทยกุ้งสด", bgColor: "bg-[#63D04C]", rating: 5, images: [{ id: "i4", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" }] },
-];
-
-const mockDeepseekRecipes: RecipeData[] = [
-  { id: "d1", recipeName: "ต้มยำกุ้ง", bgColor: "bg-[#F58D38]", rating: 5, images: [{ id: "i5", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d2", recipeName: "ส้มตำไทย", bgColor: "bg-[#D05C5C]", rating: 4.9, images: [{ id: "i6", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d3", recipeName: "ข้าวผัดหมู", bgColor: "bg-[#E6C229]", rating: 4.7, images: [{ id: "i7", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d4", recipeName: "กะเพราไก่ไข่ดาว", bgColor: "bg-[#4285F4]", rating: 5, images: [{ id: "i8", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
-];
 
 export default function HomePage() {
   const { data: featuredData } = useSWR("/api/recipes/featured", fetcher);
@@ -117,19 +103,8 @@ export default function HomePage() {
         <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
           สูตรอาหารแนะนำประจำสัปดาห์
         </h2>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12">
-          <MenuCarousel 
-            provider="โดย gemini" 
-            apiEndpoint="/api/recipes?aiProvider=gemini" 
-            fallbackMockData={mockGeminiRecipes}
-          />
-          <MenuCarousel 
-            provider="โดย Deepseek" 
-            apiEndpoint="/api/recipes?aiProvider=deepseek" 
-            fallbackMockData={mockDeepseekRecipes}
-          />
-        </div>
+
+        <WeeklyRecommendationsSection />
       </section>
     </div>
   );
@@ -147,123 +122,122 @@ function CategoryCard({ emoji, text, category }: { emoji: string; text: string; 
   );
 }
 
-function MenuCarousel({ 
-  provider, 
-  apiEndpoint,
-  fallbackMockData
-}: {
-  provider: string; 
-  apiEndpoint: string;
-  fallbackMockData: RecipeData[];
-} ) {
-  const [recipes, setRecipes] = useState<RecipeData[]>(fallbackMockData);
-  const [isUsingMock, setIsUsingMock] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-
-  useEffect(() => {
-    if (!hasMore) return;
-    const fetchRecipes = async () => {
-      try {
-        const res = await fetch(`${apiEndpoint}&page=${page}&limit=4`);
-        if (!res.ok) return;
-        const json = await res.json();
-        const newRecipes = json.data || [];
-        
-        if (newRecipes.length > 0) {
-          setRecipes((prev) => {
-            if (isUsingMock) return newRecipes; 
-            const existingIds = new Set(prev.map(r => r.id));
-            const uniqueNew = newRecipes.filter((r: RecipeData) => !existingIds.has(r.id));
-            return [...prev, ...uniqueNew];
-          });
-          setIsUsingMock(false);
-        } else if (!isUsingMock) {
-          setHasMore(false);
-        }
-      } catch (error) {
-        console.error("API Fetch Error (Using Mock Data Instead):", error);
-      }
-    };
-    fetchRecipes();
-  }, [apiEndpoint, page, hasMore, isUsingMock]);
-
-  const handleNext = useCallback(() => {
-    setCurrentIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-      if (hasMore && !isUsingMock && nextIndex >= recipes.length - 2) {
-        setPage((prevPage) => prevPage + 1);
-      }
-      return recipes.length > 0 ? nextIndex % recipes.length : 0;
-    });
-  }, [recipes.length, hasMore, isUsingMock]);
-
-  const handlePrev = useCallback(() => {
-    setCurrentIndex((prevIndex) => recipes.length > 0 ? (prevIndex - 1 + recipes.length) % recipes.length : 0);
-  }, [recipes.length]);
-
-  useEffect(() => {
-    if (recipes.length === 0) return;
-    const timer = setInterval(() => handleNext(), 3500);
-    return () => clearInterval(timer);
-  }, [handleNext, recipes.length]);
-
-  const item1 = recipes[currentIndex];
-  const item2 = recipes[(currentIndex + 1) % recipes.length];
-
-  return (
-    <div className="bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[340px] sm:max-w-[650px]">
-      <ArrowButton direction="left" onClick={handlePrev} />
-      <ArrowButton direction="right" onClick={handleNext} />
-      
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-24 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
-        {item1 && (
-          <div key={`card1-${item1.id}`} className="animate-fade-in relative flex-1 flex justify-center">
-            <RecipeCard 
-              id={item1.id} 
-              title={item1.recipeName} 
-              bgColor={item1.bgColor} 
-              image={item1.images?.[0]?.imageUrl || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"} 
-              rating={item1.rating}
-            />
-          </div>
-        )}
-        {item2 && (
-          <div key={`card2-${item2.id}`} className="animate-fade-in relative flex-1 flex justify-center">
-            <RecipeCard 
-              id={item2.id} 
-              title={item2.recipeName} 
-              bgColor={item2.bgColor} 
-              image={item2.images?.[0]?.imageUrl || "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"} 
-              rating={item2.rating}
-            />
-          </div>
-        )}
-      </div>
-      
-      <div className="text-right text-[#A5A5A5] text-base font-medium mt-6 mr-2">
-        {provider}
-      </div>
-    </div>
-  );
+interface WeeklyRecipe {
+  id: string;
+  type: "seasonal" | "trending";
+  recipeName: string;
+  rating: number;
+  bgColor: string | null;
+  imageUrl: string | null;
 }
 
-function ArrowButton({ direction, onClick }: { direction: "left" | "right", onClick: () => void }) {
-  const isLeft = direction === "left";
+const WEEKLY_IMAGE_FALLBACK =
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
+
+// 🌟 Section สูตรอาหารแนะนำประจำสัปดาห์ — ดึงข้อมูลจริงจาก API/DB ไม่ใช้ mock
+function WeeklyRecommendationsSection() {
+  const [recipes, setRecipes] = useState<WeeklyRecipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch("/api/weekly-recommendations", { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`API error ${res.status}`);
+        }
+        const body = await res.json();
+        const list: WeeklyRecipe[] = body?.recipes ?? [];
+        if (!isMounted) return;
+
+        if (list.length > 0) {
+          setRecipes(list);
+        } else {
+          setError(true);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setError(true);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [retry]);
+
+  if (loading) {
+    return (
+      <div className="w-full text-center py-16 flex flex-col items-center gap-3">
+        <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-600 font-bold text-lg">กำลังสร้างเมนูแนะนำประจำสัปดาห์...</p>
+      </div>
+    );
+  }
+
+  if (error || recipes.length === 0) {
+    return (
+      <div className="bg-white border border-red-300 rounded-2xl p-10 text-center shadow-sm">
+        <p className="text-lg font-bold text-red-600">
+          ไม่สามารถโหลดสูตรอาหารแนะนำประจำสัปดาห์ได้ในขณะนี้
+        </p>
+        <p className="text-gray-500 mt-2">
+          ระบบอาจยังไม่มีข้อมูลหรือบริการ AI ไม่พร้อมใช้งาน กรุณาลองใหม่ในภายหลัง
+        </p>
+        <button
+          onClick={() => {
+            setLoading(true);
+            setError(false);
+            setRetry((prev) => prev + 1);
+          }}
+          className="mt-6 px-6 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition"
+        >
+          ลองอีกครั้ง
+        </button>
+      </div>
+    );
+  }
+
+  const grouped = {
+    seasonal: recipes.filter((r) => r.type === "seasonal"),
+    trending: recipes.filter((r) => r.type === "trending"),
+  };
+
   return (
-    <button
-      onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgb(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
-        isLeft ? "left-1 sm:-left-7" : "right-1 sm:-right-7"
-      }`}
-    >
-      {isLeft ? (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      ) : (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      )}
-    </button>
+    <div className="flex flex-col gap-12">
+      {(["seasonal", "trending"] as const).map((type) => {
+        const list = grouped[type];
+        if (list.length === 0) return null;
+        const isSeasonal = type === "seasonal";
+        return (
+          <div key={type}>
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <span className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-base font-bold text-white shadow-sm ${isSeasonal ? "bg-[#3AC9B5]" : "bg-[#F58D38]"}`}>
+                <span>{isSeasonal ? "🌱" : "⭐"}</span>
+                <span>{isSeasonal ? "สูตรจากวัตถุดิบตามฤดูกาล" : "สูตรจากวัตถุดิบยอดนิยม"}</span>
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-items-center">
+              {list.map((item) => (
+                <RecipeCard
+                  key={item.id}
+                  id={item.id}
+                  title={item.recipeName}
+                  bgColor={item.bgColor}
+                  image={item.imageUrl || WEEKLY_IMAGE_FALLBACK}
+                  rating={item.rating}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
