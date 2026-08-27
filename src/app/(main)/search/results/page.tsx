@@ -55,8 +55,9 @@ const anuphan = Anuphan({
 // 🎨 ฟังก์ชันดึงรูปภาพ API อัตโนมัติสำหรับ AI
 // =========================================
 const getAiImageUrl = (recipeName: string, index: number = 0) => {
-  const prompt = `${recipeName} delicious food photography realistic`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&seed=${1000 + index}`;
+  const prompt = `${recipeName} top-down flat lay photo on an empty table, only the dish, food photography, no text`;
+  const negative = "people, person, hands, face, crowd, text, watermark, logo";
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&negative_prompt=${encodeURIComponent(negative)}&seed=${1000 + index}`;
 };
 
 function ResultsContent() {

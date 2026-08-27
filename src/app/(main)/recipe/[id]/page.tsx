@@ -20,6 +20,18 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
 const FALLBACK_AVATAR = "/photo/default-avatar.svg";
 
+// 🤖 โปรไฟล์เจ้าของสูตรที่สร้างโดย AI (ใช้แทน user จริง "PT" เมื่อเป็นสูตร AI)
+const AI_AUTHORS: Record<string, { name: string; avatar: string }> = {
+  gemini: { name: "Gemini", avatar: "/ai/gemini.svg" },
+  groq: { name: "Groq", avatar: "/ai/groq.svg" },
+  deepseek: { name: "DeepSeek", avatar: "/ai/gemini.svg" },
+};
+
+function getAiAuthor(aiProvider?: string | null) {
+  if (!aiProvider) return null;
+  return AI_AUTHORS[aiProvider.toLowerCase()] ?? null;
+}
+
 // 🖼️ คลังรูปสำรองสำหรับสูตรจากหน้าค้นหา (AI Recommendation)
 const FOOD_GALLERY_POOL = [
   "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=800&q=80",
@@ -912,14 +924,43 @@ export default function ViewRecipePage() {
                     <div className="flex flex-col gap-6 bg-white/90 p-6 rounded-2xl border border-[#71B254]/30 w-full">
                       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
                         <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-xl flex-shrink-0 min-w-[140px]">
-                          <div className="w-16 h-16 relative"><Image src={authorAvatar} alt="ผู้เขียน" fill className="rounded-full object-cover border-2 border-[#71B254]" /></div>
-                          <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">เจ้าของสูตร</span>
-                          <span className="font-extrabold text-gray-800 text-sm text-center leading-tight">{recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}</span>
+                          {(() => {
+                            const aiAuthor = getAiAuthor(recipe.aiProvider);
+                            if (aiAuthor) {
+                              return (
+                                <>
+                                  <div className="w-16 h-16 relative"><Image src={aiAuthor.avatar} alt={`${aiAuthor.name} logo`} fill className="rounded-full object-cover border-2 border-[#71B254] bg-white" /></div>
+                                  <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">เจ้าของสูตร</span>
+                                  <span className="font-extrabold text-gray-800 text-sm text-center leading-tight">{aiAuthor.name}</span>
+                                </>
+                              );
+                            }
+                            return (
+                              <>
+                                <div className="w-16 h-16 relative"><Image src={authorAvatar} alt="ผู้เขียน" fill className="rounded-full object-cover border-2 border-[#71B254]" /></div>
+                                <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">เจ้าของสูตร</span>
+                                <span className="font-extrabold text-gray-800 text-sm text-center leading-tight">{recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}</span>
+                              </>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex flex-col justify-between flex-1 gap-4 w-full text-center sm:text-left py-1">
                           <div>
-                            <span className="text-xs font-extrabold text-[#71B254] tracking-wide uppercase">สูตรอาหารแสนอร่อย</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-extrabold text-[#71B254] tracking-wide uppercase">สูตรอาหารแสนอร่อย</span>
+                              {recipe.aiProvider && (
+                                <span className="text-xs font-bold text-white px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#6F62E4] to-[#3AC9B5]">
+                                  โดย {(() => {
+                                      const p = recipe.aiProvider.toLowerCase();
+                                      if (p === "gemini") return "Gemini";
+                                      if (p === "groq") return "Groq";
+                                      if (p === "deepseek") return "DeepSeek";
+                                      return recipe.aiProvider;
+                                    })()}
+                                </span>
+                              )}
+                            </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-[#5A9240] leading-tight mt-1">{recipe.recipeName}</h1>
                           </div>
 

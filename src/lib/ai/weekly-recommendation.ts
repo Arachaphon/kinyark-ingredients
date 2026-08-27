@@ -8,7 +8,8 @@ import { weeklyAiRecipeSchema, type WeeklyAiRecipe } from "@/lib/validations/wee
 // ─────────────────────────────────────────────────────────────
 // ค่าคงที่
 // ─────────────────────────────────────────────────────────────
-const EACH_LABEL = 2; // แต่ละประเภท (seasonal / trending) ได้ 2 สูตร = รวม 4
+const EACH_LABEL = 4; // แต่ละประเภท (seasonal / trending) ได้ 4 สูตร = รวม 8
+const TOTAL_PER_TYPE = 4;
 
 // แผนที่ฤดูกาล → ชื่อวัตถุดิบจริง. สมาชิกต้องตรงกับชื่อ Ingredient ใน DB จริง
 // (เราจะกรองให้เหลือเฉพาะชื่อที่อยู่ในระบบจริงเสมอ ไม่ใช่ข้อมูลหลอก)
@@ -32,8 +33,6 @@ const SEASONAL_INGREDIENTS: Record<string, string[]> = {
   "01": ["แอปเปิ้ล", "องุ่น", "ส้ม", "แครอท", "มันฝรั่ง"],
   "02": ["แอปเปิ้ล", "องุ่น", "ส้ม", "แครอท", "มันฝรั่ง"],
 };
-
-const TOTAL_PER_TYPE = 2;
 
 // ─────────────────────────────────────────────────────────────
 // ตัวช่วย
@@ -70,8 +69,9 @@ function cleanAiJson(raw: string): string {
 
 /** สร้าง URL รูปภาพอาหารอัตโนมัติ (รูปแบบเดียวกับที่ใช้ในหน้าค้นหา) */
 export function buildRecipeImageUrl(recipeName: string, seed: number): string {
-  const prompt = `${recipeName} delicious thai food photography realistic`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&seed=${1000 + seed}`;
+  const prompt = `close-up food photography, top-down view of ${recipeName} served on a plate, clean background, no people, no human, no hands, without people`;
+  const negative = "people, person, hands, face, crowd, human, text, watermark, logo";
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&negative_prompt=${encodeURIComponent(negative)}&seed=${1000 + seed}`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -154,8 +154,9 @@ async function callGroq(prompt: string): Promise<string> {
       },
       { role: "user", content: prompt },
     ],
-    model: "groq/compound",
+    model: "qwen/qwen3.8-27b",
     response_format: { type: "json_object" },
+    max_tokens: 4096,
   });
   return completion.choices[0]?.message?.content ?? "";
 }
@@ -228,7 +229,7 @@ async function getSystemUserId(): Promise<string> {
 
 /**
  * คืนชุดสูตรแนะนำของสัปดาห์ปัจจุบัน.
- * - ถ้ายังไม่มีในสัปดาห์นี้ → เรียก AI 2 ตัว สร้าง 2+2 สูตร แล้วบันทึกเป็น Recipe จริง + WeeklyRecommendation
+ * - ถ้ายังไม่มีในสัปดาห์นี้ → เรียก AI 2 ตัว สร้าง ตัวละ 4 สูตร (seasonal 4 + trending 4 = 8) แล้วบันทึกเป็น Recipe จริง + WeeklyRecommendation
  * - ถ้ามีแล้ว → คืนจากฐานข้อมูล (ไม่เรียก AI ซ้ำ)
  */
 export async function ensureWeeklyRecommendations() {
@@ -239,7 +240,7 @@ export async function ensureWeeklyRecommendations() {
     orderBy: [{ type: "asc" }, { createdAt: "asc" }],
   });
 
-  if (existing.length >= 4) {
+  if (existing.length >= 8) {
     return { weekKey, recipes: existing, generated: false };
   }
 
@@ -275,12 +276,22 @@ export async function ensureWeeklyRecommendations() {
   await prisma.$transaction(async (tx) => {
     // ใช้ transaction client สำหรับสร้าง recipe ที่ต้องมีเจ้าของ
     const buildPersist = async (recipe: WeeklyAiRecipe, provider: string, type: "seasonal" | "trending", seed: number) => {
+      // รวมวัตถุดิบที่ชื่อซ้ำกันในเมนูเดียวกันเข้าเป็นรายการเดียว (กัน Unique constraint failed
+      // จาก @@unique([recipeId, ingredientId])) โดยรวม quantity/unit ของรายการแรก
+      const uniqueIngredients = new Map<string, WeeklyAiRecipe["ingredients"][number]>();
+      for (const ing of recipe.ingredients) {
+        if (!uniqueIngredients.has(ing.name)) {
+          uniqueIngredients.set(ing.name, ing);
+        }
+      }
+      const deduped = [...uniqueIngredients.values()];
+
       const savedIngredients = await upsertRecipeIngredients(
         tx,
-        recipe.ingredients.map((i) => ({ name: i.name }))
+        deduped.map((i) => ({ name: i.name }))
       );
       const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
-        const requested = recipe.ingredients[index];
+        const requested = deduped[index];
         return {
           ingredientId: savedIngredient.id,
           quantity: requested.quantity,
@@ -319,8 +330,8 @@ export async function ensureWeeklyRecommendations() {
       ],
     });
   }, {
-    timeout: 20000,
-    maxWait: 5000,
+    timeout: 120000,
+    maxWait: 15000,
   });
 
   const recipes = await prisma.weeklyRecommendation.findMany({
@@ -328,6 +339,26 @@ export async function ensureWeeklyRecommendations() {
     include: { recipe: { include: { images: { orderBy: { createdAt: "asc" }, take: 1 } } } },
     orderBy: [{ type: "asc" }, { createdAt: "asc" }],
   });
+
+  // Pre-generate (warm) ภาพทั้งหมดแบบขนาน เพื่อให้ pollinations สร้างภาพก่อน user เปิดหน้า
+  // เพราะการสร้างครั้งแรกช้า (30-60s/รูป) — ครั้งต่อไปจะโหลดจาก cache ทันที
+  const warmUrls = recipes
+    .map((r) => r.recipe?.images?.[0]?.imageUrl)
+    .filter((u): u is string => Boolean(u));
+
+  if (warmUrls.length > 0) {
+    await Promise.allSettled(
+      warmUrls.map(async (url) => {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(90000) });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          await res.arrayBuffer();
+        } catch {
+          // ไม่สนใจความล้มเหลวของภาพ — ถ้าโชคร้ายแค่ครั้งแรกช้า ครั้งถัดไป browser โหลดเอง
+        }
+      })
+    );
+  }
 
   return { weekKey, recipes, generated: true };
 }

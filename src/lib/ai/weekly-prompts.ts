@@ -5,7 +5,7 @@
  */
 export function buildSeasonalPrompt(
   ingredients: string[],
-  recipeCount = 2
+  recipeCount = 4
 ): string {
   return buildWeeklyPrompt(ingredients, recipeCount, "seasonal");
 }
@@ -17,7 +17,7 @@ export function buildSeasonalPrompt(
  */
 export function buildTrendingPrompt(
   ingredients: string[],
-  recipeCount = 2
+  recipeCount = 4
 ): string {
   return buildWeeklyPrompt(ingredients, recipeCount, "trending");
 }
@@ -45,6 +45,7 @@ function buildWeeklyPrompt(
     "- ใช้อุปกรณ์พื้นฐานในครัวที่นักศึกษามี (หม้อ กระทะ ไมโครเวฟ)",
     "- ระบุส่วนผสมพร้อมปริมาณและหน่วย (เช่น กรัม, ช้อนโต๊ะ, ถ้วย) ให้ครบถ้วน",
     `- สร้างเมนูทั้งหมด ${recipeCount} เมนู โดยแต่ละเมนูต้องมีวัตถุดิบหลักจากรายการด้านบนอย่างน้อย 1 อย่าง`,
+    `- ทั้ง ${recipeCount} เมนูต้องเป็นเมนูที่แตกต่างกันโดยสิ้นเชิง ห้ามเมนูซ้ำซ้อนกัน ห้ามทำซ้ำจานเดิม ห้ามอาหารประเภท/วิธีปรุงเดียวกันซ้ำกัน ให้กระจายความหลากหลายของเมนู (เช่น ไม่ซ้ำทั้งมิติของประเภทอาหารและวัตถุดิบประกอบ)`,
     "- ตอบกลับเป็น JSON เท่านั้น โดยไม่มีข้อความอื่นปะปน ตามโครงสร้างนี้:",
     `{ "recipes": [{ "recipeName": "...", "description": "...", "instructions": "1. ...\\n2. ...", "ingredients": [{ "name": "...", "quantity": 100, "unit": "กรัม" }] }] }`,
     "",
@@ -52,5 +53,6 @@ function buildWeeklyPrompt(
     "- recipeName: ชื่อเมนูที่ชัดเจน",
     "- instructions: เขียนเป็นข้อความขั้นตอน คั่นด้วย \\n (ขึ้นบรรทัดใหม่) ระบุขั้นตอนชัดเจน",
     "- ingredients: array ของวัตถุดิบ โดย name ตรงกับชื่อวัตถุดิบหลัก/วัตถุดิบรองตามธรรมชาติดังที่เราให้ไว้",
+    "- quantity ต้องเป็นตัวเลข (number) เท่านั้น เช่น 100, 200, 1.5 ห้ามใช้เศษส่วนแบบ 1/2 หรือ 1/4 ห้ามใส่เครื่องหมายคำพูดครอบตัวเลข",
   ].join("\n");
 }

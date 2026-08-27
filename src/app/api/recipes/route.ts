@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       limit: searchParams.get("limit") ?? undefined,
       mine: searchParams.get("mine") ?? undefined,
       publicOnly: searchParams.get("publicOnly") ?? undefined,
+      aiProvider: searchParams.get("aiProvider") ?? undefined,
     })
 
     if (!parsed.success) {
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const { page, limit, mine, publicOnly } = parsed.data
+    const { page, limit, mine, publicOnly, aiProvider } = parsed.data
 
     const userId = await getAuthUserId(request)
     const userRole = request.headers.get("x-user-role")
@@ -149,9 +150,11 @@ export async function GET(request: Request) {
       }
     }
 
-    const where: Prisma.RecipeWhereInput = visibilityFilter;
+    const where: Prisma.RecipeWhereInput = aiProvider
+      ? { ...visibilityFilter, aiProvider }
+      : visibilityFilter;
 
-    const cacheKey = `recipes:list:${page}:${limit}`
+    const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}`
     if (process.env.NODE_ENV !== 'test') {
       const cached = cache.get(cacheKey)
       if (cached) {
