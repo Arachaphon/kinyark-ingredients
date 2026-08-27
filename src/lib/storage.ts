@@ -208,7 +208,8 @@ export async function deleteAvatar(supabase: SupabaseClient, url: string, authUs
   return { success: true }
 }
 
-export async function deleteFileByUrl(supabase: SupabaseClient, url: string, bucket?: string): Promise<boolean> {
+export async function deleteFileByUrl(supabase: SupabaseClient | null, url: string, bucket?: string): Promise<boolean> {
+  if (!supabase) return true
   const targetBucket = bucket || (url.includes('/object/public/recipes/') ? 'recipes' : BUCKET_NAME)
   const path = extractPathFromPublicUrl(url, targetBucket)
   if (!path) return false

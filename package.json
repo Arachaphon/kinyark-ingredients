@@ -49,6 +49,7 @@
     "jest-environment-jsdom": "^29",
     "jest-util": "^30.4.1",
     "tailwindcss": "^4",
+    "testcontainers": "^12.1.0",
     "ts-jest": "^29",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
