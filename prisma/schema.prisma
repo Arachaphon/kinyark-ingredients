@@ -197,11 +197,12 @@ model IngredientPairRecipe {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ingredientKey String
   monthKey      String
+  provider      String
   recipeId      String   @db.Uuid
   recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now()) @db.Timestamptz
 
-  @@unique([ingredientKey])
+  @@unique([ingredientKey, provider])
   @@index([monthKey])
   @@map("ingredient_pair_recipes")
 }

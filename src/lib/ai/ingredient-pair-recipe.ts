@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { upsertRecipeIngredients } from "@/lib/ingredients";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { weeklyAiRecipeSchema, type WeeklyAiRecipe } from "@/lib/validations/weekly.schema";
 
 // ─────────────────────────────────────────────────────────────
@@ -82,6 +83,29 @@ async function callGemini(prompt: string): Promise<string> {
   return result.response.text();
 }
 
+async function callGroq(prompt: string): Promise<string> {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not configured");
+  }
+  const groq = new OpenAI({
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKey: process.env.GROQ_API_KEY,
+  });
+  const completion = await groq.chat.completions.create({
+    messages: [
+      {
+        role: "system",
+        content: "You are a helpful API that strictly outputs valid JSON only.",
+      },
+      { role: "user", content: prompt },
+    ],
+    model: "qwen/qwen3.8-27b",
+    response_format: { type: "json_object" },
+    max_tokens: 4096,
+  });
+  return completion.choices[0]?.message?.content ?? "";
+}
+
 /** ดึงรายชื่อเมนูที่มีอยู่ในระบบ เพื่อให้ AI หลีกเลี่ยงการสร้างเมนูซ้ำ */
 async function getExistingRecipeNames(): Promise<string[]> {
   const rows = await prisma.recipe.findMany({
@@ -92,13 +116,19 @@ async function getExistingRecipeNames(): Promise<string[]> {
   return rows.map((r) => r.recipeName).filter(Boolean);
 }
 
-function buildPrompt(ingredients: string[], existingNames: string[]): string {
+function buildPrompt(
+  ingredients: string[],
+  existingNames: string[],
+  provider: "gemini" | "groq"
+): string {
   const focusList = ingredients.join(", ");
   const existingList =
     existingNames.length > 0 ? existingNames.join(" | ") : "(ไม่มีข้อมูล)";
+  const providerLabel =
+    provider === "gemini" ? "Gemini" : "Groq";
 
   return [
-    "คุณคือเชฟผู้เชี่ยวชาญด้านการออกแบบเมนูอาหารไทย",
+    `คุณคือ ${providerLabel} เชฟผู้เชี่ยวชาญด้านการออกแบบเมนูอาหารไทย`,
     "",
     `วัตถุดิบที่ผู้ใช้เลือก (จับคู่กันแล้ว ใช้เป็นตัวชูโรงของเมนู): ${focusList}`,
     "",
@@ -120,149 +150,38 @@ function buildPrompt(ingredients: string[], existingNames: string[]): string {
   ].join("\n");
 }
 
-/**
- * คืนเมนูที่ AI สร้างจากชุดวัตถุดิบที่เลือก.
- * - เลือกชุดเดิมซ้ำภายในเดือนเดียวกัน → คืนเมนูเดิม (ไม่เรียก AI ซ้ำ)
- * - เดือนใหม่ หรือชุดใหม่ → เรียก Gemini สร้าง 1 เมนู, บันทึกเป็น Recipe จริง + จดคู่
- * - AI ถูกสั่งห้ามสร้างเมนูที่ชื่อซ้ำกับที่เคยมีในระบบ
- */
-export async function ensureIngredientPairRecipe(
-  rawIngredients: string[]
-): Promise<{
-  recipe: {
-    id: string;
-    recipeName: string;
-    description: string | null;
-    instructions: string | null;
-    aiProvider: string | null;
-    imageUrl: string | null;
-    ingredients: { name: string; quantity: number; unit: string }[];
-    createdAt: string;
-  };
-  generated: boolean;
-}> {
-  const ingredients = rawIngredients
-    .map((i) => i.trim())
-    .filter(Boolean);
-  if (ingredients.length === 0) {
-    throw new Error("กรุณาระบุวัตถุดิบอย่างน้อย 1 ชนิด");
-  }
+type Provider = "gemini" | "groq";
 
-  const ingredientKey = normalizeIngredientKey(ingredients);
-  const monthKey = getMonthKey();
-
-  // ลบ record ที่หมดอายุ (เดือนเก่า) เพื่อให้เดือนใหม่สร้างเมนูใหม่ได้
-  await prisma.ingredientPairRecipe.deleteMany({
-    where: { monthKey: { not: monthKey } },
-  });
-
-  // 1) ค้นหาชุดที่เคยสร้างไว้แล้วในเดือนนี้
-  const cached = await prisma.ingredientPairRecipe.findUnique({
-    where: { ingredientKey },
-    include: {
-      recipe: {
-        include: {
-          images: { orderBy: { createdAt: "asc" }, take: 1 },
-          recipeIngredients: { include: { ingredient: true } },
-        },
-      },
-    },
-  });
-
-  if (cached?.recipe) {
-    return {
-      recipe: toRecipeDto(cached.recipe),
-      generated: false,
-    };
-  }
-
-  // 2) เรียก Gemini สร้าง 1 เมนูจากชุดนี้ (หลีกเลี่ยงชื่อซ้ำกับในระบบ)
-  const [existingNames, systemUserId] = await Promise.all([
-    getExistingRecipeNames(),
-    getSystemUserId(),
-  ]);
-
-  const prompt = buildPrompt(ingredients, existingNames);
-  const raw = await callGemini(prompt);
-  if (!raw) throw new Error("AI returned empty response");
+async function requestRecipe(
+  provider: Provider,
+  ingredients: string[],
+  existingNames: string[]
+): Promise<WeeklyAiRecipe> {
+  const raw =
+    provider === "gemini"
+      ? await callGemini(buildPrompt(ingredients, existingNames, provider))
+      : await callGroq(buildPrompt(ingredients, existingNames, provider));
+  if (!raw) throw new Error(`${provider} returned empty response`);
 
   const parsed: unknown = JSON.parse(cleanAiJson(raw));
   const envelope = (parsed as { recipes?: unknown }).recipes;
   if (!Array.isArray(envelope) || envelope.length === 0) {
-    throw new Error("AI response missing 'recipes' array");
+    throw new Error(`${provider} response missing 'recipes' array`);
   }
 
-  const aiRecipe: WeeklyAiRecipe = weeklyAiRecipeSchema.parse(envelope[0]);
-
-  // 3) บันทึกเป็น Recipe จริง + record จับคู่ ใน transaction เดียว
-  const saved = await prisma.$transaction(
-    async (tx) => {
-      const uniqueIngredients = new Map<string, WeeklyAiRecipe["ingredients"][number]>();
-      for (const ing of aiRecipe.ingredients) {
-        if (!uniqueIngredients.has(ing.name.toLowerCase())) {
-          uniqueIngredients.set(ing.name.toLowerCase(), ing);
-        }
-      }
-      const deduped = [...uniqueIngredients.values()];
-
-      const savedIngredients = await upsertRecipeIngredients(
-        tx,
-        deduped.map((i) => ({ name: i.name }))
-      );
-
-      const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
-        const requested = deduped[index];
-        return {
-          ingredientId: savedIngredient.id,
-          quantity: requested.quantity,
-          unit: requested.unit,
-        };
-      });
-
-      const imageUrl = buildRecipeImageUrl(aiRecipe.recipeName, ingredients.length);
-
-      const recipe = await tx.recipe.create({
-        data: {
-          userId: systemUserId,
-          recipeName: aiRecipe.recipeName,
-          description: aiRecipe.description ?? null,
-          instructions: aiRecipe.instructions,
-          bgColor: null,
-          aiProvider: "gemini",
-          visibility: "public",
-          recipeIngredients: { create: recipeIngredientsToCreate },
-          ...(imageUrl ? { images: { create: [{ imageUrl }] } } : {}),
-        },
-        include: {
-          images: { orderBy: { createdAt: "asc" }, take: 1 },
-          recipeIngredients: { include: { ingredient: true } },
-        },
-      });
-
-      await tx.ingredientPairRecipe.create({
-        data: { ingredientKey, monthKey, recipeId: recipe.id },
-      });
-
-      return recipe;
-    },
-    { timeout: 30000, maxWait: 15000 }
-  );
-
-  // 4) Pre-warm รูป เพื่อให้ pollinations สร้างภาพก่อนผู้ใช้เปิดหน้า
-  const warmUrl = saved.images?.[0]?.imageUrl;
-  if (warmUrl) {
-    void (async () => {
-      try {
-        const res = await fetch(warmUrl, { signal: AbortSignal.timeout(90000) });
-        if (res.ok) await res.arrayBuffer();
-      } catch {
-        // ไม่สนใจ — ถ้าพลาดครั้งแรก browser จะโหลดเอง
-      }
-    })();
-  }
-
-  return { recipe: toRecipeDto(saved), generated: true };
+  return weeklyAiRecipeSchema.parse(envelope[0]);
 }
+
+type RecipeDto = {
+  id: string;
+  recipeName: string;
+  description: string | null;
+  instructions: string | null;
+  aiProvider: string | null;
+  imageUrl: string | null;
+  ingredients: { name: string; quantity: number; unit: string }[];
+  createdAt: string;
+};
 
 function toRecipeDto(recipe: {
   id: string;
@@ -273,16 +192,7 @@ function toRecipeDto(recipe: {
   images?: { imageUrl: string }[];
   recipeIngredients?: { ingredient: { name: string }; quantity: number; unit: string }[];
   createdAt: Date;
-}): {
-  id: string;
-  recipeName: string;
-  description: string | null;
-  instructions: string | null;
-  aiProvider: string | null;
-  imageUrl: string | null;
-  ingredients: { name: string; quantity: number; unit: string }[];
-  createdAt: string;
-} {
+}): RecipeDto {
   return {
     id: recipe.id,
     recipeName: recipe.recipeName,
@@ -297,4 +207,169 @@ function toRecipeDto(recipe: {
     })),
     createdAt: recipe.createdAt.toISOString(),
   };
+}
+
+/**
+ * สร้าง/คืนเมนูที่ AI 2 ตัว (Gemini + Groq) สร้างจากชุดวัตถุดิบที่เลือก.
+ * - แต่ละ AI สร้าง 1 เมนู → รวม 2 เมนูต่อชุด
+ * - แคชแยกต่อ (ชุด, AI) — เลือกชุดเดิมซ้ำภายในเดือนเดียวกัน → คืนเมนูเดิมของแต่ละ AI
+ * - เดือนใหม่ หรือชุด/คู่ใหม่ → เรียก AI นั้นสร้างใหม่, บันทึกเป็น Recipe จริง + จดคู่
+ * - AI ถูกสั่งห้ามสร้างเมนูที่ชื่อซ้ำกับที่เคยมีในระบบ
+ */
+export async function ensureIngredientPairRecipes(
+  rawIngredients: string[]
+): Promise<{
+  recipes: RecipeDto[];
+  generated: boolean;
+}> {
+  const ingredients = rawIngredients.map((i) => i.trim()).filter(Boolean);
+  if (ingredients.length === 0) {
+    throw new Error("กรุณาระบุวัตถุดิบอย่างน้อย 1 ชนิด");
+  }
+
+  const ingredientKey = normalizeIngredientKey(ingredients);
+  const monthKey = getMonthKey();
+
+  // ลบ record ที่หมดอายุ (เดือนเก่า) เพื่อให้เดือนใหม่สร้างเมนูใหม่ได้
+  await prisma.ingredientPairRecipe.deleteMany({
+    where: { monthKey: { not: monthKey } },
+  });
+
+  const providers: Provider[] = ["gemini", "groq"];
+
+  // 1) ค้นหาชุดที่เคยสร้างไว้แล้วของแต่ละ AI ในเดือนนี้
+  const existingPairs = await prisma.ingredientPairRecipe.findMany({
+    where: { ingredientKey, provider: { in: providers } },
+    include: {
+      recipe: {
+        include: {
+          images: { orderBy: { createdAt: "asc" }, take: 1 },
+          recipeIngredients: { include: { ingredient: true } },
+        },
+      },
+    },
+  });
+
+  const cachedByProvider = new Map(
+    existingPairs.map((p) => [p.provider, p.recipe])
+  );
+
+  // 2) หา AI ที่ยังไม่มีเมนูในเดือนนี้ (ต้องสร้างใหม่)
+  const providersToGenerate = providers.filter(
+    (p) => !cachedByProvider.get(p)
+  );
+
+  // 3) ถ้ามีครบทั้ง 2 AI แล้ว → คืนแคช (ไม่เรียก AI ซ้ำ)
+  if (providersToGenerate.length === 0) {
+    const recipes = providers
+      .map((p) => cachedByProvider.get(p)!)
+      .map(toRecipeDto);
+    return { recipes, generated: false };
+  }
+
+  const [existingNames, systemUserId] = await Promise.all([
+    getExistingRecipeNames(),
+    getSystemUserId(),
+  ]);
+
+  // 4) เรียก AI ที่จำเป็นคู่ขนาน (แต่ละตัวสร้าง 1 เมนู)
+  const results = await Promise.allSettled(
+    providersToGenerate.map(async (p) => {
+      const aiRecipe = await requestRecipe(p, ingredients, existingNames);
+      return { provider: p, aiRecipe };
+    })
+  );
+
+  const newlySaved: RecipeDto[] = [];
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      // ถ้า AI ตัวใดล้มเหลว ข้ามไป ไม่พังทั้งคำขอ
+      console.error(`ingredient-pair ${result.reason}`);
+      continue;
+    }
+
+    const { provider, aiRecipe } = result.value;
+
+    // บันทึกเป็น Recipe จริง + record จับคู่ (แยก provider) ใน transaction เดียว
+    const saved = await prisma.$transaction(
+      async (tx) => {
+        const uniqueIngredients = new Map<string, WeeklyAiRecipe["ingredients"][number]>();
+        for (const ing of aiRecipe.ingredients) {
+          if (!uniqueIngredients.has(ing.name.toLowerCase())) {
+            uniqueIngredients.set(ing.name.toLowerCase(), ing);
+          }
+        }
+        const deduped = [...uniqueIngredients.values()];
+
+        const savedIngredients = await upsertRecipeIngredients(
+          tx,
+          deduped.map((i) => ({ name: i.name }))
+        );
+
+        const recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
+          const requested = deduped[index];
+          return {
+            ingredientId: savedIngredient.id,
+            quantity: requested.quantity,
+            unit: requested.unit,
+          };
+        });
+
+        const imageUrl = buildRecipeImageUrl(
+          aiRecipe.recipeName,
+          ingredients.length + (provider === "groq" ? 50 : 0)
+        );
+
+        const recipe = await tx.recipe.create({
+          data: {
+            userId: systemUserId,
+            recipeName: aiRecipe.recipeName,
+            description: aiRecipe.description ?? null,
+            instructions: aiRecipe.instructions,
+            bgColor: null,
+            aiProvider: provider,
+            visibility: "public",
+            recipeIngredients: { create: recipeIngredientsToCreate },
+            ...(imageUrl ? { images: { create: [{ imageUrl }] } } : {}),
+          },
+          include: {
+            images: { orderBy: { createdAt: "asc" }, take: 1 },
+            recipeIngredients: { include: { ingredient: true } },
+          },
+        });
+
+        await tx.ingredientPairRecipe.create({
+          data: { ingredientKey, monthKey, provider, recipeId: recipe.id },
+        });
+
+        return recipe;
+      },
+      { timeout: 30000, maxWait: 15000 }
+    );
+
+    // Pre-warm รูป
+    const warmUrl = saved.images?.[0]?.imageUrl;
+    if (warmUrl) {
+      void (async () => {
+        try {
+          const res = await fetch(warmUrl, { signal: AbortSignal.timeout(90000) });
+          if (res.ok) await res.arrayBuffer();
+        } catch {
+          // ไม่สนใจ — ถ้าพลาดครั้งแรก browser จะโหลดเอง
+        }
+      })();
+    }
+
+    newlySaved.push(toRecipeDto(saved));
+  }
+
+  // 5) รวมเมนูที่เพิ่งสร้าง กับเมนูที่มาจากแคช (จัดเรียงตามลำดับ AI)
+  const allRecipes = providers
+    .map((p) => cachedByProvider.get(p) ?? null)
+    .map((r) => (r ? toRecipeDto(r) : null))
+    .concat(newlySaved)
+    .filter((r): r is RecipeDto => r !== null);
+
+  return { recipes: allRecipes, generated: true };
 }

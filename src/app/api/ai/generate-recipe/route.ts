@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ensureIngredientPairRecipe } from "@/lib/ai/ingredient-pair-recipe";
+import { ensureIngredientPairRecipes } from "@/lib/ai/ingredient-pair-recipe";
 
 export async function POST(req: Request) {
   try {
@@ -13,33 +13,32 @@ export async function POST(req: Request) {
     }
 
     const cleanIngredients = ingredients
-      .map((i: unknown) => typeof i === "string" ? i.trim() : String(i))
+      .map((i: unknown) => (typeof i === "string" ? i.trim() : String(i)))
       .filter(Boolean);
 
-    const { recipe, generated } = await ensureIngredientPairRecipe(cleanIngredients);
+    const { recipes, generated } = await ensureIngredientPairRecipes(cleanIngredients);
 
     // รูปแบบ response สอดคล้องกับที่หน้า /search/results คาดหวัง (array ของรายการ)
-    const items = [
-      {
-        id: recipe.id,
-        recipeName: recipe.recipeName,
-        description: recipe.description ?? "",
-        instructions: recipe.instructions ?? "",
-        aiProvider: recipe.aiProvider ?? "Gemini",
-        isAi: true,
-        rating: 5,
-        likes: 0,
-        favoriteCount: 0,
-        images: recipe.imageUrl ? [{ imageUrl: recipe.imageUrl }] : [],
-        recipeIngredients: recipe.ingredients.map((ig) => ({
-          ingredient: { name: ig.name },
-          quantity: ig.quantity,
-          unit: ig.unit,
-        })),
-        tags: cleanIngredients,
-        generated,
-      },
-    ];
+    // รองรับหลาย AI (gemini + groq) → ส่งเป็นหลายรายการใน array
+    const items = recipes.map((recipe) => ({
+      id: recipe.id,
+      recipeName: recipe.recipeName,
+      description: recipe.description ?? "",
+      instructions: recipe.instructions ?? "",
+      aiProvider: recipe.aiProvider ?? "Gemini",
+      isAi: true,
+      rating: 5,
+      likes: 0,
+      favoriteCount: 0,
+      images: recipe.imageUrl ? [{ imageUrl: recipe.imageUrl }] : [],
+      recipeIngredients: recipe.ingredients.map((ig) => ({
+        ingredient: { name: ig.name },
+        quantity: ig.quantity,
+        unit: ig.unit,
+      })),
+      tags: cleanIngredients,
+      generated,
+    }));
 
     return NextResponse.json(items);
   } catch (error) {
