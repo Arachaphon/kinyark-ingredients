@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureIngredientPairRecipe } from "@/lib/ai/ingredient-pair-recipe";
 
 export async function POST(req: Request) {
   try {
@@ -11,30 +12,36 @@ export async function POST(req: Request) {
       );
     }
 
-    const ingredientsStr = ingredients.join(", ");
+    const cleanIngredients = ingredients
+      .map((i: unknown) => typeof i === "string" ? i.trim() : String(i))
+      .filter(Boolean);
 
-    const generatedRecipes = [
+    const { recipe, generated } = await ensureIngredientPairRecipe(cleanIngredients);
+
+    // รูปแบบ response สอดคล้องกับที่หน้า /search/results คาดหวัง (array ของรายการ)
+    const items = [
       {
-        id: `ai-gemini-${Date.now()}-1`,
-        recipeName: `เมนูสร้างสรรค์จาก ${ingredientsStr}`,
-        aiProvider: "Gemini",
+        id: recipe.id,
+        recipeName: recipe.recipeName,
+        description: recipe.description ?? "",
+        instructions: recipe.instructions ?? "",
+        aiProvider: recipe.aiProvider ?? "Gemini",
         isAi: true,
-        rating: 4.8,
-        likes: 65,
-        tags: ingredients,
-      },
-      {
-        id: `ai-deepseek-${Date.now()}-2`,
-        recipeName: `ผัดกลมกล่อม ${ingredientsStr}`,
-        aiProvider: "Deep Seek",
-        isAi: true,
-        rating: 4.5,
-        likes: 52,
-        tags: ingredients,
+        rating: 5,
+        likes: 0,
+        favoriteCount: 0,
+        images: recipe.imageUrl ? [{ imageUrl: recipe.imageUrl }] : [],
+        recipeIngredients: recipe.ingredients.map((ig) => ({
+          ingredient: { name: ig.name },
+          quantity: ig.quantity,
+          unit: ig.unit,
+        })),
+        tags: cleanIngredients,
+        generated,
       },
     ];
 
-    return NextResponse.json(generatedRecipes);
+    return NextResponse.json(items);
   } catch (error) {
     console.error("AI Generate Error:", error);
     return NextResponse.json(

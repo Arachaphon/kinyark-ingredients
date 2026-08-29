@@ -94,32 +94,46 @@ function ResultsContent() {
 
     const fetchResults = async () => {
       try {
+        // ดึงสูตรจริงจากฐานข้อมูล
         const response = await fetch(
           isIngredientSearch
             ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
             : `/api/search?q=${encodeURIComponent(queryTitle)}`
         );
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch real data");
         }
 
-        let data: ApiRecipeItem[] = await response.json();
+        const parsedResponse = await response.json();
+        let data: ApiRecipeItem[] = Array.isArray(parsedResponse) ? parsedResponse : [];
 
-        // ✨ ถ้าไม่พบสูตรจากฐานข้อมูลเลย ให้ขอเมนูแนะนำจาก AI Service แทน
-        if (!Array.isArray(data) || data.length === 0) {
+        const ingredientList = queryTitle
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        // ✨ เมื่อเป็นการค้นหาด้วยวัตถุดิบ ให้ขอเมนูจาก AI เสมอ (แม้มีสูตรจริงในระบบ)
+        // ระบบจะคืนเมนูเดิมถ้าเคยสร้างชุดนี้ไว้แล้วภายในเดือนนี้ (cache ตามชุดวัตถุดิบ)
+        if (isIngredientSearch && ingredientList.length > 0) {
           try {
             const aiResponse = await fetch("/api/ai/generate-recipe", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ingredients: queryTitle.split(",").map((s) => s.trim()).filter(Boolean) }),
+              body: JSON.stringify({ ingredients: ingredientList }),
             });
 
             if (aiResponse.ok) {
-              data = await aiResponse.json();
+              const aiData: ApiRecipeItem[] = await aiResponse.json();
+              if (Array.isArray(aiData) && aiData.length > 0) {
+                // รวมผล AI เข้ากับผลจากฐานข้อมูล (ไม่ให้ ID ซ้ำกัน)
+                const existingIds = new Set(data.map((d) => d.id));
+                const uniqueAi = aiData.filter((a) => !existingIds.has(a.id));
+                data = [...uniqueAi, ...data];
+              }
             }
           } catch (aiError) {
-            console.warn("AI Generate fallback error:", aiError);
+            console.warn("AI Generate error:", aiError);
           }
         }
 
