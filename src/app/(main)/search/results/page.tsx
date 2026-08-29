@@ -316,10 +316,11 @@ function ResultsContent() {
             const isLiked = favorites[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
 
-            // ✨ สูตรจาก AI ส่งข้อมูลผ่าน query params ส่วนสูตรจริงเปิดด้วย id จากฐานข้อมูล
-            const detailHref = recipe.isAi
-              ? `/recipe/${recipe.id}?title=${encodeURIComponent(recipe.title)}&tags=${encodeURIComponent((recipe.tags || []).join(","))}&image=${encodeURIComponent(recipe.image || "")}`
-              : `/recipe/${recipe.id}`;
+            // ✨ สูตรที่สร้างโดย AI ถูกบันทึกเป็น Recipe จริงในฐานข้อมูลแล้ว
+            // จึงเปิดด้วย id จากฐานข้อมูลเช่นเดียวกับสูตรปกติและสูตรแนะนำประจำสัปดาห์
+            // (ไม่ต้องส่งข้อมูลผ่าน query params — หน้า /recipe/[id] โหลดเต็มจาก DB
+            //  และแสดงเจ้าของเป็น AI ตาม aiProvider อัตโนมัติ)
+            const detailHref = `/recipe/${recipe.id}`;
 
             return (
               <div
