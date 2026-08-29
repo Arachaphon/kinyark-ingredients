@@ -108,6 +108,12 @@ function ResultsContent() {
         const parsedResponse = await response.json();
         let data: ApiRecipeItem[] = Array.isArray(parsedResponse) ? parsedResponse : [];
 
+        // เก็บเฉพาะสูตรของผู้ใช้จริง (recipe ที่คน/ร้านค้าโพสต์ไว้) — ตัด AI recipe เก่าที่สะสมอยู่
+        // ในระบบออกไป เพราะอยากแสดงเฉพาะเมนู AI 2 ตัวใหม่ (Gemini + Groq) ที่ได้จากด้านล่างเท่านั้น
+        if (isIngredientSearch) {
+          data = data.filter((item) => !item.aiProvider);
+        }
+
         const ingredientList = queryTitle
           .split(",")
           .map((s) => s.trim())

@@ -238,6 +238,7 @@ export async function ensureIngredientPairRecipes(
   const providers: Provider[] = ["gemini", "groq"];
 
   // 1) ค้นหาชุดที่เคยสร้างไว้แล้วของแต่ละ AI ในเดือนนี้
+  //    (recipe อาจเป็น null ถ้าสูตรถูก SetNull ไปแล้ว → ถือว่าไม่มีแคช ต้องสร้างใหม่)
   const existingPairs = await prisma.ingredientPairRecipe.findMany({
     where: { ingredientKey, provider: { in: providers } },
     include: {
@@ -250,8 +251,11 @@ export async function ensureIngredientPairRecipes(
     },
   });
 
-  const cachedByProvider = new Map(
-    existingPairs.map((p) => [p.provider, p.recipe])
+  type PairWithRecipe = (typeof existingPairs)[number] & { recipe: NonNullable<(typeof existingPairs)[number]["recipe"]> };
+  const cachedByProvider = new Map<string, PairWithRecipe["recipe"]>(
+    existingPairs
+      .filter((p): p is PairWithRecipe => p.recipe !== null)
+      .map((p) => [p.provider, p.recipe])
   );
 
   // 2) หา AI ที่ยังไม่มีเมนูในเดือนนี้ (ต้องสร้างใหม่)

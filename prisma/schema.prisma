@@ -198,8 +198,8 @@ model IngredientPairRecipe {
   ingredientKey String
   monthKey      String
   provider      String
-  recipeId      String   @db.Uuid
-  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId      String?  @db.Uuid
+  recipe        Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now()) @db.Timestamptz
 
   @@unique([ingredientKey, provider])
