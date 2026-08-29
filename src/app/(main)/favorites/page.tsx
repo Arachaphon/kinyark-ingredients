@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import type { FavoriteListResponse } from "@/types/recipes";
+import { getAiAuthor } from "@/lib/ai-author";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -195,16 +196,31 @@ export default function FavoritesPage() {
                           )}
 
                           <div className="flex items-center gap-3">
-                            <Image
-                              src={recipe.user?.avatarUrl ?? FALLBACK_AVATAR}
-                              alt={recipe.user?.username ?? "ผู้เขียน"}
-                              width={32}
-                              height={32}
-                              className="rounded-full object-cover shrink-0"
-                            />
-                            <span className="font-bold text-gray-800 text-lg">
-                              {recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
-                            </span>
+                            {(() => {
+                              const aiAuthor = getAiAuthor(recipe.aiProvider);
+                              if (aiAuthor) {
+                                return (
+                                  <>
+                                    <Image src={aiAuthor.logo} alt={`${aiAuthor.name} logo`} width={32} height={32} className="rounded-full object-cover shrink-0 bg-white" />
+                                    <span className="font-bold text-gray-800 text-lg">{aiAuthor.name}</span>
+                                  </>
+                                );
+                              }
+                              return (
+                                <>
+                                  <Image
+                                    src={recipe.user?.avatarUrl ?? FALLBACK_AVATAR}
+                                    alt={recipe.user?.username ?? "ผู้เขียน"}
+                                    width={32}
+                                    height={32}
+                                    className="rounded-full object-cover shrink-0"
+                                  />
+                                  <span className="font-bold text-gray-800 text-lg">
+                                    {recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </div>
 
                           <div className="flex items-center gap-8 mt-4">

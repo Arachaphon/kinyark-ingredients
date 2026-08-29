@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { getAiAuthor } from "@/lib/ai-author";
 
 // =========================================
 // 📐 Interfaces
@@ -156,13 +157,23 @@ function ResultsContent() {
               mappedTags = queryTitle.split(",").map((t) => t.trim()).filter(Boolean);
             }
 
+            const aiAuthor = getAiAuthor(item.aiProvider);
             return {
               id: item.id,
               title: recipeTitle,
               image: finalImage,
               tags: mappedTags,
-              author: item.user?.username || item.aiProvider || item.author || "ผู้ใช้งานทั่วไป",
-              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+              author:
+                aiAuthor?.name ||
+                item.user?.username ||
+                item.aiProvider ||
+                item.author ||
+                "ผู้ใช้งานทั่วไป",
+              authorAvatar:
+                aiAuthor?.logo ||
+                item.user?.avatarUrl ||
+                item.authorAvatar ||
+                "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
               likes: item.favoriteCount || item.likes || 0,
               rating: item.rating || 0,
               initialFavorite: false,
