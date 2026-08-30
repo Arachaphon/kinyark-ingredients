@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSystemUserId } from "@/lib/ai/system-user";
 import { upsertRecipeIngredients } from "@/lib/ingredients";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
@@ -187,41 +188,7 @@ async function requestRecipes(
 // ตรวจสอบว่า Recipe.userId เป็น required — ต้องมีผู้ใช้จริง
 // ─────────────────────────────────────────────────────────────
 // หมายเหตุ: schema เขียน `userId String @db.Uuid` ไม่มี default ดังนั้นทุกสูตรต้องมีเจ้าของจริง
-// เราจึงต้อง ensure ว่ามี user อย่างน้อยหนึ่งคนในระบบ เพื่อใช้เป็นเจ้าของสูตรที่ AI สร้าง
-
-let _systemUserId: string | null = null;
-
-/** ดึง/สร้าง system user สำหรับเจ้าของสูตรที่ AI สร้าง (ใช้ข้อมูล user จริงในระบบ) */
-async function getSystemUserId(): Promise<string> {
-  if (_systemUserId) return _systemUserId;
-
-  const existing = await prisma.user.findFirst({
-    where: { role: { equals: "ADMIN" } },
-    select: { id: true },
-  });
-  if (existing) {
-    _systemUserId = existing.id;
-    return existing.id;
-  }
-
-  const anyUser = await prisma.user.findFirst({ select: { id: true } });
-  if (anyUser) {
-    _systemUserId = anyUser.id;
-    return anyUser.id;
-  }
-
-  // ทางเลือกสุดท้าย: สร้าง system account ขึ้นมา (ใช้ข้อมูลจริง ไม่ใช่ recipe mock)
-  const created = await prisma.user.create({
-    data: {
-      email: `weekly-ai@kinyark.local`,
-      username: "KINYARK AI",
-      role: "ADMIN",
-    },
-    select: { id: true },
-  });
-  _systemUserId = created.id;
-  return created.id;
-}
+// เราจึงใช้บัญชีระบบ (ai-system@kinyark.local) ที่ upsert ให้มีอยู่จริงเสมอ เป็นเจ้าของสูตรที่ AI สร้าง
 
 // ─────────────────────────────────────────────────────────────
 // ฟังก์ชันหลัก

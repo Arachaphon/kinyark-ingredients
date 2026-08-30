@@ -185,9 +185,14 @@ export async function GET(request: Request) {
           data: { searchQuery: cacheVal, createdAt: new Date() },
         });
       } else {
-        await prisma.searchHistory.create({
-          data: { userId: user.id, searchQuery: cacheVal },
-        });
+        try {
+          await prisma.searchHistory.create({
+            data: { userId: user.id, searchQuery: cacheVal },
+          });
+        } catch (err) {
+          // user row อาจถูก clean ไปแล้ว → ไม่ควรทำให้ featured พัง แค่ข้ามการบันทึกประวัติ
+          console.error("featured: skip searchHistory.create (user missing?)", err);
+        }
       }
     }
 

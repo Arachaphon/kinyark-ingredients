@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSystemUserId } from "@/lib/ai/system-user";
 import { upsertRecipeIngredients } from "@/lib/ingredients";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import OpenAI from "openai";
@@ -32,34 +33,6 @@ export function getMonthKey(date = new Date()): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
-}
-
-/** หา system user ที่เป็นเจ้าของสูตร AI (ใช้ user จริงตัวแรก/ADMIN ในระบบ) */
-let _systemUserId: string | null = null;
-async function getSystemUserId(): Promise<string> {
-  if (_systemUserId) return _systemUserId;
-
-  const admin = await prisma.user.findFirst({
-    where: { role: { equals: "ADMIN" } },
-    select: { id: true },
-  });
-  if (admin) {
-    _systemUserId = admin.id;
-    return admin.id;
-  }
-
-  const anyUser = await prisma.user.findFirst({ select: { id: true } });
-  if (anyUser) {
-    _systemUserId = anyUser.id;
-    return anyUser.id;
-  }
-
-  const created = await prisma.user.create({
-    data: { email: "ingredient-ai@kinyark.local", username: "KINYARK AI", role: "ADMIN" },
-    select: { id: true },
-  });
-  _systemUserId = created.id;
-  return created.id;
 }
 
 function cleanAiJson(raw: string): string {
