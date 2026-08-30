@@ -180,6 +180,8 @@ type RecipeDto = {
   aiProvider: string | null;
   imageUrl: string | null;
   ingredients: { name: string; quantity: number; unit: string }[];
+  rating: number;
+  reviewCount: number;
   createdAt: string;
 };
 
@@ -191,6 +193,8 @@ function toRecipeDto(recipe: {
   aiProvider: string | null;
   images?: { imageUrl: string }[];
   recipeIngredients?: { ingredient: { name: string }; quantity: number; unit: string }[];
+  rating: number;
+  reviewCount: number;
   createdAt: Date;
 }): RecipeDto {
   return {
@@ -205,6 +209,8 @@ function toRecipeDto(recipe: {
       quantity: ri.quantity,
       unit: ri.unit,
     })),
+    rating: recipe.rating,
+    reviewCount: recipe.reviewCount,
     createdAt: recipe.createdAt.toISOString(),
   };
 }
