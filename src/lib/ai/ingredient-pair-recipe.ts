@@ -358,8 +358,9 @@ export async function ensureIngredientPairRecipes(
           },
         });
 
-        await tx.ingredientPairRecipe.create({
-          data: { ingredientKey, monthKey, provider, recipeId: recipe.id },
+        await tx.ingredientPairRecipe.createMany({
+          data: [{ ingredientKey, monthKey, provider, recipeId: recipe.id }],
+          skipDuplicates: true,
         });
 
         return recipe;
