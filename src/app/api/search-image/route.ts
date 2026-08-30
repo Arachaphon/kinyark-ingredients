@@ -12,13 +12,14 @@ export async function GET(request: Request) {
     const res = await fetch(url);
     const data = await res.json();
 
-    const pages = data.query?.pages || {};
-    const images = Object.values(pages).map(
-      (page: any) => page.imageinfo?.[0]?.url
-    ).filter(Boolean);
+    const pages: Record<string, { imageinfo?: { url?: string }[] }> =
+      data.query?.pages || {};
+    const images = Object.values(pages)
+      .map((page) => page.imageinfo?.[0]?.url)
+      .filter(Boolean);
 
     return NextResponse.json({ images });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch images" }, { status: 500 });
   }
 }

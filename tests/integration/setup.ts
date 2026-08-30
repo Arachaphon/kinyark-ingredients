@@ -61,7 +61,7 @@ export async function cleanupDatabase() {
       const formattedTables = tablenames.map((t) => `"public"."${t.tablename}"`).join(', ')
       await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${formattedTables} CASCADE;`)
     }
-  } catch (e) {
+  } catch {
     // Ignore error if database tables are temporarily locked or cleared
   }
 }
