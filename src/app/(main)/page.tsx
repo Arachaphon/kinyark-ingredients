@@ -345,7 +345,7 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
         <span className="font-bold text-white text-lg">
-          {rating !== undefined && rating !== null ? rating.toFixed(1) : "5.0"}
+          {rating !== undefined && rating !== null ? rating.toFixed(1) : "0.0"}
         </span>
       </div>
 

@@ -4,6 +4,10 @@
     {
       "path": "/api/health",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/weekly-recommendations",
+      "schedule": "0 0 * * 1"
     }
   ]
 }
