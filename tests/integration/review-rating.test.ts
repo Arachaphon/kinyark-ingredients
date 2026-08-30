@@ -99,7 +99,7 @@ describe('Review & Rating Flow Integration Test', () => {
       }),
     })
 
-    const res = await PATCH_REVIEW(req, { params: Promise.resolve({ id: reviewId }) } as any)
+    const res = await PATCH_REVIEW(req, { params: Promise.resolve({ id: reviewId }) } as { params: Promise<{ id: string }> })
     const body = await res.json()
     const reviewData = body.data || body
 
@@ -121,7 +121,7 @@ describe('Review & Rating Flow Integration Test', () => {
       },
     })
 
-    const res = await DELETE_REVIEW(req, { params: Promise.resolve({ id: reviewId }) } as any)
+    const res = await DELETE_REVIEW(req, { params: Promise.resolve({ id: reviewId }) } as { params: Promise<{ id: string }> })
     const body = await res.json()
     const deleteResult = body.data || body
 

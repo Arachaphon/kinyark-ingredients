@@ -44,11 +44,11 @@ const mockGeminiRecipes: RecipeData[] = [
   { id: "g4", recipeName: "ผัดไทยกุ้งสด", bgColor: "bg-[#63D04C]", rating: 5, images: [{ id: "i4", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" }] },
 ];
 
-const mockDeepseekRecipes: RecipeData[] = [
-  { id: "d1", recipeName: "ต้มยำกุ้ง", bgColor: "bg-[#F58D38]", rating: 5, images: [{ id: "i5", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d2", recipeName: "ส้มตำไทย", bgColor: "bg-[#D05C5C]", rating: 4.9, images: [{ id: "i6", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d3", recipeName: "ข้าวผัดหมู", bgColor: "bg-[#E6C229]", rating: 4.7, images: [{ id: "i7", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "d4", recipeName: "กะเพราไก่ไข่ดาว", bgColor: "bg-[#4285F4]", rating: 5, images: [{ id: "i8", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
+const mockGroqRecipes: RecipeData[] = [
+  { id: "g1", recipeName: "แกงเหลืองกุ้งเจือตะไคร้", bgColor: "bg-[#F58D38]", rating: 5, images: [{ id: "i5", imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80" }] },
+  { id: "g2", recipeName: "ผัดคะน้าหมูกรอบคั่ว", bgColor: "bg-[#D05C5C]", rating: 4.9, images: [{ id: "i6", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
+  { id: "g3", recipeName: "ยำกุ้งตะไคร้ข้าวคั่ว", bgColor: "bg-[#E6C229]", rating: 4.7, images: [{ id: "i7", imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" }] },
+  { id: "g4", recipeName: "แกงเลียงกุ้งและคะน้า", bgColor: "bg-[#4285F4]", rating: 5, images: [{ id: "i8", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" }] },
 ];
 
 export default function HomePage() {
@@ -125,9 +125,9 @@ export default function HomePage() {
             fallbackMockData={mockGeminiRecipes}
           />
           <MenuCarousel 
-            provider="โดย Deepseek" 
-            apiEndpoint="/api/recipes?aiProvider=deepseek" 
-            fallbackMockData={mockDeepseekRecipes}
+            provider="โดย Groq" 
+            apiEndpoint="/api/recipes?aiProvider=groq" 
+            fallbackMockData={mockGroqRecipes}
           />
         </div>
       </section>
@@ -350,9 +350,9 @@ function RecipeCard({
       {/* ส่วนเนื้อหา ชื่อ + ดาวเรตติ้ง (จับรวมกลุ่มกัน) */}
       <div className="flex flex-col items-center w-full px-4">
         
-        {/* ⚠️ min-h-[64px] ล็อคความสูงของกรอบชื่ออาหาร ให้กินพื้นที่ 2 บรรทัดเสมอ (ป้องกันการ์ดหดตัว) */}
-        <div className="flex items-center justify-center gap-3 w-full relative z-30 min-h-[64px] mb-3">
-          <span className="font-bold text-2xl text-white whitespace-normal text-center leading-snug max-w-[75%] line-clamp-2">
+        {/* ⚠️ แสดงชื่อเต็ม ไม่ตัด/ไม่ clamp เพราะชื่อสูตรอาจยาว */}
+        <div className="flex items-center justify-center gap-3 w-full relative z-30 mb-3">
+          <span className="font-bold text-xl md:text-2xl text-white whitespace-normal text-center leading-snug max-w-[80%]">
             {title}
           </span>
           

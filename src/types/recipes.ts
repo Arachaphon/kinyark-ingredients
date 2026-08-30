@@ -28,6 +28,7 @@ export interface RecipeListItem {
   createdAt: string
   bgColor: string | null
   visibility: string
+  aiProvider?: string | null
   images: RecipeImage[]
   user: RecipeUser
   recipeIngredients: RecipeIngredientItem[]
@@ -129,6 +130,7 @@ export interface FavoriteRecipe {
   recipeName: string
   rating: number
   favoriteCount: number
+  aiProvider?: string | null
   images: RecipeImage[]
   user: RecipeUser
   recipeIngredients: RecipeIngredientItem[]

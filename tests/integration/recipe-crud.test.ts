@@ -87,7 +87,7 @@ describe('Core Recipe Flow (CRUD) Integration Test', () => {
         'x-user-role': testUser.role,
       },
     })
-    const res = await GET_BY_ID(req, { params: Promise.resolve({ id: createdRecipeId }) } as any)
+    const res = await GET_BY_ID(req, { params: Promise.resolve({ id: createdRecipeId }) } as { params: Promise<{ id: string }> })
     const body = await res.json()
     const recipeData = body.data || body
 
@@ -113,7 +113,7 @@ describe('Core Recipe Flow (CRUD) Integration Test', () => {
       body: JSON.stringify(updatePayload),
     })
 
-    const res = await PATCH(req, { params: Promise.resolve({ id: createdRecipeId }) } as any)
+    const res = await PATCH(req, { params: Promise.resolve({ id: createdRecipeId }) } as { params: Promise<{ id: string }> })
     const body = await res.json()
     const recipeData = body.data || body
 
@@ -152,7 +152,7 @@ describe('Core Recipe Flow (CRUD) Integration Test', () => {
       },
     })
 
-    const res = await DELETE(req, { params: Promise.resolve({ id: createdRecipeId }) } as any)
+    const res = await DELETE(req, { params: Promise.resolve({ id: createdRecipeId }) } as { params: Promise<{ id: string }> })
     const body = await res.json()
     const deleteResult = body.data || body
 

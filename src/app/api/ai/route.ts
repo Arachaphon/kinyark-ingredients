@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     // ==========================================
     if (provider === "gemini") {
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
       
       const result = await model.generateContent(prompt);
       return NextResponse.json({ success: true, text: result.response.text() });
