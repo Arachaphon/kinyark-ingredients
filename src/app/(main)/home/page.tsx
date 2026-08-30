@@ -375,7 +375,7 @@ function RecipeCard({
         {/* ดาว */}
         <div className="flex items-center gap-2 relative z-30">
           <span className="text-[#F1C40F] text-xl">★</span>
-          <span className="font-semibold text-white text-lg">{rating ? rating.toFixed(1) : "5.0"}</span>
+          <span className="font-semibold text-white text-lg">{rating !== undefined && rating !== null ? rating.toFixed(1) : "0.0"}</span>
         </div>
       </div>
 
