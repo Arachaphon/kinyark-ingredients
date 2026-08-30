@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import useSWR from "swr";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -22,12 +21,7 @@ interface RecommendedRecipe {
   featured_image_url?: string;
   rating?: number;
 }
-interface FeaturedRecipe {
-  id: string;
-  recipeName: string;
-  rating: number;
-  images: { id: string; imageUrl: string }[];
-}
+
 const fallbackGemini: RecommendedRecipe[] = [
   {
     id: "mock-g1",
@@ -90,22 +84,19 @@ const fallbackDeepseek: RecommendedRecipe[] = [
   }
 ];
 
+// ข้อมูลจำลองสำหรับสูตรอาหารแนะนำด้านบนสุด
+const mockFeatured = {
+  id: "featured-1",
+  recipeName: "สลัดผลไม้ออร์แกนิก",
+  rating: 5.0,
+  imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+};
+
 export default function HomePage() {
-  const { data: recommendedData } = useSWR("/api/recipes/recommended");
-  const { data: featuredData, isLoading } = useSWR("/api/recipes/featured");
-
-  const geminiRecipes: RecommendedRecipe[] = recommendedData?.gemini || [];
-  const deepseekRecipes: RecommendedRecipe[] = recommendedData?.deepseek || [];
-  const featured: FeaturedRecipe | null = featuredData?.data?.[0] ?? null;
-
-  const featuredTitle = featured?.recipeName ?? "สลัด";
-  const featuredRating = featured?.rating ?? 5.0;
-  const featuredImage =
-    featured?.images?.[0]?.imageUrl ??
-    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
-
-  const geminiToDisplay = geminiRecipes.length > 0 ? geminiRecipes : fallbackGemini;
-  const deepseekToDisplay = deepseekRecipes.length > 0 ? deepseekRecipes : fallbackDeepseek;
+  // 🌟 บังคับใช้ Mock Data ล้วนๆ 100% (ถอด SWR / API ออกทั้งหมด)
+  const geminiToDisplay = fallbackGemini;
+  const deepseekToDisplay = fallbackDeepseek;
+  const featured = mockFeatured;
 
   return (
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
@@ -178,32 +169,21 @@ export default function HomePage() {
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-9 h-9 border-4 border-[#3AC9B5] border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <>
-                  <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featuredTitle}</h1>
-                  <div className="flex items-center gap-2 mb-8">
-                    <span className="text-[#F1C40F] text-2xl">★</span>
-                    <span className="font-bold text-gray-800 text-lg">{featuredRating.toFixed(1)}</span>
-                  </div>
-                  {featured ? (
-                    <Link href={`/recipe/${featured.id}`} className="inline-flex px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition items-center gap-2 text-base">
-                      <span>▶</span> ดูเพิ่มเติม
-                    </Link>
-                  ) : (
-                    <button className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base">
-                      <span>▶</span> ดูเพิ่มเติม
-                    </button>
-                  )}
-                </>
-              )}
+              
+              {/* ลบ isLoading ออก แสดงผลข้อมูลทันที */}
+              <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              <div className="flex items-center gap-2 mb-8">
+                <span className="text-[#F1C40F] text-2xl">★</span>
+                <span className="font-bold text-gray-800 text-lg">{featured.rating.toFixed(1)}</span>
+              </div>
+              
+              <Link href={`/recipe/${featured.id}`} className="inline-flex px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition items-center gap-2 text-base">
+                <span>▶</span> ดูเพิ่มเติม
+              </Link>
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-            <Image src={featuredImage} alt={featuredTitle} fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
+            <Image src={featured.imageUrl} alt={featured.recipeName} fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
           </div>
         </div>
       </main>
@@ -216,17 +196,11 @@ export default function HomePage() {
           สูตรแนะนำประจำสัปดาห์
         </h2>
 
-        {isLoading ? (
-          <div className="w-full text-center py-12 flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-600 font-bold text-lg">กำลังจัดเตรียมเมนูแนะนำสุดละมุนตานะคร้าบ... 🍳</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-            <MenuCarousel provider="" recipes={geminiToDisplay} />
-            <MenuCarousel provider="" recipes={deepseekToDisplay} />
-          </div>
-        )}
+        {/* แสดงผล Carousel ทันทีโดยไม่ต้องรอโหลด */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
+          <MenuCarousel provider="" recipes={geminiToDisplay} />
+          <MenuCarousel provider="" recipes={deepseekToDisplay} />
+        </div>
       </section>
 
       <CookieConsent />
@@ -345,7 +319,7 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
       <div className="flex items-center gap-2 mb-8">
         <span className="text-[#F1C40F] text-xl">★</span>
         <span className="font-bold text-white text-lg">
-          {rating !== undefined && rating !== null ? rating.toFixed(1) : "5.0"}
+          {rating ? rating.toFixed(1) : "5.0"}
         </span>
       </div>
 
