@@ -241,7 +241,7 @@ export async function ensureWeeklyRecommendations() {
   });
 
   if (existing.length >= 8) {
-    return { weekKey, recipes: existing, generated: false };
+    return { weekKey, recipes: existing, generated: false, missingProviders: [] };
   }
 
   const systemUserId = await getSystemUserId();
@@ -261,18 +261,38 @@ export async function ensureWeeklyRecommendations() {
       ? trendingIngredients
       : ["ไก่", "หมู", "ไข่"];
 
-  // เรียก AI ทั้ง 2 เจ้าคู่ขนาน
+  // เรียก AI ทั้ง 2 เจ้าคู่ขนาน (Gemini = seasonal, Groq = trending)
   const [seasonalPrompt, trendingPrompt] = [
     buildSeasonalPrompt(seasonalFallback),
     buildTrendingPrompt(trendingFallback),
   ];
 
-  const [seasonalRecipes, trendingRecipes] = await Promise.all([
+  // ⚠️ ใช้ allSettled แทน Promise.all — ถ้า AI ตัวใดตัวหนึ่งหมดโควตา/พัง
+  //    เราจะยังคงสร้าง/คืนเมนูจากตัวที่สำเร็จได้ (ไม่ล้มทั้งสัปดาห์)
+  const [seasonalResult, trendingResult] = await Promise.allSettled([
     requestRecipes("gemini", seasonalPrompt),
     requestRecipes("groq", trendingPrompt),
   ]);
 
-  // บันทึกทั้งหมดใน transaction เดียว (รับประกันว่าถ้าพังจะไม่เหลือครึ่งเดียว)
+  const missingProviders: string[] = [];
+  if (seasonalResult.status === "rejected") {
+    missingProviders.push("gemini");
+    console.error("weekly seasonal (gemini) failed:", seasonalResult.reason);
+  }
+  if (trendingResult.status === "rejected") {
+    missingProviders.push("groq");
+    console.error("weekly trending (groq) failed:", trendingResult.reason);
+  }
+
+  const seasonalRecipes = seasonalResult.status === "fulfilled" ? seasonalResult.value : [];
+  const trendingRecipes = trendingResult.status === "fulfilled" ? trendingResult.value : [];
+
+  // ถ้าทั้งสองตาถึงล้มเหลว → คืนผลว่าง (ฝั่ง route จะ return [] แทนที่จะ 500)
+  if (seasonalRecipes.length === 0 && trendingRecipes.length === 0) {
+    return { weekKey, recipes: [], generated: false, missingProviders };
+  }
+
+  // บันทึกเฉพาะเมนูที่ AI สร้างสำเร็จ
   await prisma.$transaction(async (tx) => {
     // ใช้ transaction client สำหรับสร้าง recipe ที่ต้องมีเจ้าของ
     const buildPersist = async (recipe: WeeklyAiRecipe, provider: string, type: "seasonal" | "trending", seed: number) => {
@@ -360,5 +380,5 @@ export async function ensureWeeklyRecommendations() {
     );
   }
 
-  return { weekKey, recipes, generated: true };
+  return { weekKey, recipes, generated: true, missingProviders };
 }

@@ -31,6 +31,7 @@ export async function GET() {
       success: true,
       weekKey: result.weekKey,
       generated: result.generated,
+      missingProviders: result.missingProviders ?? [],
       recipes,
     });
   } catch (error) {
