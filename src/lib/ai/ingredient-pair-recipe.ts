@@ -221,6 +221,7 @@ export async function ensureIngredientPairRecipes(
 ): Promise<{
   recipes: RecipeDto[];
   generated: boolean;
+  missingProviders: string[];
 }> {
   const ingredients = rawIngredients.map((i) => i.trim()).filter(Boolean);
   if (ingredients.length === 0) {
@@ -268,7 +269,7 @@ export async function ensureIngredientPairRecipes(
     const recipes = providers
       .map((p) => cachedByProvider.get(p)!)
       .map(toRecipeDto);
-    return { recipes, generated: false };
+    return { recipes, generated: false, missingProviders: [] };
   }
 
   const [existingNames, systemUserId] = await Promise.all([
@@ -277,18 +278,26 @@ export async function ensureIngredientPairRecipes(
   ]);
 
   // 4) เรียก AI ที่จำเป็นคู่ขนาน (แต่ละตัวสร้าง 1 เมนู)
+  //    เก็บ provider กำกับทุกผล (ทั้งสำเร็จ/ล้มเหลว) เพื่อให้รู้ว่า AI ตัวใดสร้างสำเร็จ
   const results = await Promise.allSettled(
     providersToGenerate.map(async (p) => {
-      const aiRecipe = await requestRecipe(p, ingredients, existingNames);
-      return { provider: p, aiRecipe };
+      try {
+        const aiRecipe = await requestRecipe(p, ingredients, existingNames);
+        return { provider: p, aiRecipe };
+      } catch (err) {
+        throw { provider: p, cause: err };
+      }
     })
   );
 
   const newlySaved: RecipeDto[] = [];
+  const missingProviders: string[] = [];
 
   for (const result of results) {
     if (result.status === "rejected") {
-      // ถ้า AI ตัวใดล้มเหลว ข้ามไป ไม่พังทั้งคำขอ
+      // ถ้า AI ตัวใดล้มเหลว ข้ามไป ไม่พังทั้งคำขอ แต่จดว่าเป็น provider ใด
+      const provider = (result.reason as { provider?: string } | null)?.provider;
+      if (provider) missingProviders.push(provider);
       console.error(`ingredient-pair ${result.reason}`);
       continue;
     }
@@ -375,5 +384,5 @@ export async function ensureIngredientPairRecipes(
     .concat(newlySaved)
     .filter((r): r is RecipeDto => r !== null);
 
-  return { recipes: allRecipes, generated: true };
+  return { recipes: allRecipes, generated: true, missingProviders };
 }

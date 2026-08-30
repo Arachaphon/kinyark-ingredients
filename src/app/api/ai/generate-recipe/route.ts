@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       .map((i: unknown) => (typeof i === "string" ? i.trim() : String(i)))
       .filter(Boolean);
 
-    const { recipes, generated } = await ensureIngredientPairRecipes(cleanIngredients);
+    const { recipes, generated, missingProviders } = await ensureIngredientPairRecipes(cleanIngredients);
 
     // รูปแบบ response สอดคล้องกับที่หน้า /search/results คาดหวัง (array ของรายการ)
     // รองรับหลาย AI (gemini + groq) → ส่งเป็นหลายรายการใน array
@@ -40,7 +40,10 @@ export async function POST(req: Request) {
       generated,
     }));
 
-    return NextResponse.json(items);
+    return NextResponse.json({
+      items,
+      missingAiProviders: missingProviders,
+    });
   } catch (error) {
     console.error("AI Generate Error:", error);
     return NextResponse.json(

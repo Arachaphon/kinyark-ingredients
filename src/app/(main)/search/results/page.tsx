@@ -69,6 +69,9 @@ function ResultsContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
+
+  // 💡 รายชื่อ AI provider ที่ควรมีเมนูแต่ยังสร้างไม่สำเร็จ (เช่น Gemini หมดโควตา)
+  const [missingAiProviders, setMissingAiProviders] = useState<string[]>([]);
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -91,6 +94,7 @@ function ResultsContent() {
     }
 
     setIsLoading(true);
+    setMissingAiProviders([]);
 
     const fetchResults = async () => {
       try {
@@ -130,8 +134,16 @@ function ResultsContent() {
             });
 
             if (aiResponse.ok) {
-              const aiData: ApiRecipeItem[] = await aiResponse.json();
-              if (Array.isArray(aiData) && aiData.length > 0) {
+              const aiJson = await aiResponse.json();
+              // response ใหม่: { items, missingAiProviders } ; เก่า: array
+              const aiData: ApiRecipeItem[] = Array.isArray(aiJson)
+                ? aiJson
+                : (aiJson?.items ?? []);
+              const missing: string[] = Array.isArray(aiJson?.missingAiProviders)
+                ? aiJson.missingAiProviders
+                : [];
+              setMissingAiProviders(missing);
+              if (aiData.length > 0) {
                 // รวมผล AI เข้ากับผลจากฐานข้อมูล (ไม่ให้ ID ซ้ำกัน)
                 const existingIds = new Set(data.map((d) => d.id));
                 const uniqueAi = aiData.filter((a) => !existingIds.has(a.id));
@@ -262,6 +274,23 @@ function ResultsContent() {
           </span>
         )}
       </div>
+
+      {/* 🔔 แจ้งเตือนเมื่อ AI ตัวใดยังสร้างเมนูไม่สำเร็จ (เช่น Gemini หมดโควตา) */}
+      {!isLoading && missingAiProviders.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
+          <span className="text-xl leading-none mt-0.5">⚠️</span>
+          <div>
+            <p className="font-semibold text-amber-800">
+              {missingAiProviders.length === 1 && missingAiProviders[0]?.toLowerCase() === "gemini"
+                ? "Gemini หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก Groq ก่อน"
+                : `${missingAiProviders.join(", ")} หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก provider อื่นก่อน`}
+            </p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              ลองเลือกชุดวัตถุดิบเดิมอีกครั้งภายหลัง เพื่อให้เมนูที่เหลือถูกสร้างเพิ่ม
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
