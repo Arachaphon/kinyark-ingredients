@@ -53,14 +53,21 @@ export async function seedTestUser(user: TestUser) {
  */
 export async function cleanupDatabase() {
   try {
-    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT LIKE '_prisma_migrations';
-    `
+    // Only clean up test users created during integration tests (which cascades to their test recipes/reviews)
+    const testUserIds = [
+      '11111111-1111-4111-a111-111111111111',
+      '22222222-2222-4222-a222-222222222222',
+      '33333333-3333-4333-a333-333333333333',
+    ]
 
-    if (tablenames.length > 0) {
-      const formattedTables = tablenames.map((t) => `"public"."${t.tablename}"`).join(', ')
-      await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${formattedTables} CASCADE;`)
-    }
+    await prisma.user.deleteMany({
+      where: {
+        OR: [
+          { id: { in: testUserIds } },
+          { email: { endsWith: '@example.com' } },
+        ],
+      },
+    })
   } catch {
     // Ignore error if database tables are temporarily locked or cleared
   }
