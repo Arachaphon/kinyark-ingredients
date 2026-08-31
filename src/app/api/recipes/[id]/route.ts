@@ -219,6 +219,9 @@ export async function DELETE(
 
     // 3. Delete related relations and recipe record from Database
     await prisma.$transaction([
+      prisma.storePostImage.deleteMany({ where: { storePost: { recipeId } } }),
+      prisma.storePostVideo.deleteMany({ where: { storePost: { recipeId } } }),
+      prisma.storePost.deleteMany({ where: { recipeId } }),
       prisma.reviewLike.deleteMany({ where: { review: { recipeId } } }),
       prisma.review.deleteMany({ where: { recipeId } }),
       prisma.favorite.deleteMany({ where: { recipeId } }),

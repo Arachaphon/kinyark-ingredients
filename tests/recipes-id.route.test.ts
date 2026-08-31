@@ -18,6 +18,8 @@ const mockPrisma = {
   recipeImage: { findMany: jest.fn(), deleteMany: jest.fn() },
   recipeVideo: { findMany: jest.fn(), deleteMany: jest.fn() },
   storePost: { findMany: jest.fn(), deleteMany: jest.fn() },
+  storePostImage: { deleteMany: jest.fn() },
+  storePostVideo: { deleteMany: jest.fn() },
 }
 jest.mock('@/lib/prisma', () => ({ prisma: mockPrisma }))
 
