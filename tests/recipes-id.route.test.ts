@@ -7,10 +7,27 @@ jest.mock('@/lib/storage', () => ({
   deleteFileByUrl: jest.fn(),
 }))
 
-const mockPrisma = {
+type MockFn = jest.Mock
+
+interface MockPrismaClient {
+  recipe: { findUnique: MockFn; delete: MockFn }
+  favorite: { findUnique: MockFn; deleteMany: MockFn }
+  $transaction: MockFn
+  reviewLike: { deleteMany: MockFn }
+  review: { findMany: MockFn; deleteMany: MockFn }
+  recipeIngredient: { findMany: MockFn; deleteMany: MockFn }
+  recipeEquipment: { findMany: MockFn; deleteMany: MockFn }
+  recipeImage: { findMany: MockFn; deleteMany: MockFn }
+  recipeVideo: { findMany: MockFn; deleteMany: MockFn }
+  storePost: { findMany: MockFn; deleteMany: MockFn }
+  storePostImage: { deleteMany: MockFn }
+  storePostVideo: { deleteMany: MockFn }
+}
+
+const mockPrisma: MockPrismaClient = {
   recipe: { findUnique: jest.fn(), delete: jest.fn() },
   favorite: { findUnique: jest.fn(), deleteMany: jest.fn() },
-  $transaction: jest.fn((arg: unknown) =>
+  $transaction: jest.fn((arg: unknown): Promise<unknown> =>
     typeof arg === 'function' ? arg(mockPrisma) : Promise.all(arg as unknown[])
   ),
   reviewLike: { deleteMany: jest.fn() },
