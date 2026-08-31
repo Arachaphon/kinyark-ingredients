@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { updateReviewSchema } from "@/lib/validations/review.schema"
 import { getAuthUserId } from "@/lib/auth-user"
 import { cache } from "@/lib/cache"
@@ -84,28 +85,53 @@ export async function DELETE(
   if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.review.delete({ where: { id } })
+    const deleteReviewWithRetry = async (maxRetries = 3) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return await prisma.$transaction(
+            async (tx) => {
+              await tx.review.delete({ where: { id } })
 
-      await tx.recipe.update({
-        where: { id: existing.recipeId },
-        data: {
-          reviewCount: { decrement: 1 },
-        },
-      })
+              await tx.recipe.update({
+                where: { id: existing.recipeId },
+                data: {
+                  reviewCount: { decrement: 1 },
+                },
+              })
 
-      const agg = await tx.review.aggregate({
-        where: { recipeId: existing.recipeId },
-        _avg: { rating: true },
-      })
+              const agg = await tx.review.aggregate({
+                where: { recipeId: existing.recipeId },
+                _avg: { rating: true },
+              })
 
-      const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
+              const newRating = Math.round((agg._avg.rating ?? 0) * 10) / 10
 
-      await tx.recipe.update({
-        where: { id: existing.recipeId },
-        data: { rating: newRating },
-      })
-    })
+              await tx.recipe.update({
+                where: { id: existing.recipeId },
+                data: { rating: newRating },
+              })
+            },
+            {
+              maxWait: 15000,
+              timeout: 30000,
+              isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+            }
+          )
+        } catch (err: unknown) {
+          const isDeadlock =
+            (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') ||
+            (err instanceof Error && err.message.toLowerCase().includes('deadlock'))
+
+          if (isDeadlock && attempt < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, 150 * attempt))
+            continue
+          }
+          throw err
+        }
+      }
+    }
+
+    await deleteReviewWithRetry()
 
     cache.del(`recipe:${existing.recipeId}`)
 
