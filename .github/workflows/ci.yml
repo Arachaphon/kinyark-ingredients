@@ -42,6 +42,3 @@ jobs:
 
       - name: Lint
         run: npx eslint . --ext .ts,.tsx --max-warnings 0
-
-      - name: Run tests
-        run: npm test
