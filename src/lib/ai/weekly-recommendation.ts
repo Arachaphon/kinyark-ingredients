@@ -134,7 +134,7 @@ async function callGemini(prompt: string): Promise<string> {
     throw new Error("GEMINI_API_KEY is not configured");
   }
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
@@ -199,16 +199,23 @@ async function requestRecipes(
  * - ถ้ายังไม่มีในสัปดาห์นี้ → เรียก AI 2 ตัว สร้าง ตัวละ 4 สูตร (seasonal 4 + trending 4 = 8) แล้วบันทึกเป็น Recipe จริง + WeeklyRecommendation
  * - ถ้ามีแล้ว → คืนจากฐานข้อมูล (ไม่เรียก AI ซ้ำ)
  */
-export async function ensureWeeklyRecommendations() {
+export async function ensureWeeklyRecommendations(options?: { force?: boolean }) {
   const weekKey = getWeekKey();
-  const existing = await prisma.weeklyRecommendation.findMany({
-    where: { weekKey },
-    include: { recipe: { include: { images: { orderBy: { createdAt: "asc" }, take: 1 } } } },
-    orderBy: [{ type: "asc" }, { createdAt: "asc" }],
-  });
 
-  if (existing.length >= 8) {
-    return { weekKey, recipes: existing, generated: false, missingProviders: [] };
+  if (options?.force) {
+    await prisma.weeklyRecommendation.deleteMany({
+      where: { weekKey },
+    });
+  } else {
+    const existing = await prisma.weeklyRecommendation.findMany({
+      where: { weekKey },
+      include: { recipe: { include: { images: { orderBy: { createdAt: "asc" }, take: 1 } } } },
+      orderBy: [{ type: "asc" }, { createdAt: "asc" }],
+    });
+
+    if (existing.length >= 8) {
+      return { weekKey, recipes: existing, generated: false, missingProviders: [] };
+    }
   }
 
   const systemUserId = await getSystemUserId();

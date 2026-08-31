@@ -47,6 +47,11 @@ describe('Review & Rating Flow Integration Test', () => {
 
     const res = await POST_RECIPE(createReq)
     const body = await res.json()
+
+    if (!body.data?.id) {
+      throw new Error(`Failed to create recipe for review test: ${JSON.stringify(body)}`)
+    }
+
     recipeId = body.data.id
   })
 
