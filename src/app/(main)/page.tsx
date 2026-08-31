@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import useSWR from "swr";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -22,12 +21,7 @@ interface RecommendedRecipe {
   featured_image_url?: string;
   rating?: number;
 }
-interface FeaturedRecipe {
-  id: string;
-  recipeName: string;
-  rating: number;
-  images: { id: string; imageUrl: string }[];
-}
+
 const fallbackGemini: RecommendedRecipe[] = [
   {
     id: "mock-g1",
@@ -90,55 +84,52 @@ const fallbackDeepseek: RecommendedRecipe[] = [
   }
 ];
 
+// ข้อมูลจำลองสำหรับสูตรอาหารแนะนำด้านบนสุด
+const mockFeatured = {
+  id: "featured-1",
+  recipeName: "สลัดผลไม้ออร์แกนิก",
+  rating: 5.0,
+  imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
+};
+
 export default function HomePage() {
-  const { data: recommendedData } = useSWR("/api/recipes/recommended");
-  const { data: featuredData, isLoading } = useSWR("/api/recipes/featured");
-
-  const geminiRecipes: RecommendedRecipe[] = recommendedData?.gemini || [];
-  const deepseekRecipes: RecommendedRecipe[] = recommendedData?.deepseek || [];
-  const featured: FeaturedRecipe | null = featuredData?.data?.[0] ?? null;
-
-  const featuredTitle = featured?.recipeName ?? "สลัด";
-  const featuredRating = featured?.rating ?? 5.0;
-  const featuredImage =
-    featured?.images?.[0]?.imageUrl ??
-    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80";
-
-  const geminiToDisplay = geminiRecipes.length > 0 ? geminiRecipes : fallbackGemini;
-  const deepseekToDisplay = deepseekRecipes.length > 0 ? deepseekRecipes : fallbackDeepseek;
+  const geminiToDisplay = fallbackGemini;
+  const deepseekToDisplay = fallbackDeepseek;
+  const featured = mockFeatured;
 
   return (
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
+      
       {/* =========================================
-          1. HEADER & NAVBAR SECTION
+          1. HEADER & NAVBAR SECTION (Responsive)
           ========================================= */}
-      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-8 mb-12 flex flex-col xl:flex-row items-center xl:items-center justify-between gap-6">
+      <header className="w-[95%] max-w-[1440px] mx-auto px-4 pt-6 mb-8 lg:mb-12 flex flex-col xl:flex-row items-center justify-between gap-6">
         
-        {/* โลโก้ขนาดใหญ่ */}
-        <div className="flex-shrink-0 flex items-center justify-center w-48 h-48 xl:w-64 xl:h-64 scale-110 md:scale-115 transition-all duration-300 relative">
-          <Image src="/photo/logo.png" alt="Kin Yark" fill className="object-contain" />
+        {/* โลโก้ */}
+        <div className="flex-shrink-0 flex items-center justify-center w-36 h-36 sm:w-48 sm:h-48 xl:w-64 xl:h-64 relative">
+          <Image src="/photo/logo.png" alt="Kin Yark" fill className="object-contain" priority />
         </div>
 
         {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
-          <div className="flex gap-16 mb-5 text-lg font-bold">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-4 text-base sm:text-lg font-bold">
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
             <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">โพสต์ทั้งหมด</span>
           </div>
           <div className="w-full relative">
-            <input type="text" placeholder="ค้นหา..." className="w-full py-4 px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-lg " />
+            <input type="text" placeholder="ค้นหา..." className="w-full py-3 sm:py-4 px-6 sm:px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-base sm:text-lg" />
             <div className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400">
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
             </div>
           </div>
         </div>
 
         {/* ปุ่มฝั่งขวา */}
-        <div className="flex-shrink-0 flex items-center gap-4">
-          <button className="px-6 py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-lg">+ เผยแพร่สูตรอาหาร</button>
-          <Link href="/login" className="px-6 py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-lg">
+        <div className="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+          <button className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-base sm:text-lg">+ เผยแพร่สูตรอาหาร</button>
+          <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base sm:text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
             เข้าสู่ระบบ
           </Link>
@@ -146,12 +137,14 @@ export default function HomePage() {
       </header>
 
       {/* =========================================
-          2. HERO SECTION
+          2. HERO SECTION (Responsive Grid)
           ========================================= */}
-      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-12 mb-20">
-        <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2 pl-4">
-          <h2 className="text-[24px] font-bold mb-8 text-gray-900 w-full max-w-[450px] text-center">หมวดหมู่วัตถุดิบ</h2>
-          <div className="grid grid-cols-2 gap-5 w-full max-w-[450px]">
+      <main className="w-[95%] max-w-[1440px] mx-auto px-4 grid grid-cols-1 xl:grid-cols-12 gap-8 xl:gap-12 mb-16 xl:mb-20">
+        
+        {/* หมวดหมู่วัตถุดิบ */}
+        <div className="xl:col-span-5 flex flex-col items-center xl:items-start pt-2">
+          <h2 className="text-xl sm:text-[24px] font-bold mb-6 text-gray-900 w-full max-w-[450px] text-center xl:text-left">หมวดหมู่วัตถุดิบ</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-[450px]">
             <CategoryCard emoji="🥩" text="เนื้อสัตว์" />
             <CategoryCard emoji="🍳" text="อุปกรณ์ทำครัว" />
             <CategoryCard emoji="🥗" text="ผลไม้" />
@@ -164,46 +157,38 @@ export default function HomePage() {
             <CategoryCard emoji="🥜" text="ถั่วและเมล็ดพืช" />
             <CategoryCard emoji="🧈" text="น้ำมันและไขมัน" />
             <CategoryCard emoji="🥤" text="ของเหลวและเครื่องดื่ม" />
-            <div className="col-span-2 flex justify-center mt-2">
-              <div className="w-[210px]">
+            <div className="sm:col-span-2 flex justify-center mt-1">
+              <div className="w-full sm:w-[210px]">
                 <CategoryCard emoji="📦" text="อื่นๆ" />
               </div>
             </div>
           </div>
         </div>
-        <div className="xl:col-span-7 flex items-center justify-end relative mt-12 xl:mt-0">
-          <div className="bg-white rounded-[40px] w-full xl:w-[88%] p-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm font-bold">✓</div>
-                <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
+
+        {/* การ์ดสูตรอาหารแนะนำหลัก */}
+        <div className="xl:col-span-7 flex items-center justify-center xl:justify-end relative mt-8 xl:mt-0">
+          <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[88%] p-6 sm:p-12 pb-24 sm:pb-12 xl:pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
+            <div className="z-10 max-w-[calc(100%-120px)] sm:max-w-none">
+              <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                <div className="bg-[#FF8585] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm shadow-sm font-bold">✓</div>
+                <span className="font-bold text-gray-900 text-lg sm:text-xl">สูตรอาหารแนะนำ</span>
               </div>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="w-9 h-9 border-4 border-[#3AC9B5] border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <>
-                  <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featuredTitle}</h1>
-                  <div className="flex items-center gap-2 mb-8">
-                    <span className="text-[#F1C40F] text-2xl">★</span>
-                    <span className="font-bold text-gray-800 text-lg">{featuredRating.toFixed(1)}</span>
-                  </div>
-                  {featured ? (
-                    <Link href={`/recipe/${featured.id}`} className="inline-flex px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition items-center gap-2 text-base">
-                      <span>▶</span> ดูเพิ่มเติม
-                    </Link>
-                  ) : (
-                    <button className="px-8 py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base">
-                      <span>▶</span> ดูเพิ่มเติม
-                    </button>
-                  )}
-                </>
-              )}
+              
+              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              <div className="flex items-center gap-2 mb-6 sm:mb-8">
+                <span className="text-[#F1C40F] text-xl sm:text-2xl">★</span>
+                <span className="font-bold text-gray-800 text-base sm:text-lg">{featured.rating.toFixed(1)}</span>
+              </div>
+              
+              <Link href={`/recipe/${featured.id}`} className="inline-flex px-6 sm:px-8 py-2.5 sm:py-3 bg-[#71B254] text-white rounded-full font-bold shadow-md hover:bg-[#5b9642] transition items-center gap-2 text-sm sm:text-base">
+                <span>▶</span> ดูเพิ่มเติม
+              </Link>
             </div>
           </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 xl:translate-x-16 w-56 h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-            <Image src={featuredImage} alt={featuredTitle} fill className="object-cover rounded-full border-[12px] border-white shadow-xl" sizes="(max-width: 1280px) 224px, 320px" />
+
+          {/* รูปวงกลมลอยเด่น Responsive */}
+          <div className="absolute right-4 sm:right-8 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
+            <Image src={featured.imageUrl} alt={featured.recipeName} fill className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" sizes="(max-width: 640px) 144px, (max-width: 1280px) 224px, 320px" priority />
           </div>
         </div>
       </main>
@@ -212,21 +197,14 @@ export default function HomePage() {
           3. DAILY RECOMMENDED MENU SECTION
           ========================================= */}
       <section className="w-[95%] max-w-[1440px] mx-auto px-4 mt-12">
-        <h2 className="text-[32px] font-bold text-center mb-20 text-gray-900">
+        <h2 className="text-2xl sm:text-[32px] font-bold text-center mb-12 sm:mb-20 text-gray-900">
           สูตรแนะนำประจำสัปดาห์
         </h2>
 
-        {isLoading ? (
-          <div className="w-full text-center py-12 flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-600 font-bold text-lg">กำลังจัดเตรียมเมนูแนะนำสุดละมุนตานะคร้าบ... 🍳</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-            <MenuCarousel provider="" recipes={geminiToDisplay} />
-            <MenuCarousel provider="" recipes={deepseekToDisplay} />
-          </div>
-        )}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
+          <MenuCarousel provider="" recipes={geminiToDisplay} />
+          <MenuCarousel provider="" recipes={deepseekToDisplay} />
+        </div>
       </section>
 
       <CookieConsent />
@@ -235,7 +213,7 @@ export default function HomePage() {
 }
 
 /* =========================================
-    COMPONENTS ย่อย
+    COMPONENTS ย่อยที่ปรับให้ Responsive แล้ว
    ========================================= */
 
 function MenuCarousel({ provider, recipes }: { provider: string, recipes: RecommendedRecipe[] }) {
@@ -261,13 +239,15 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
 
   const item1 = recipes[currentIndex];
   const item2 = recipes[(currentIndex + 1) % recipes.length] || item1;
+
   return (
-    <div className={`bg-white rounded-[40px] p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
+    <div className={`bg-white rounded-[30px] sm:rounded-[40px] p-4 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[650px] ${anuphan.className}`}>
       <ArrowButton direction="left" onClick={handlePrev} />
       <ArrowButton direction="right" onClick={handleNext} />
 
-      <div className="flex justify-center gap-6 mt-12 px-4 relative">
-        <div key={`card1-${item1.id}`} className="animate-fade-in relative">
+      {/* บนมือถือจอเล็กให้เรียงแนวตั้งหรือยืดหยุ่นไม่ให้ล้น */}
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-20 sm:gap-6 mt-16 sm:mt-12 px-2 sm:px-4 relative">
+        <div key={`card1-${item1.id}`} className="animate-fade-in relative w-full sm:w-auto flex justify-center">
           <RecipeCard
             title={item1.menu_name}
             bgColor={item1.bg_color || "bg-[#6F62E4]"}
@@ -275,7 +255,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
             rating={item1.rating}
           />
         </div>
-        <div key={`card2-${item2.id}`} className="animate-fade-in relative">
+        <div key={`card2-${item2.id}`} className="animate-fade-in relative w-full sm:w-auto flex justify-center">
           <RecipeCard
             title={item2.menu_name}
             bgColor={item2.bg_color || "bg-[#3AC9B5]"}
@@ -285,7 +265,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
         </div>
       </div>
       
-      <div className="text-right text-[#A5A5A5] text-base font-bold mt-6 mr-2">
+      <div className="text-right text-[#A5A5A5] text-sm sm:text-base font-bold mt-6 mr-2">
         {provider}
       </div>
     </div>
@@ -294,9 +274,9 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
 
 function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   return (
-    <div className={`bg-white px-5 py-4 rounded-[24px] shadow-sm flex items-center gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
-      <div className="text-3xl">{emoji}</div>
-      <span className="font-bold text-base text-gray-800">{text}</span>
+    <div className={`bg-white px-4 sm:px-5 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] shadow-sm flex items-center gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
+      <div className="text-2xl sm:text-3xl">{emoji}</div>
+      <span className="font-bold text-sm sm:text-base text-gray-800">{text}</span>
     </div>
   );
 }
@@ -306,13 +286,14 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   return (
     <button
       onClick={onClick}
-      className={`absolute top-1/2 -translate-y-1/2 w-14 h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${isLeft ? "-left-7" : "-right-7"
-        }`}
+      className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 sm:w-14 sm:h-14 bg-white rounded-full shadow-[0_3px_15px_rgba(0,0,0,0.1)] flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:scale-110 active:scale-95 transition-all z-20 ${
+        isLeft ? "-left-2 sm:-left-7" : "-right-2 sm:-right-7"
+      }`}
     >
       {isLeft ? (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <svg width="22" height="22" className="sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
       ) : (
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <svg width="22" height="22" className="sm:w-7 sm:h-7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
       )}
     </button>
   );
@@ -322,34 +303,34 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
   return (
     <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-36 h-36 sm:w-40 sm:h-40 z-20 hover:rotate-6 transition duration-300">
         <Image
           src={image}
           alt={title}
           fill
-          className="object-cover rounded-full shadow-lg border-[10px] border-[#F4EFE5]"
+          className="object-cover rounded-full shadow-lg border-[8px] sm:border-[10px] border-[#F4EFE5]"
           sizes="160px"
         />
       </div>
 
-      <div className="relative w-full mb-5 mt-2 px-10 flex items-center justify-center min-h-[64px]">
-        <span className="font-bold text-xl sm:text-2xl text-white text-center leading-snug block w-full">
+      <div className="relative w-full mb-5 mt-2 px-8 sm:px-10 flex items-center justify-center min-h-[64px]">
+        <span className="font-bold text-lg sm:text-2xl text-white text-center leading-snug block w-full line-clamp-2">
           {title}
         </span>
 
-        <div className="absolute right-4 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
-          <span className="text-[#FF4747] text-sm">❤</span>
+        <div className="absolute right-3 sm:right-4 bg-white rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center shadow-sm shrink-0 cursor-pointer hover:bg-red-50">
+          <span className="text-[#FF4747] text-xs sm:text-sm">❤</span>
         </div>
       </div>
 
       <div className="flex items-center gap-2 mb-8">
-        <span className="text-[#F1C40F] text-xl">★</span>
-        <span className="font-bold text-white text-lg">
-          {rating !== undefined && rating !== null ? rating.toFixed(1) : "0.0"}
+        <span className="text-[#F1C40F] text-lg sm:text-xl">★</span>
+        <span className="font-bold text-white text-base sm:text-lg">
+          {rating ? rating.toFixed(1) : "5.0"}
         </span>
       </div>
 
-      <button className="bg-white text-gray-800 text-sm font-bold px-8 py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2.5">
+      <button className="bg-white text-gray-800 text-xs sm:text-sm font-bold px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2">
         <span>▶</span> ดูเพิ่มเติม
       </button>
     </div>
