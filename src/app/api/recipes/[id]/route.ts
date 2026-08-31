@@ -15,6 +15,34 @@ class HttpError extends Error {
   }
 }
 
+function isDeadlockError(err: unknown): boolean {
+  if (err && typeof err === "object") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2034" || err.code === "P2002")) {
+      return true
+    }
+    const msg = String((err as { message?: string }).message || "").toLowerCase()
+    return (
+      msg.includes("deadlock detected") ||
+      msg.includes("40p01") ||
+      msg.includes("deadlock")
+    )
+  }
+  return false
+}
+
+async function runWithRetries<T>(fn: () => Promise<T>, retries = 3, baseDelay = 100): Promise<T> {
+  let attempt = 0
+  while (true) {
+    try {
+      return await fn()
+    } catch (err) {
+      attempt++
+      if (attempt > retries || !isDeadlockError(err)) throw err
+      await new Promise((r) => setTimeout(r, baseDelay * Math.pow(2, attempt - 1)))
+    }
+  }
+}
+
 export const dynamic = "force-dynamic"
 
 export async function GET(
@@ -218,52 +246,75 @@ export async function DELETE(
     const storeVideoUrls = recipe.storePosts.flatMap((sp) => sp.videos.map((vid) => vid.videoUrl))
 
     // 3. Delete related relations and recipe record from Database with retry on deadlock/concurrency
-    const deleteRecipeWithRetry = async (maxRetries = 3) => {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          return await prisma.$transaction(
-            async (tx) => {
-              await tx.storePostImage.deleteMany({ where: { storePost: { recipeId } } })
-              await tx.storePostVideo.deleteMany({ where: { storePost: { recipeId } } })
-              await tx.storePost.deleteMany({ where: { recipeId } })
-              await tx.reviewLike.deleteMany({ where: { review: { recipeId } } })
-              await tx.review.deleteMany({ where: { recipeId } })
-              await tx.favorite.deleteMany({ where: { recipeId } })
-              await tx.recipeIngredient.deleteMany({ where: { recipeId } })
-              await tx.recipeEquipment.deleteMany({ where: { recipeId } })
-              await tx.recipeImage.deleteMany({ where: { recipeId } })
-              await tx.recipeVideo.deleteMany({ where: { recipeId } })
-              await tx.recipe.delete({ where: { id: recipeId } })
-            },
-            {
-              maxWait: 15000,
-              timeout: 30000,
-              isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
-            }
-          )
-        } catch (err: unknown) {
-          const isDeadlock =
-            (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2034') ||
-            (err instanceof Error && err.message.toLowerCase().includes('deadlock'))
+    await runWithRetries(async () => {
+      return prisma.$transaction(
+        async (tx) => {
+          // 1) Gather store post ids
+          const storePosts = await tx.storePost.findMany({
+            where: { recipeId },
+            select: { id: true },
+          })
+          const storePostIds = (storePosts || []).map((p) => p.id)
 
-          if (isDeadlock && attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, 150 * attempt))
-            continue
+          // 2) Remove store post images/videos by FK
+          if (storePostIds.length > 0) {
+            await tx.storePostImage.deleteMany({ where: { storePostId: { in: storePostIds } } })
+            await tx.storePostVideo.deleteMany({ where: { storePostId: { in: storePostIds } } })
           }
-          throw err
+
+          // 3) Remove store posts
+          await tx.storePost.deleteMany({ where: { recipeId } })
+
+          // 4) Gather reviews ids
+          const reviews = await tx.review.findMany({
+            where: { recipeId },
+            select: { id: true },
+          })
+          const reviewIds = (reviews || []).map((r) => r.id)
+
+          // 5) Remove review likes by FK
+          if (reviewIds.length > 0) {
+            await tx.reviewLike.deleteMany({ where: { reviewId: { in: reviewIds } } })
+          }
+
+          // 6) Remove reviews
+          await tx.review.deleteMany({ where: { recipeId } })
+
+          // 7) Remove favorites
+          await tx.favorite.deleteMany({ where: { recipeId } })
+
+          // 8) Recipe-specific children
+          await tx.recipeIngredient.deleteMany({ where: { recipeId } })
+          await tx.recipeEquipment.deleteMany({ where: { recipeId } })
+          await tx.recipeImage.deleteMany({ where: { recipeId } })
+          await tx.recipeVideo.deleteMany({ where: { recipeId } })
+
+          // 9) Finally delete recipe
+          await tx.recipe.delete({ where: { id: recipeId } })
+        },
+        {
+          maxWait: 15000,
+          timeout: 30000,
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
         }
+      )
+    }, 3)
+
+    // 4. Delete files from Supabase Storage Bucket (guarded)
+    if (supabase) {
+      for (const url of [...imageUrls, ...storeImageUrls]) {
+        await deleteFileByUrl(supabase, url).catch((err) => {
+          console.error("Failed to delete storage file:", url, err)
+        })
       }
-    }
 
-    await deleteRecipeWithRetry()
-
-    // 4. Delete files from Supabase Storage Bucket
-    for (const url of [...imageUrls, ...storeImageUrls]) {
-      await deleteFileByUrl(supabase, url)
-    }
-
-    for (const url of [...videoUrls, ...storeVideoUrls]) {
-      await deleteFileByUrl(supabase, url)
+      for (const url of [...videoUrls, ...storeVideoUrls]) {
+        await deleteFileByUrl(supabase, url).catch((err) => {
+          console.error("Failed to delete storage file:", url, err)
+        })
+      }
+    } else {
+      console.warn("Supabase client unavailable; skipping storage deletes for recipe", recipeId)
     }
 
     cache.del(`recipe:${recipeId}`)
