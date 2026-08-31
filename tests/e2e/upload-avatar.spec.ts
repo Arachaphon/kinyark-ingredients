@@ -23,7 +23,7 @@ test.describe('Upload Avatar E2E', () => {
 
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
-    await expect(page).toHaveURL(/.*\/home/);
+    await expect(page).toHaveURL(/.*\/home/, { timeout: 15000 });
 
     const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 

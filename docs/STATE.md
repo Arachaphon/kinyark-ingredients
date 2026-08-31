@@ -36,7 +36,8 @@ _Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 K
 ## 5. Playwright Baseline Status
 - Installed: YES
 - Browser Installed: YES (Chromium)
-- Auth E2E Tests Passing: YES (auth.spec.ts, profile.spec.ts)
+- E2E Tests Passing: YES (28/28 tests passing across 8 spec files in tests/e2e)
+- Test Report: `tests/result/e2e-test-report.md`
 
 ## 6. Critical Blockers
 1. Zod validation fires AFTER `signUp()` in `register/actions.ts` — partially fixed (signOut added post-signup)

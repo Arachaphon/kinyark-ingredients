@@ -128,7 +128,7 @@
 
 | ID | Feature | Assigned | Due | Est. | Remaining | STATUS |
 |---|---|---|---|---|---|---|
-| W1-1 | Perform End-to-End (E2E) Functional Testing | อรชพร | Sep 1 | 20 | 20 | ToDO |
+| W1-1 | Perform End-to-End (E2E) Functional Testing | อรชพร | Sep 1 | 20 | 0 | Complete |
 | W1-2 | Cross-Browser & Responsive UI Testing | การัญภาส | Sep 2 | 20 | 20 | ToDO |
 | W1-3 | Performance & Error Handling Validation | พีรพัฒน์ | Sep 2 | 20 | 20 | ToDO |
 | W1-4 | Final Bug Fixing & Code Refactoring | การัญภาส | Sep 3 | 20 | 20 | ToDO |
@@ -433,13 +433,12 @@ Phase 5.1 Score: 0/3 ❌
 - [ ] Remove all implicit `any` types
 
 ### 5.2 Playwright Test Suite
-Phase 5.2 Score: 0/5 ❌
-- [ ] `tests/phase2-auth/middleware.spec.ts` — test 401 on protected routes
-- [ ] `tests/phase3-recipe/crud.spec.ts` — test full CRUD flow
-- [ ] `tests/phase3-recipe/upload.spec.ts` — test image upload to Storage
-- [ ] `tests/phase4-ai/suggest.spec.ts` — test AI response JSON structure
-- [ ] `tests/e2e/user-journey.spec.ts` — full flow: register → create recipe → search → favorite
-- [ 🔶    ]  `tests/auth.spec.ts  (baseline)` -Exists — 4 tests written, 0/4 pass  (Chromium missing)
+Phase 5.2 Score: 5/5 ✅
+- [✅] `tests/e2e/auth.spec.ts` — Authentication & Session E2E
+- [✅] `tests/e2e/profile.spec.ts` & `upload-avatar.spec.ts` — Profile management & Supabase Avatar upload
+- [✅] `tests/e2e/recipes.spec.ts` — Recipe CRUD & Lifecycle E2E
+- [✅] `tests/e2e/ai-recipe.spec.ts` — AI Recipe Suggestion E2E
+- [✅] `tests/e2e/favorites.spec.ts`, `reviews.spec.ts`, `search.spec.ts`, `search-history.spec.ts` — Full Functional E2E (28 tests passing)
 
 Phase 5.3–5.5 Score: 0/10 ❌
 ### 5.3 Git & Branch Cleanup
