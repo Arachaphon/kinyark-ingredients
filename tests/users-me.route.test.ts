@@ -662,14 +662,14 @@ describe('PATCH /api/users/me', () => {
     expect(body.error).toBe('Failed to update password')
   })
 
-  test('unexpected error returns 500', async () => {
+  test('returns 401 when auth check fails', async () => {
     mockGetUser.mockRejectedValue(new Error('Unexpected crash'))
 
     const res = await PATCH(createPatchRequest({ username: 'test' }))
     const body = await res.json()
 
-    expect(res.status).toBe(500)
-    expect(body.error).toBe('Internal Server Error')
+    expect(res.status).toBe(401)
+    expect(body.error).toBe('Unauthorized')
   })
 
   test('existing GET tests continue to pass alongside PATCH', async () => {

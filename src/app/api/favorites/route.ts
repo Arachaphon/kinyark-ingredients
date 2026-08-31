@@ -158,6 +158,7 @@ export async function GET(request?: Request) {
             createdAt: true,
             bgColor: true,
             visibility: true,
+            aiProvider: true,
             images: {
               orderBy: { createdAt: "asc" },
               take: 1,

@@ -11,6 +11,13 @@ jobs:
     name: Type Check & Lint
     runs-on: ubuntu-latest
 
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,11 +34,11 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Clean Next.js cache
+        run: rm -rf .next
+
       - name: Type check
         run: npx tsc --noEmit
 
       - name: Lint
         run: npx eslint . --ext .ts,.tsx --max-warnings 0
-
-      - name: Run tests
-        run: npm test

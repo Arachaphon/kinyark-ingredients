@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { getAiAuthor } from "@/lib/ai-author";
 
 // =========================================
 // 📐 Interfaces
@@ -32,6 +33,7 @@ interface ApiRecipeItem {
   images?: { imageUrl: string }[];
   image?: string;
   recipeIngredients?: { ingredient?: { name: string } }[];
+  ingredients?: string[];
   tags?: string[];
   user?: { username?: string; avatarUrl?: string };
   author?: string;
@@ -53,9 +55,10 @@ const anuphan = Anuphan({
 // =========================================
 // 🎨 ฟังก์ชันดึงรูปภาพ API อัตโนมัติสำหรับ AI
 // =========================================
-const getAiImageUrl = (recipeName: string) => {
-  const prompt = `${recipeName} delicious food photography realistic`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
+const getAiImageUrl = (recipeName: string, index: number = 0) => {
+  const prompt = `${recipeName} top-down flat lay photo on an empty table, only the dish, food photography, no text`;
+  const negative = "people, person, hands, face, crowd, text, watermark, logo";
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&negative_prompt=${encodeURIComponent(negative)}&seed=${1000 + index}`;
 };
 
 function ResultsContent() {
@@ -66,6 +69,9 @@ function ResultsContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [results, setResults] = useState<RecipeItem[]>([]);
+
+  // 💡 รายชื่อ AI provider ที่ควรมีเมนูแต่ยังสร้างไม่สำเร็จ (เช่น Gemini หมดโควตา)
+  const [missingAiProviders, setMissingAiProviders] = useState<string[]>([]);
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -88,41 +94,118 @@ function ResultsContent() {
     }
 
     setIsLoading(true);
+    setMissingAiProviders([]);
 
     const fetchResults = async () => {
       try {
+        // ดึงสูตรจริงจากฐานข้อมูล
         const response = await fetch(
           isIngredientSearch
             ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
             : `/api/search?q=${encodeURIComponent(queryTitle)}`
         );
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch real data");
         }
 
-        const data: ApiRecipeItem[] = await response.json();
+        const parsedResponse = await response.json();
+        let data: ApiRecipeItem[] = Array.isArray(parsedResponse) ? parsedResponse : [];
 
-        if (data && Array.isArray(data)) {
-          const formattedData: RecipeItem[] = data.map((item) => {
+        // เก็บเฉพาะสูตรของผู้ใช้จริง (recipe ที่คน/ร้านค้าโพสต์ไว้) — ตัด AI recipe เก่าที่สะสมอยู่
+        // ในระบบออกไป เพราะอยากแสดงเฉพาะเมนู AI 2 ตัวใหม่ (Gemini + Groq) ที่ได้จากด้านล่างเท่านั้น
+        if (isIngredientSearch) {
+          data = data.filter((item) => !item.aiProvider);
+        }
+
+        const ingredientList = queryTitle
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        // ✨ เมื่อเป็นการค้นหาด้วยวัตถุดิบ ให้ขอเมนูจาก AI เสมอ (แม้มีสูตรจริงในระบบ)
+        // ระบบจะคืนเมนูเดิมถ้าเคยสร้างชุดนี้ไว้แล้วภายในเดือนนี้ (cache ตามชุดวัตถุดิบ)
+        if (isIngredientSearch && ingredientList.length > 0) {
+          try {
+            const aiResponse = await fetch("/api/ai/generate-recipe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ingredients: ingredientList }),
+            });
+
+            if (aiResponse.ok) {
+              const aiJson = await aiResponse.json();
+              // response ใหม่: { items, missingAiProviders } ; เก่า: array
+              const aiData: ApiRecipeItem[] = Array.isArray(aiJson)
+                ? aiJson
+                : (aiJson?.items ?? []);
+              const missing: string[] = Array.isArray(aiJson?.missingAiProviders)
+                ? aiJson.missingAiProviders
+                : [];
+              setMissingAiProviders(missing);
+              if (aiData.length > 0) {
+                // รวมผล AI เข้ากับผลจากฐานข้อมูล (ไม่ให้ ID ซ้ำกัน)
+                const existingIds = new Set(data.map((d) => d.id));
+                const uniqueAi = aiData.filter((a) => !existingIds.has(a.id));
+                data = [...uniqueAi, ...data];
+              }
+            }
+          } catch (aiError) {
+            console.warn("AI Generate error:", aiError);
+          }
+        }
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const formattedData: RecipeItem[] = data.map((item, index) => {
             const isAiRecipe = !!item.aiProvider || item.isAi || false;
             const recipeTitle = item.recipeName || item.title || "";
 
-            const finalImage = item.images?.[0]?.imageUrl || item.image || 
-                               (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
+            const imageUrl = item.image?.trim() || item.images?.[0]?.imageUrl?.trim();
+            const finalImage =
+              imageUrl && imageUrl.startsWith("http")
+                ? imageUrl
+                : getAiImageUrl(recipeTitle || queryTitle, index);
 
-            const mappedTags = item.recipeIngredients
-              ?.map((ri) => ri.ingredient?.name)
-              .filter((name): name is string => Boolean(name))
-              .slice(0, 5) || item.tags || [];
+            // 🟢 รวมวัตถุดิบจากทุกฟิลด์ที่ API ส่งมา
+            let tempTags: string[] = [];
 
+            if (Array.isArray(item.recipeIngredients)) {
+              item.recipeIngredients.forEach((ri) => {
+                if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
+              });
+            }
+
+            if (Array.isArray(item.ingredients)) {
+              tempTags = [...tempTags, ...item.ingredients];
+            }
+
+            if (Array.isArray(item.tags)) {
+              tempTags = [...tempTags, ...item.tags];
+            }
+
+            let mappedTags = Array.from(new Set(tempTags.filter((t) => typeof t === "string" && t.trim() !== "")));
+
+            if (mappedTags.length === 0) {
+              mappedTags = queryTitle.split(",").map((t) => t.trim()).filter(Boolean);
+            }
+
+            const aiAuthor = getAiAuthor(item.aiProvider);
             return {
               id: item.id,
               title: recipeTitle,
               image: finalImage,
               tags: mappedTags,
-              author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
-              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+              author:
+                aiAuthor?.name ||
+                item.user?.username ||
+                item.aiProvider ||
+                item.author ||
+                "ผู้ใช้งานทั่วไป",
+              authorAvatar:
+                aiAuthor?.logo ||
+                item.user?.avatarUrl ||
+                item.authorAvatar ||
+                "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
               likes: item.favoriteCount || item.likes || 0,
               rating: item.rating || 0,
               initialFavorite: false,
@@ -134,6 +217,8 @@ function ResultsContent() {
             setResults(formattedData);
             setupFavorites(formattedData);
           }
+        } else if (isMounted) {
+          setResults([]);
         }
       } catch (error) {
         console.warn("API Search Error:", error);
@@ -189,6 +274,23 @@ function ResultsContent() {
           </span>
         )}
       </div>
+
+      {/* 🔔 แจ้งเตือนเมื่อ AI ตัวใดยังสร้างเมนูไม่สำเร็จ (เช่น Gemini หมดโควตา) */}
+      {!isLoading && missingAiProviders.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
+          <span className="text-xl leading-none mt-0.5">⚠️</span>
+          <div>
+            <p className="font-semibold text-amber-800">
+              {missingAiProviders.length === 1 && missingAiProviders[0]?.toLowerCase() === "gemini"
+                ? "Gemini หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก Groq ก่อน"
+                : `${missingAiProviders.join(", ")} หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก provider อื่นก่อน`}
+            </p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              ลองเลือกชุดวัตถุดิบเดิมอีกครั้งภายหลัง เพื่อให้เมนูที่เหลือถูกสร้างเพิ่ม
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
@@ -248,6 +350,12 @@ function ResultsContent() {
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
+
+            // ✨ สูตรที่สร้างโดย AI ถูกบันทึกเป็น Recipe จริงในฐานข้อมูลแล้ว
+            // จึงเปิดด้วย id จากฐานข้อมูลเช่นเดียวกับสูตรปกติและสูตรแนะนำประจำสัปดาห์
+            // (ไม่ต้องส่งข้อมูลผ่าน query params — หน้า /recipe/[id] โหลดเต็มจาก DB
+            //  และแสดงเจ้าของเป็น AI ตาม aiProvider อัตโนมัติ)
+            const detailHref = `/recipe/${recipe.id}`;
 
             return (
               <div
@@ -351,7 +459,7 @@ function ResultsContent() {
 
                   {/* ปุ่มเปิดดูวิธีทำตัวเต็ม */}
                   <Link
-                    href={`/recipe/${recipe.id}`}
+                    href={detailHref}
                     className="mt-4 md:mt-0 w-full md:w-auto px-5 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition text-center shadow-sm block"
                   >
                     ดูสูตรอาหาร

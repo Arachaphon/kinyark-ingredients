@@ -19,10 +19,11 @@ export const dynamic = "force-dynamic"
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params
+    const params = await props.params
+    const id = params?.id
 
     const parsed = recipeIdParamSchema.safeParse({ id })
 
@@ -163,7 +164,7 @@ export async function GET(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const userId = await getAuthUserId(request)
 
@@ -172,9 +173,15 @@ export async function DELETE(
   }
 
   const user = { id: userId }
-  const supabase = await createClient()
+  let supabase = null
+  try {
+    supabase = await createClient()
+  } catch {
+    // cookies() unavailable in test context
+  }
 
-  const { id: rawId } = await params
+  const params = await props.params
+  const rawId = params?.id
 
   const parsedId = recipeIdParamSchema.safeParse({ id: rawId })
   if (!parsedId.success) {
@@ -245,7 +252,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const userId = await getAuthUserId(request)
@@ -254,7 +261,8 @@ export async function PATCH(
     }
     const user = { id: userId }
 
-    const { id } = await params
+    const params = await props.params
+    const id = params?.id
     const parsedId = recipeIdParamSchema.safeParse({ id })
 
     if (!parsedId.success) {

@@ -5,12 +5,14 @@ import { cache } from "@/lib/cache"
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  props: { params: Promise<{ id: string }> | { id: string } },
 ) {
-  const { id } = await params
+  const params = await props.params
+  const id = params?.id
   const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
+  if (!id) return Response.json({ error: "Invalid review ID" }, { status: 400 })
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
   if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })
@@ -69,12 +71,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  props: { params: Promise<{ id: string }> | { id: string } },
 ) {
-  const { id } = await params
+  const params = await props.params
+  const id = params?.id
   const userId = await getAuthUserId(request)
   if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
+  if (!id) return Response.json({ error: "Invalid review ID" }, { status: 400 })
   const existing = await prisma.review.findUnique({ where: { id } })
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 })
   if (existing.userId !== userId) return Response.json({ error: "Forbidden" }, { status: 403 })

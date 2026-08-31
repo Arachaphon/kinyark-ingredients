@@ -23,7 +23,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "image.pollinations.ai",
+      },
+      {
+        protocol: "https",
         hostname: "example.com",
+      },
+      {
+        protocol: "https",
+        hostname: "image.pollinations.ai",
       },
     ],
   },
