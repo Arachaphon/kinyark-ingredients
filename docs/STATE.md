@@ -33,10 +33,12 @@ _Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 K
 | Phase 4: AI Matching Engine | NOT_STARTED (W2-2, W2-6, W2-7, W2-9 ❌ ToDO) |
 | Phase 5: Testing & Deployment | IN_PROGRESS (W3-5 ✅ Done; W4 cross-iteration tasks partial) |
 
-## 5. Playwright Baseline Status
+## 5. Playwright Baseline & CI/CD Status
 - Installed: YES
 - Browser Installed: YES (Chromium)
-- Auth E2E Tests Passing: YES (auth.spec.ts, profile.spec.ts)
+- E2E Tests Passing: YES (28/28 tests passing across 8 spec files in tests/e2e)
+- Test Report: `tests/result/e2e-test-report.md`
+- CI/CD Workflows: Configured and Verified (`ci.yml`, `playwright.yml`, `deploy-production.yml`)
 
 ## 6. Critical Blockers
 1. Zod validation fires AFTER `signUp()` in `register/actions.ts` — partially fixed (signOut added post-signup)
