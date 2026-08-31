@@ -1,4 +1,4 @@
-﻿import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 
@@ -40,7 +40,7 @@ test.describe('Search History E2E', () => {
     const getRes = await page.request.get('/api/search-history');
     expect(getRes.status()).toBe(200);
     const getBody = await getRes.json();
-    expect(getBody.data.some((h: any) => h.searchQuery === 'Spicy Soup')).toBe(true);
+    expect(getBody.data.some((h: { searchQuery: string }) => h.searchQuery === 'Spicy Soup')).toBe(true);
 
     const deleteRes = await page.request.delete('/api/search-history');
     expect(deleteRes.status()).toBe(200);

@@ -132,7 +132,7 @@
 | W1-2 | Cross-Browser & Responsive UI Testing | การัญภาส | Sep 2 | 20 | 20 | ToDO |
 | W1-3 | Performance & Error Handling Validation | พีรพัฒน์ | Sep 2 | 20 | 20 | ToDO |
 | W1-4 | Final Bug Fixing & Code Refactoring | การัญภาส | Sep 3 | 20 | 20 | ToDO |
-| W1-5 | Production Deployment & CI/CD Setup | อรชพร | Sep 4 | 20 | 20 | ToDO |
+| W1-5 | Production Deployment & CI/CD Setup | อรชพร | Sep 4 | 20 | 0 | Complete |
 | W1-6 | Post-Deployment Smoke Testing | พีรพัฒน์ | Sep 4 | 20 | 20 | ToDO |
 
 **Iteration 03:** Planned Score 120 · Actual Score 0

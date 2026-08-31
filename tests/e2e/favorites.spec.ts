@@ -55,7 +55,7 @@ test.describe('Favorites & Interactions E2E', () => {
     const getFavsRes = await page.request.get('/api/favorites');
     expect(getFavsRes.status()).toBe(200);
     const getFavsBody = await getFavsRes.json();
-    expect(getFavsBody.data.some((f: any) => f.recipeId === recipeId)).toBe(true);
+    expect(getFavsBody.data.some((f: { recipeId: string }) => f.recipeId === recipeId)).toBe(true);
 
     // 5. Toggle Favorite OFF
     const favOffRes = await page.request.post('/api/favorites', {
