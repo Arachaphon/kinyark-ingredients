@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Image from "next/image";
@@ -5,6 +6,7 @@ import { Anuphan } from "next/font/google";
 import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
@@ -20,21 +22,22 @@ function CheckEmailContent() {
   const [resendMessage, setResendMessage] = useState("");
 
   const handleResend = async () => {
-    if (isResending) return;
+    if (isResending || !email) return;
     setIsResending(true);
     setResendMessage("");
 
     try {
-      // TODO: เชื่อมกับ API ส่งอีเมลยืนยันอีกครั้ง
-      // await fetch("/api/resend-verification", {
-      //   method: "POST",
-      //   body: JSON.stringify({ email }),
-      // });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/resetpassword`,
+      });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (error) {
+        throw error;
+      }
+
       setResendMessage("ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว");
-    } catch {
-      setResendMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } catch (error: any) {
+      setResendMessage(error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsResending(false);
     }
@@ -89,7 +92,7 @@ function CheckEmailContent() {
         </p>
 
         {resendMessage && (
-          <p className="text-sm mb-4 bg-[#F5ECD7]/60 px-4 py-2 rounded-lg w-full text-center font-semibold text-amber-800 border border-amber-100 animate-fade-in">
+          <p className={`text-sm mb-4 px-4 py-2 rounded-lg w-full text-center font-semibold border animate-fade-in ${resendMessage.includes("เรียบร้อย") ? "bg-[#F5ECD7]/60 text-amber-800 border-amber-100" : "bg-red-50 text-red-600 border-red-200"}`}>
             {resendMessage}
           </p>
         )}
