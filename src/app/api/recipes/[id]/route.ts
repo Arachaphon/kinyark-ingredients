@@ -218,19 +218,25 @@ export async function DELETE(
     const storeVideoUrls = recipe.storePosts.flatMap((sp) => sp.videos.map((vid) => vid.videoUrl))
 
     // 3. Delete related relations and recipe record from Database
-    await prisma.$transaction([
-      prisma.storePostImage.deleteMany({ where: { storePost: { recipeId } } }),
-      prisma.storePostVideo.deleteMany({ where: { storePost: { recipeId } } }),
-      prisma.storePost.deleteMany({ where: { recipeId } }),
-      prisma.reviewLike.deleteMany({ where: { review: { recipeId } } }),
-      prisma.review.deleteMany({ where: { recipeId } }),
-      prisma.favorite.deleteMany({ where: { recipeId } }),
-      prisma.recipeIngredient.deleteMany({ where: { recipeId } }),
-      prisma.recipeEquipment.deleteMany({ where: { recipeId } }),
-      prisma.recipeImage.deleteMany({ where: { recipeId } }),
-      prisma.recipeVideo.deleteMany({ where: { recipeId } }),
-      prisma.recipe.delete({ where: { id: recipeId } }),
-    ])
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.storePostImage.deleteMany({ where: { storePost: { recipeId } } })
+        await tx.storePostVideo.deleteMany({ where: { storePost: { recipeId } } })
+        await tx.storePost.deleteMany({ where: { recipeId } })
+        await tx.reviewLike.deleteMany({ where: { review: { recipeId } } })
+        await tx.review.deleteMany({ where: { recipeId } })
+        await tx.favorite.deleteMany({ where: { recipeId } })
+        await tx.recipeIngredient.deleteMany({ where: { recipeId } })
+        await tx.recipeEquipment.deleteMany({ where: { recipeId } })
+        await tx.recipeImage.deleteMany({ where: { recipeId } })
+        await tx.recipeVideo.deleteMany({ where: { recipeId } })
+        await tx.recipe.delete({ where: { id: recipeId } })
+      },
+      {
+        maxWait: 15000,
+        timeout: 30000,
+      }
+    )
 
     // 4. Delete files from Supabase Storage Bucket
     for (const url of [...imageUrls, ...storeImageUrls]) {

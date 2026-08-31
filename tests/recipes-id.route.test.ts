@@ -10,7 +10,9 @@ jest.mock('@/lib/storage', () => ({
 const mockPrisma = {
   recipe: { findUnique: jest.fn(), delete: jest.fn() },
   favorite: { findUnique: jest.fn(), deleteMany: jest.fn() },
-  $transaction: jest.fn((ops: unknown[]) => Promise.all(ops)),
+  $transaction: jest.fn((arg: unknown) =>
+    typeof arg === 'function' ? arg(mockPrisma) : Promise.all(arg as unknown[])
+  ),
   reviewLike: { deleteMany: jest.fn() },
   review: { findMany: jest.fn(), deleteMany: jest.fn() },
   recipeIngredient: { findMany: jest.fn(), deleteMany: jest.fn() },
