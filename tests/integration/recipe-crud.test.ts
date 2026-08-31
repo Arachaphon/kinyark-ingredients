@@ -1,16 +1,16 @@
 import { GET, POST } from '@/app/api/recipes/route'
 import { GET as GET_BY_ID, PATCH, DELETE } from '@/app/api/recipes/[id]/route'
 import { prisma } from '@/lib/prisma'
-import { seedTestUser, cleanupDatabase, TestUser } from './setup'
+import { seedTestUser, cleanupTestUsers, TestUser } from './setup'
 
 jest.setTimeout(30000)
 
 describe('Core Recipe Flow (CRUD) Integration Test', () => {
   const testUser: TestUser = {
     id: '11111111-1111-4111-a111-111111111111',
-    email: 'recipe-tester@example.com',
+    email: 'recipe-crud-tester@example.com',
     role: 'USER',
-    username: 'recipetester',
+    username: 'recipecrudtester',
   }
 
   let createdRecipeId: string
@@ -22,7 +22,7 @@ describe('Core Recipe Flow (CRUD) Integration Test', () => {
 
   afterAll(async () => {
     // Clean up created records
-    await cleanupDatabase()
+    await cleanupTestUsers([testUser.id])
     await prisma.$disconnect()
   })
 

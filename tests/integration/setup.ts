@@ -51,25 +51,16 @@ export async function seedTestUser(user: TestUser) {
 /**
  * Clean up database tables for isolation between integration test suites
  */
-export async function cleanupDatabase() {
+export async function cleanupTestUsers(userIds: string[]) {
   try {
-    // Only clean up test users created during integration tests (which cascades to their test recipes/reviews)
-    const testUserIds = [
-      '11111111-1111-4111-a111-111111111111',
-      '22222222-2222-4222-a222-222222222222',
-      '33333333-3333-4333-a333-333333333333',
-    ]
-
+    if (!userIds || userIds.length === 0) return
     await prisma.user.deleteMany({
       where: {
-        OR: [
-          { id: { in: testUserIds } },
-          { email: { endsWith: '@example.com' } },
-        ],
+        id: { in: userIds },
       },
     })
   } catch {
-    // Ignore error if database tables are temporarily locked or cleared
+    // Ignore error if records already deleted or temporarily locked
   }
 }
 

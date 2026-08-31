@@ -16,6 +16,9 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
 
     steps:
       - uses: actions/checkout@v4
@@ -28,5 +31,5 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
       - name: Run tests
-        run: npm test
+        run: npx jest --ci --runInBand
 

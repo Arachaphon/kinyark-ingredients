@@ -2,21 +2,21 @@ import { POST as POST_RECIPE } from '@/app/api/recipes/route'
 import { POST as POST_REVIEW } from '@/app/api/reviews/route'
 import { PATCH as PATCH_REVIEW, DELETE as DELETE_REVIEW } from '@/app/api/reviews/[id]/route'
 import { prisma } from '@/lib/prisma'
-import { seedTestUser, cleanupDatabase, TestUser } from './setup'
+import { seedTestUser, cleanupTestUsers, TestUser } from './setup'
 
 jest.setTimeout(30000)
 
 describe('Review & Rating Flow Integration Test', () => {
   const authorUser: TestUser = {
     id: '22222222-2222-4222-a222-222222222222',
-    email: 'author@example.com',
+    email: 'review-author@example.com',
     role: 'USER',
     username: 'recipeauthor',
   }
 
   const reviewerUser: TestUser = {
     id: '33333333-3333-4333-a333-333333333333',
-    email: 'reviewer@example.com',
+    email: 'review-reviewer@example.com',
     role: 'USER',
     username: 'foodreviewer',
   }
@@ -51,7 +51,7 @@ describe('Review & Rating Flow Integration Test', () => {
   })
 
   afterAll(async () => {
-    await cleanupDatabase()
+    await cleanupTestUsers([authorUser.id, reviewerUser.id])
     await prisma.$disconnect()
   })
 
