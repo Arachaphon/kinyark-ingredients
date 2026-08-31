@@ -11,7 +11,7 @@ import {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
 async function callGemini(prompt: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
