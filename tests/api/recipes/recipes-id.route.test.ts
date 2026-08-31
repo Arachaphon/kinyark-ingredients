@@ -188,6 +188,8 @@ describe('DELETE /api/recipes/[id]', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockPrisma.recipe.findUnique.mockResolvedValue(deleteRecipe)
+    mockPrisma.storePost.findMany.mockResolvedValue(deleteRecipe.storePosts.map((sp) => ({ id: sp.id })))
+    mockPrisma.review.findMany.mockResolvedValue([])
     mockSupabaseAuth.getUser.mockResolvedValue({
       data: { user: { id: 'user-owner' } },
       error: null,
@@ -238,6 +240,21 @@ describe('DELETE /api/recipes/[id]', () => {
     allUrls.forEach((url) => {
       expect(deleteFileByUrl).toHaveBeenCalledWith(expect.anything(), url)
     })
+  })
+
+  test('retries on deadlock error and succeeds', async () => {
+    let callCount = 0
+    mockPrisma.$transaction.mockImplementation(async (callback) => {
+      callCount++
+      if (callCount === 1) {
+        throw new Error('deadlock detected (code: "40P01")')
+      }
+      return callback(mockPrisma)
+    })
+
+    const res = await DELETE(makeRequest(), { params: Promise.resolve({ id: UUID }) })
+    expect(res.status).toBe(200)
+    expect(callCount).toBe(2)
   })
 
   test('returns 500 on internal server error', async () => {

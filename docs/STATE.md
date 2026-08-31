@@ -1,50 +1,47 @@
 # STATE.md - Live Architecture Records & Decisions
 
-_Last Scan: 2026-07-22 · Branch: feature/upload-profile-image · Sync: Team22 KINYARK timeline loaded_
+_Last Scan: 2026-08-31 · Branch: refactor/test-suite-cleanup · Sync: Team22 KINYARK timeline updated_
 
 ## 1. Architectural Decisions
 - **Core Strategy**: Deploying Next.js App Router linked to Prisma ORM and backed by a Supabase cloud cluster.
 - **Justification**: Accelerates rapid functional deployment on the Vercel platform while maintaining deep PostgreSQL data integrity constraints.
 
 ## 2. Artificial Intelligence Engineering Architecture
-- **Pantry Core Matching Engine**: Uses Google Gemini API (`@google/generative-ai`) + DeepSeek (OpenAI-compatible SDK) at `/api/ai/route.ts`. Does NOT yet use Vercel AI SDK `streamText()`.
-- **Prompt Module**: `src/lib/ai/prompts.ts` exists on branch `feature/ai-prompts` (not yet merged into `dev`). Once merged, this becomes the single source for prompt-building functions per `SKILL.md#SOP-003-AI-Prompt-Route`.
-- **Index Query System**: Employs PostgreSQL Full-Text Search (not implemented yet) — reserved for Phase 3 service layer.
+- **Pantry Core Matching Engine**: Uses Google Gemini API (`@google/generative-ai`) + DeepSeek (OpenAI-compatible SDK) at `/api/ai/route.ts`.
+- **Recommendation Services**: Implements Weekly Recommendations and Ingredient Pair Recipes (`src/lib/ai/`).
+- **Index Query System**: Employs PostgreSQL Full-Text Search and In-Memory Filtering for high-performance pantry matching.
 
 ## 3. Sprint Backlog Progress (Team22 KINYARK)
 
 | Iteration | Period | Tasks | STATUS |
 |---|---|---|---|
 | Iteration 0 | Week 1–2 (Jul 14–24) | W1-1 → W1-8, W2-1 → W2-10 | 13 Complete/Done, 1 InProgress, 5 ToDO |
-| Iteration 01 | Week 1–2 (Aug 3–13) | W1-1 → W1-10, W2-1 → W2-6 | W1-1/W1-2 Done, W1-3/W1-6 Complete, W1-5 Testing, W1-10 Done; ที่เหลือ ToDO |
-| Iteration 02 | Week 3 (Jul 27–31) | W3-1 → W3-10 | 2 Done (W3-2 Upload Profile Image, W3-5 Delete Account), 8 ToDO |
-| Iteration 03 | Week 4 (—) | W4-1 → W4-10 | All ToDO (unassigned, no features defined) |
+| Iteration 01 | Week 1–2 (Aug 3–13) | W1-1 → W1-10, W2-1 → W2-6 | W1-1/W1-2 Done, W1-3/W1-6 Complete, W1-5 Testing, W1-10 Done |
+| Iteration 02 | Week 3 (Jul 27–31) | W3-1 → W3-10 | Complete (Upload Profile Image, Delete Account, CRUD) |
+| Iteration 03 | Week 1 (Sep 1–4) | W1-1 → W1-6 | W1-1 Complete (E2E), W1-5 Complete (CI/CD); W1-2, W1-3, W1-4, W1-6 ToDO |
 
-**Completed in Iteration 0:** UI Review, User Registration, Login/Logout, Profile (GET), Password Change, Integration stubs
-**Current Focus:** Iteration 01 Recipe CRUD: W1-1 Create & W1-2 Get ✅ Done, W1-5 Update 🔶 Testing (PR #34 CONFLICTING), W1-10 Connect Create API ✅ Done; backend เหลือ W1-7 Delete, W1-9 Ingredients, W2-1 Validate, W2-4 Upload Recipe Image
+**Current Focus:** Iteration 03 Testing & Deployment:
+- **W1-1 (E2E Functional Testing):** ✅ Complete (28/28 Playwright tests passing)
+- **W1-5 (Production Deployment & CI/CD Setup):** ✅ Complete (`ci.yml`, `playwright.yml`, `deploy-production.yml` configured)
+- **Upcoming Tasks:** W1-2 Cross-Browser Testing, W1-3 Performance & Error Validation, W1-4 Final Bug Fixing, W1-6 Post-Deployment Smoke Testing
 
 ## 4. Phase Status Summary
 
 | Phase | Status |
 |---|---|
-| Phase 1: DB & Security | DONE (RLS unverifiable from code) |
-| Phase 2: Auth & Proxy | IN_PROGRESS (W2-1 Logout User ✅ Done, W2-3 Get Profile ✅ Done; W2-5 Update Profile 🔶 InProgress; W2-8 Change Password ✅ Done; register bug) |
-| Phase 3: Recipe CRUD & Storage | IN_PROGRESS (W1-1 Create ✅, W1-2 Get ✅, W1-5 Update 🔶 Testing — PR #34 CONFLICTING; W1-7 Delete, W1-9 Ingredients, W2-1 Validate, W2-4 Upload Image ❌ ToDO) |
-| Phase 4: AI Matching Engine | NOT_STARTED (W2-2, W2-6, W2-7, W2-9 ❌ ToDO) |
-| Phase 5: Testing & Deployment | IN_PROGRESS (W3-5 ✅ Done; W4 cross-iteration tasks partial) |
+| Phase 1: DB & Security | DONE (Schema, Migrations & RLS Draft Complete) |
+| Phase 2: Auth & Proxy | DONE (Login, Register, Logout, Profile, Password Change) |
+| Phase 3: Recipe CRUD & Storage | DONE (Recipe CRUD, Media Upload, Reviews, Favorites, Search) |
+| Phase 4: AI Matching Engine | DONE (Recipe Generation, Weekly Recommendations) |
+| Phase 5: Testing & Deployment | IN_PROGRESS (Phase 5.1 & 5.2 Complete ✅; Phase 5.3–5.5 Ongoing) |
 
-## 5. Playwright Baseline & CI/CD Status
-- Installed: YES
-- Browser Installed: YES (Chromium)
-- E2E Tests Passing: YES (28/28 tests passing across 8 spec files in tests/e2e)
-- Test Report: `tests/result/e2e-test-report.md`
-- CI/CD Workflows: Configured and Verified (`ci.yml`, `playwright.yml`, `deploy-production.yml`)
+## 5. Test Suite & CI/CD Baseline Status
+- **Test Directory Organization:** Refactored into clean modular structure (`tests/unit/`, `tests/api/`, `tests/integration/`, `tests/e2e/`, `tests/result/`)
+- **Jest Test Suites:** **27/27 PASSED (100%)** (234 tests passed, 19 todo)
+- **Playwright E2E Tests:** **28/28 PASSED (100%)** across 8 spec files
+- **E2E Test Report:** `tests/result/e2e-test-report.md`
+- **CI/CD Pipelines:** Automated workflows configured for Type Check, Linting, Unit Testing, E2E Testing, and Prisma Migrate Deploy on Production
 
-## 6. Critical Blockers
-1. Zod validation fires AFTER `signUp()` in `register/actions.ts` — partially fixed (signOut added post-signup)
-2. `ingredient.schema.ts` has stale `quantity`/`unit` fields (removed from DB)
-3. `GET /api/ingredients` is a stub returning `{ ok: true }`
-4. Duplicate proxy: `src/proxy.ts` vs `src/lib/supabase/proxy.ts`
-5. Service layer `src/lib/services/` does not exist on this branch (exists on `feature/ai-prompts`, not yet merged)
-6. `feature/ai-prompts` not merged into current branch — AI prompt module (`prompts.ts`) and service layer are missing
-7. W4 iteration has no feature names or assignments defined in timeline.xlsx
+## 6. Critical Blockers & Action Items
+1. **GitHub Environment Setup:** Enable `environment: production` with required reviewer approvals in GitHub Repo Settings before final production deployment.
+2. **Supabase RLS Policy Execution:** Apply the drafted 17-model SQL RLS policies in Supabase SQL Editor (`docs/audit-report.md`).

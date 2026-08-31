@@ -24,6 +24,26 @@ interface RecipeData {
   images: { id: string; imageUrl: string }[];
 }
 
+interface WeeklyRecipeItem {
+  id: string;
+  type: "seasonal" | "trending";
+  recipeName: string;
+  rating: number;
+  favoriteCount: number;
+  createdAt: string;
+  bgColor: string | null;
+  visibility: string;
+  imageUrl: string | null;
+}
+
+interface WeeklyResponse {
+  success: boolean;
+  weekKey: string;
+  generated: boolean;
+  missingProviders?: string[];
+  recipes: WeeklyRecipeItem[];
+}
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 // =========================================
@@ -37,25 +57,27 @@ const mockFeaturedRecipe: RecipeData = {
   images: [{ id: "img-1", imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80" }]
 };
 
-const mockGeminiRecipes: RecipeData[] = [
-  { id: "g1", recipeName: "แกงเขียวหวาน", bgColor: "bg-[#6F62E4]", rating: 5, images: [{ id: "i1", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g2", recipeName: "ไข่เจียวหมูสับ", bgColor: "bg-[#FF8585]", rating: 4.5, images: [{ id: "i2", imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g3", recipeName: "ต้มจืดเต้าหู้", bgColor: "bg-[#3AC9B5]", rating: 4.8, images: [{ id: "i3", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g4", recipeName: "ผัดไทยกุ้งสด", bgColor: "bg-[#63D04C]", rating: 5, images: [{ id: "i4", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" }] },
-];
-
-const mockGroqRecipes: RecipeData[] = [
-  { id: "g1", recipeName: "แกงเหลืองกุ้งเจือตะไคร้", bgColor: "bg-[#F58D38]", rating: 5, images: [{ id: "i5", imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g2", recipeName: "ผัดคะน้าหมูกรอบคั่ว", bgColor: "bg-[#D05C5C]", rating: 4.9, images: [{ id: "i6", imageUrl: "https://images.unsplash.com/photo-1564834724105-918b73d1b9e0?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g3", recipeName: "ยำกุ้งตะไคร้ข้าวคั่ว", bgColor: "bg-[#E6C229]", rating: 4.7, images: [{ id: "i7", imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80" }] },
-  { id: "g4", recipeName: "แกงเลียงกุ้งและคะน้า", bgColor: "bg-[#4285F4]", rating: 5, images: [{ id: "i8", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80" }] },
-];
-
 export default function HomePage() {
   const { data: featuredData } = useSWR("/api/recipes/featured", fetcher);
+  const { data: weeklyData } = useSWR<WeeklyResponse>("/api/weekly-recommendations", fetcher);
   
   const isApiReady = featuredData?.data && featuredData.data.length > 0;
   const featured: RecipeData = isApiReady ? featuredData.data[0] : mockFeaturedRecipe;
+
+  // แปลงเมนูที่ AI สร้าง (weekly) ให้เป็นรูปแบบที่ MenuCarousel ใช้
+  const toDisplay = (items: WeeklyRecipeItem[] | undefined): RecipeData[] =>
+    (items ?? []).map((r, i) => ({
+      id: r.id,
+      recipeName: r.recipeName,
+      bgColor: r.bgColor,
+      rating: r.rating,
+      images: r.imageUrl ? [{ id: `w-${i}`, imageUrl: r.imageUrl }] : [],
+    }));
+
+  // เฉพาะสูตรที่อยู่ใน weekly เท่านั้น (seasonal=Gemini, trending=Groq) — ไม่เอาสูตรอื่น
+  const seasonalMenus = toDisplay(weeklyData?.recipes?.filter((r) => r.type === "seasonal"));
+  const trendingMenus = toDisplay(weeklyData?.recipes?.filter((r) => r.type === "trending"));
+  const weeklyLoading = !weeklyData;
 
   return (
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
@@ -119,16 +141,27 @@ export default function HomePage() {
         </h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-12">
-          <MenuCarousel 
-            provider="โดย gemini" 
-            apiEndpoint="/api/recipes?aiProvider=gemini" 
-            fallbackMockData={mockGeminiRecipes}
-          />
-          <MenuCarousel 
-            provider="โดย Groq" 
-            apiEndpoint="/api/recipes?aiProvider=groq" 
-            fallbackMockData={mockGroqRecipes}
-          />
+          {weeklyLoading ? (
+            <>
+              <div className="flex justify-center">
+                <MenuCarouselSkeleton />
+              </div>
+              <div className="flex justify-center">
+                <MenuCarouselSkeleton />
+              </div>
+            </>
+          ) : (
+            <>
+              <MenuCarousel 
+                provider="โดย Gemini" 
+                initialRecipes={seasonalMenus}
+              />
+              <MenuCarousel 
+                provider="โดย Groq" 
+                initialRecipes={trendingMenus}
+              />
+            </>
+          )}
         </div>
       </section>
     </div>
@@ -149,55 +182,17 @@ function CategoryCard({ emoji, text, category }: { emoji: string; text: string; 
 
 function MenuCarousel({ 
   provider, 
-  apiEndpoint,
-  fallbackMockData
+  initialRecipes
 }: {
   provider: string; 
-  apiEndpoint: string;
-  fallbackMockData: RecipeData[];
+  initialRecipes: RecipeData[];
 } ) {
-  const [recipes, setRecipes] = useState<RecipeData[]>(fallbackMockData);
-  const [isUsingMock, setIsUsingMock] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-
-  useEffect(() => {
-    if (!hasMore) return;
-    const fetchRecipes = async () => {
-      try {
-        const res = await fetch(`${apiEndpoint}&page=${page}&limit=4`);
-        if (!res.ok) return;
-        const json = await res.json();
-        const newRecipes = json.data || [];
-        
-        if (newRecipes.length > 0) {
-          setRecipes((prev) => {
-            if (isUsingMock) return newRecipes; 
-            const existingIds = new Set(prev.map(r => r.id));
-            const uniqueNew = newRecipes.filter((r: RecipeData) => !existingIds.has(r.id));
-            return [...prev, ...uniqueNew];
-          });
-          setIsUsingMock(false);
-        } else if (!isUsingMock) {
-          setHasMore(false);
-        }
-      } catch (error) {
-        console.error("API Fetch Error (Using Mock Data Instead):", error);
-      }
-    };
-    fetchRecipes();
-  }, [apiEndpoint, page, hasMore, isUsingMock]);
+  const recipes = initialRecipes;
 
   const handleNext = useCallback(() => {
-    setCurrentIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-      if (hasMore && !isUsingMock && nextIndex >= recipes.length - 2) {
-        setPage((prevPage) => prevPage + 1);
-      }
-      return recipes.length > 0 ? nextIndex % recipes.length : 0;
-    });
-  }, [recipes.length, hasMore, isUsingMock]);
+    setCurrentIndex((prevIndex) => recipes.length > 0 ? (prevIndex + 1) % recipes.length : 0);
+  }, [recipes.length]);
 
   const handlePrev = useCallback(() => {
     setCurrentIndex((prevIndex) => recipes.length > 0 ? (prevIndex - 1 + recipes.length) % recipes.length : 0);
@@ -209,8 +204,8 @@ function MenuCarousel({
     return () => clearInterval(timer);
   }, [handleNext, recipes.length]);
 
-  const item1 = recipes[currentIndex];
-  const item2 = recipes[(currentIndex + 1) % recipes.length];
+  const item1 = recipes[currentIndex % recipes.length];
+  const item2 = recipes.length > 1 ? recipes[(currentIndex + 1) % recipes.length] : undefined;
 
   return (
     <div className="bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[340px] sm:max-w-[650px]">
@@ -244,6 +239,24 @@ function MenuCarousel({
       
       <div className="text-right text-[#A5A5A5] text-base font-medium mt-6 mr-2">
         {provider}
+      </div>
+    </div>
+  );
+}
+
+// แถบเทา (skeleton) โชว์ระหว่างโหลดเมนูประจำสัปดาห์ แทนการ์ดจริง
+function MenuCarouselSkeleton() {
+  return (
+    <div className="bg-white rounded-[40px] p-6 sm:p-10 pb-6 relative shadow-sm mx-auto w-full max-w-[340px] sm:max-w-[650px] animate-pulse">
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-24 sm:gap-6 mt-20 sm:mt-12 px-4 relative">
+        <div className="relative flex-1 flex justify-center" style={{ minWidth: "240px" }}>
+          <div className="bg-gray-200 w-[240px] sm:w-[280px] h-[340px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 overflow-hidden">
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 bg-gray-300 rounded-full" />
+            <div className="w-3/4 h-6 bg-gray-300 rounded mt-6" />
+            <div className="w-1/2 h-5 bg-gray-300 rounded mt-4" />
+            <div className="w-1/3 h-8 bg-gray-300 rounded-full mt-8" />
+          </div>
+        </div>
       </div>
     </div>
   );
