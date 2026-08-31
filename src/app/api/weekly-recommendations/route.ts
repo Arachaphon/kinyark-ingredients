@@ -11,9 +11,12 @@ export const dynamic = "force-dynamic";
  *   + เก็บ index ลง weekly_recommendations แล้วคืนผล
  * - ถ้ามีแล้ว → คืนจากฐานข้อมูล (ไม่เรียก AI ซ้ำ)
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const result = await ensureWeeklyRecommendations();
+    const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true";
+
+    const result = await ensureWeeklyRecommendations({ force });
 
     const recipes = result.recipes.map((entry) => ({
       id: entry.recipe.id,
