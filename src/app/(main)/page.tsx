@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
+import useSWR from "swr";
 import CookieConsent from "@/components/CookieConsent";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
@@ -21,6 +22,28 @@ interface RecommendedRecipe {
   featured_image_url?: string;
   rating?: number;
 }
+
+interface WeeklyRecipeItem {
+  id: string;
+  type: "seasonal" | "trending";
+  recipeName: string;
+  rating: number;
+  favoriteCount: number;
+  createdAt: string;
+  bgColor: string | null;
+  visibility: string;
+  imageUrl: string | null;
+}
+
+interface WeeklyResponse {
+  success: boolean;
+  weekKey: string;
+  generated: boolean;
+  missingProviders?: string[];
+  recipes: WeeklyRecipeItem[];
+}
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const fallbackGemini: RecommendedRecipe[] = [
   {
@@ -93,8 +116,24 @@ const mockFeatured = {
 };
 
 export default function HomePage() {
-  const geminiToDisplay = fallbackGemini;
-  const deepseekToDisplay = fallbackDeepseek;
+  const { data: weeklyData } = useSWR<WeeklyResponse>("/api/weekly-recommendations", fetcher);
+
+  // แปลงเมนูที่ AI สร้างให้เป็นรูปแบบที่ MenuCarousel ใช้
+  const toDisplay = (items: WeeklyRecipeItem[] | undefined): RecommendedRecipe[] =>
+    (items ?? []).map((r) => ({
+      id: r.id,
+      menu_name: r.recipeName,
+      bg_color: r.bgColor ?? undefined,
+      featured_image_url: r.imageUrl ?? undefined,
+      rating: r.rating,
+    }));
+
+  // แยกตามประเภท: seasonal (Gemini) + trending (Groq) ที่ AI สร้างเอง
+  const seasonal = toDisplay(weeklyData?.recipes?.filter((r) => r.type === "seasonal"));
+  const trending = toDisplay(weeklyData?.recipes?.filter((r) => r.type === "trending"));
+
+  const geminiToDisplay = seasonal.length > 0 ? seasonal : fallbackGemini;
+  const deepseekToDisplay = trending.length > 0 ? trending : fallbackDeepseek;
   const featured = mockFeatured;
 
   return (
@@ -202,8 +241,8 @@ export default function HomePage() {
         </h2>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-16 xl:gap-12">
-          <MenuCarousel provider="" recipes={geminiToDisplay} />
-          <MenuCarousel provider="" recipes={deepseekToDisplay} />
+          <MenuCarousel provider="โดย Gemini" recipes={geminiToDisplay} />
+          <MenuCarousel provider="โดย Groq" recipes={deepseekToDisplay} />
         </div>
       </section>
 
@@ -249,6 +288,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
       <div className="flex flex-col sm:flex-row justify-center items-center gap-20 sm:gap-6 mt-16 sm:mt-12 px-2 sm:px-4 relative">
         <div key={`card1-${item1.id}`} className="animate-fade-in relative w-full sm:w-auto flex justify-center">
           <RecipeCard
+            id={item1.id}
             title={item1.menu_name}
             bgColor={item1.bg_color || "bg-[#6F62E4]"}
             image={item1.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
@@ -257,6 +297,7 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
         </div>
         <div key={`card2-${item2.id}`} className="animate-fade-in relative w-full sm:w-auto flex justify-center">
           <RecipeCard
+            id={item2.id}
             title={item2.menu_name}
             bgColor={item2.bg_color || "bg-[#3AC9B5]"}
             image={item2.featured_image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"}
@@ -299,7 +340,7 @@ function ArrowButton({ direction, onClick }: { direction: "left" | "right", onCl
   );
 }
 
-function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title: string, image: string, rating?: number }) {
+function RecipeCard({ id, bgColor, title, image, rating }: { id: string, bgColor: string, title: string, image: string, rating?: number }) {
   return (
     <div className={`${bgColor} w-[240px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-24 pb-6 shadow-lg transition hover:-translate-y-2 overflow-visible ${anuphan.className}`}>
       
@@ -330,9 +371,9 @@ function RecipeCard({ bgColor, title, image, rating }: { bgColor: string, title:
         </span>
       </div>
 
-      <button className="bg-white text-gray-800 text-xs sm:text-sm font-bold px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2">
+      <Link href={`/recipe/${id}`} className="bg-white text-gray-800 text-xs sm:text-sm font-bold px-6 sm:px-8 py-3 sm:py-3.5 rounded-full shadow-sm hover:bg-gray-100 transition flex items-center gap-2">
         <span>▶</span> ดูเพิ่มเติม
-      </button>
+      </Link>
     </div>
   );
 }
