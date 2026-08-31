@@ -1,13 +1,13 @@
-import { proxy } from '../src/proxy';
+import { proxy } from '@/proxy';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { verifySupabaseJWT } from '../src/lib/auth-jwt';
+import { verifySupabaseJWT } from '@/lib/auth-jwt';
 
 jest.mock('@supabase/ssr', () => ({
   createServerClient: jest.fn(),
 }));
 
-jest.mock('../src/lib/auth-jwt', () => ({
+jest.mock('@/lib/auth-jwt', () => ({
   verifySupabaseJWT: jest.fn(),
 }));
 
