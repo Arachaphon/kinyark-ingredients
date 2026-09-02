@@ -108,14 +108,13 @@ export default function HomePage() {
         </div>
 
         <div className="md:col-span-7 flex items-center justify-end relative mt-12 md:mt-0">
-          <div className="bg-white rounded-[40px] w-full md:w-[88%] p-12 pr-36 md:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10">
+           <div className="bg-white rounded-[40px] w-full md:w-[88%] p-12 pr-36 md:pr-72 min-h-[300px] shadow-sm flex flex-col justify-center relative">            <div className="z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featured.recipeName}</h1>
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">{featured.rating.toFixed(1)}</span>
