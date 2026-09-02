@@ -118,7 +118,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
       
       <div className="bg-white w-full max-w-[900px] h-auto md:h-[550px] max-h-[92vh] md:max-h-none rounded-[24px] shadow-2xl overflow-hidden flex flex-col md:flex-row border border-gray-100 animate-scale-up relative">
         
-        <div className="w-full md:w-[260px] bg-[#FFC700] p-4 md:p-6 flex flex-row md:flex-col justify-between shrink-0 text-black items-center md:items-stretch gap-2 md:gap-4 border-b md:border-b-0 md:border-r border-black/5">
+        <div className="w-full md:w-[260px] bg-[#FCB49560] p-4 md:p-6 flex flex-row md:flex-col justify-between shrink-0 text-black items-center md:items-stretch gap-2 md:gap-4 border-b md:border-b-0 md:border-r border-black/5">
           <div className="w-full flex md:flex-col justify-between md:justify-start items-center md:items-stretch">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-black md:mb-8 tracking-wide whitespace-nowrap">ตั้งค่า</h2>
             
@@ -473,7 +473,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       <button 
                         key={item} onClick={() => setDiet(item)}
                         className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-md font-bold text-xs sm:text-sm transition-all ${
-                          diet === item ? "bg-[#FFC700] text-black shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          diet === item ? "bg-[#FCB49560] text-black shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
                         {item}
@@ -489,7 +489,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       <button 
                         key={item} onClick={() => setAllergy(item)}
                         className={`px-4 py-2 sm:px-5 sm:py-2.5 rounded-md font-bold text-xs sm:text-sm transition-all ${
-                          allergy === item ? "bg-[#FFC700] text-black shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          allergy === item ? "bg-[#FCB49560] text-black shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                       >
                         {item}
@@ -527,7 +527,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
                       <input type="checkbox" checked={aiRec} onChange={() => setAiRec(!aiRec)} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FFC700]"></div>
+                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FCB49560]"></div>
                     </label>
                   </div>
 
@@ -538,7 +538,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
                       <input type="checkbox" checked={aiHistory} onChange={() => setAiHistory(!aiHistory)} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FFC700]"></div>
+                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FCB49560]"></div>
                     </label>
                   </div>
 
@@ -549,7 +549,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
                       <input type="checkbox" checked={dailySug} onChange={() => setDailySug(!dailySug)} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FFC700]"></div>
+                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FCB49560]"></div>
                     </label>
                   </div>
                 </div>
