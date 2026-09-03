@@ -121,33 +121,21 @@ export async function GET(request: Request) {
     }
 
     // Determine visibility filter based on user role
-    // STORE role users cannot see protected recipes, unless they own the recipe
+    // In public feed, drafts and private posts are NEVER shown to anyone
     let visibilityFilter: Prisma.RecipeWhereInput;
 
     if (publicOnly) {
       visibilityFilter = { visibility: "public" };
+    } else if (user && userRole === "STORE") {
+      // Store users can see public recipes and their own protected recipes
+      visibilityFilter = {
+        OR: [
+          { visibility: "public" },
+          { userId: user.id, visibility: "protected" },
+        ]
+      };
     } else {
-      if (user) {
-        if (userRole === "STORE") {
-          // Store users cannot see protected recipes, unless they own the recipe
-          visibilityFilter = {
-            OR: [
-              { visibility: "public" },
-              { userId: user.id },
-            ]
-          };
-        } else {
-          visibilityFilter = {
-            OR: [
-              { visibility: { in: ["public", "protected"] } },
-              { userId: user.id },
-            ]
-          };
-        }
-      } else {
-        // Not logged in — show both public and protected
-        visibilityFilter = { visibility: { in: ["public", "protected"] } };
-      }
+      visibilityFilter = { visibility: { in: ["public", "protected"] } };
     }
 
     const where: Prisma.RecipeWhereInput = aiProvider
@@ -167,18 +155,11 @@ export async function GET(request: Request) {
     };
     
     // Check auth for visibility filtering of orphaned store posts
-    if (user) {
-      if (userRole === "STORE") {
-        storePostVisibilityConditions.OR = [
-          { visibility: "public" },
-          { userId: user.id }
-        ];
-      } else {
-        storePostVisibilityConditions.OR = [
-          { visibility: { in: ["public", "protected"] } },
-          { userId: user.id }
-        ];
-      }
+    if (user && userRole === "STORE") {
+      storePostVisibilityConditions.OR = [
+        { visibility: "public" },
+        { userId: user.id, visibility: "protected" }
+      ];
     } else {
       storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
     }
