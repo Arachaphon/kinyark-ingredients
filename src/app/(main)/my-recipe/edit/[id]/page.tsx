@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { mutate } from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
 import type { Map, Marker, LeafletMouseEvent } from "leaflet";
@@ -108,9 +109,36 @@ export default function EditRecipePage() {
     if (existing) return existing;
 
     const promise = (async () => {
-      if (!user) return { url: null, error: "ยังไม่ได้ล็อกอิน" };
-      const result = await uploadRecipeMedia(createClient(), file, user.id);
-      if (result.error) return { url: null, error: result.error };
+      const supabase = createClient();
+      let activeUserId = user?.id;
+
+      if (!activeUserId) {
+        const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        activeUserId = sessionData?.session?.user?.id;
+      }
+
+      if (!activeUserId) {
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            activeUserId = meData?.user?.id;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!activeUserId) {
+        delete uploadPromisesRef.current[key];
+        return { url: null, error: "ยังไม่ได้เข้าสู่ระบบ กรุณาเข้าสู่ระบบก่อนอัปโหลดรูปภาพ" };
+      }
+
+      const result = await uploadRecipeMedia(supabase, file, activeUserId);
+      if (result.error) {
+        delete uploadPromisesRef.current[key];
+        return { url: null, error: result.error };
+      }
       return { url: result.url };
     })();
 
@@ -1232,6 +1260,12 @@ export default function EditRecipePage() {
 
       const result = await response.json();
       console.log("Success:", result);
+
+      await mutate(
+        (key) => typeof key === "string" && key.startsWith("/api/recipes"),
+        undefined,
+        { revalidate: true }
+      );
       
       if (isStoreOnlyEdit || isDraft) {
         router.push("/my-recipe");

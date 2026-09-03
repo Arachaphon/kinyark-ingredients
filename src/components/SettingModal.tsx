@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from 'next/navigation'
 import { mutate } from "swr";
 
 interface SettingModalProps {
@@ -13,13 +12,18 @@ interface SettingModalProps {
 type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
-  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
-    window.location.href = '/login'
-  }
+    onClose();
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' });
+    } catch {
+      // ignore
+    }
+    await mutate('/api/auth/me', null, { revalidate: false });
+    window.location.replace('/login');
+  };
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   
@@ -104,14 +108,14 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
         : ""
       : "";
 
-  const isFormValid = formCurrentPassword.length > 0;
+  const isFormValid = formPassword.length > 0 ? formCurrentPassword.length > 0 : true;
   const hasChanges =
     formUsername !== (userProfile?.username || "") ||
     formPassword !== "" ||
     formEmail !== (userProfile?.email || "") ||
     avatarFile !== null;
 
-  if (!isOpen) return null;
+  if (!isOpen || !userProfile) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fade-in font-anuphan">
@@ -339,7 +343,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     type={showFormCurrentPassword ? "text" : "password"} 
                     value={formCurrentPassword} 
                     onChange={(e) => { setFormCurrentPassword(e.target.value); setCurrentPasswordError(""); }} 
-                    placeholder="กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันการเปลี่ยนแปลงข้อมูล" 
+                    placeholder="กรุณากรอกรหัสผ่านปัจจุบัน (เฉพาะเมื่อต้องการเปลี่ยนรหัสผ่าน)" 
                     className="w-full p-2.5 pr-10 border border-gray-300 rounded-md focus:outline-none focus:border-[#FFC700] text-gray-700 placeholder-gray-400 text-xs sm:text-sm" 
                   />
                   <button
@@ -389,15 +393,12 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 <button
                   disabled={!isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError}
                   onClick={async () => {
-                    if (formPassword !== formConfirmPassword) return;
+                    if (formPassword.length > 0 && formPassword !== formConfirmPassword) return;
                     setCurrentPasswordError("");
                     setIsSaving(true);
                     try {
-                      const body: Record<string, string> = {};
-                      body.currentPassword = formCurrentPassword;
-                      if (formUsername !== (userProfile?.username || "")) body.username = formUsername;
-                      if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
-                      if (formPassword.length > 0) body.newPassword = formPassword;
+                      let updatedUser = null;
+
                       if (avatarFile) {
                         const formData = new FormData();
                         formData.append("avatar", avatarFile);
@@ -411,23 +412,38 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                           return;
                         }
                         const uploadData = await uploadRes.json();
-                        body.avatarUrl = uploadData.data.user.avatarUrl;
+                        updatedUser = uploadData?.data?.user;
                       }
 
-                      const res = await fetch("/api/users/me", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(body),
-                      });
+                      const hasOtherChanges =
+                        formUsername !== (userProfile?.username || "") ||
+                        formPassword !== "" ||
+                        formEmail !== (userProfile?.email || "");
 
-                      if (!res.ok) {
-                        const err = await res.json();
-                        setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-                        return;
+                      if (hasOtherChanges) {
+                        const body: Record<string, string> = {};
+                        if (formCurrentPassword) body.currentPassword = formCurrentPassword;
+                        if (formUsername !== (userProfile?.username || "")) body.username = formUsername;
+                        if (formEmail !== (userProfile?.email || "")) body.email = formEmail;
+                        if (formPassword.length > 0) body.newPassword = formPassword;
+
+                        const res = await fetch("/api/users/me", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(body),
+                        });
+
+                        if (!res.ok) {
+                          const err = await res.json();
+                          setCurrentPasswordError(err.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+                          return;
+                        }
+
+                        const updatedData = await res.json().catch(() => null);
+                        if (updatedData?.data?.user) {
+                          updatedUser = updatedData.data.user;
+                        }
                       }
-
-                      const updatedData = await res.json().catch(() => null);
-                      const updatedUser = updatedData?.data?.user;
 
                       await mutate(
                         "/api/auth/me",
@@ -609,7 +625,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                         setDeleteError(err.message || "เกิดข้อผิดพลาด");
                         return;
                       }
-                      router.push("/login");
+                      await mutate('/api/auth/me', null, { revalidate: false });
+                      window.location.replace('/login');
                     } catch {
                       setDeleteError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
                     } finally {

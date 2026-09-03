@@ -25,8 +25,11 @@ const fetcher = (url: string) => fetch(url).then((res) => {
   return res.json();
 });
 
+type Tab = "all" | "user" | "ai";
+
 export default function PostsFeedPage() {
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<Tab>("all");
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
 
   // Sync initial heart state with the user's real favorites list
@@ -50,7 +53,7 @@ export default function PostsFeedPage() {
   }, []);
 
   const { data, error: isError, isLoading } = useSWR<RecipeListResponse>(
-    `/api/recipes?page=${page}&limit=${PAGE_SIZE}`,
+    `/api/recipes?page=${page}&limit=${PAGE_SIZE}${activeTab !== "all" ? `&authorType=${activeTab}` : ""}`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 10000 }
   );
@@ -184,6 +187,58 @@ export default function PostsFeedPage() {
       <Navbar />
 
       <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-8">
+        {/* Category Tabs: ทั้งหมด, ผู้ใช้งาน, สร้างโดย AI */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/80 backdrop-blur-sm p-3 sm:p-4 rounded-2xl shadow-sm border border-gray-200">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-gray-700 font-bold text-sm hidden sm:inline mr-2">หมวดหมู่:</span>
+            <button
+              onClick={() => {
+                setActiveTab("all");
+                setPage(1);
+              }}
+              className={`px-4 sm:px-5 py-2 rounded-full font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === "all"
+                  ? "bg-[#71B254] text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-gray-100 hover:text-[#71B254] border border-gray-200"
+              }`}
+            >
+              ทั้งหมด
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("user");
+                setPage(1);
+              }}
+              className={`px-4 sm:px-5 py-2 rounded-full font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === "user"
+                  ? "bg-[#71B254] text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-gray-100 hover:text-[#71B254] border border-gray-200"
+              }`}
+            >
+              โพสต์จากผู้ใช้
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("ai");
+                setPage(1);
+              }}
+              className={`px-4 sm:px-5 py-2 rounded-full font-bold text-xs sm:text-sm transition-all duration-200 cursor-pointer ${
+                activeTab === "ai"
+                  ? "bg-[#71B254] text-white shadow-md"
+                  : "bg-white text-gray-600 hover:bg-gray-100 hover:text-[#71B254] border border-gray-200"
+              }`}
+            >
+              สร้างโดย AI
+            </button>
+          </div>
+
+          {data?.meta?.total !== undefined && !loading && (
+            <span className="text-xs sm:text-sm text-gray-500 font-medium">
+              พบทั้งหมด {data.meta.total} รายการ
+            </span>
+          )}
+        </div>
+
         {loading && (
           <div className="flex flex-col items-center justify-center py-32 gap-4">
             <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
@@ -208,7 +263,11 @@ export default function PostsFeedPage() {
         {!loading && !error && posts.length === 0 && (
           <div className="bg-white border border-gray-200 rounded-sm p-12 text-center shadow-sm">
             <p className="text-lg text-gray-500 italic">
-              ยังไม่มีโพสต์สูตรอาหารในตอนนี้
+              {activeTab === "ai"
+                ? "ยังไม่มีสูตรอาหารที่สร้างโดย AI ในหมวดหมู่นี้"
+                : activeTab === "user"
+                ? "ยังไม่มีโพสต์สูตรอาหารจากผู้ใช้งานในหมวดหมู่นี้"
+                : "ยังไม่มีโพสต์สูตรอาหารในตอนนี้"}
             </p>
           </div>
         )}
@@ -372,25 +431,28 @@ export default function PostsFeedPage() {
                         const aiAuthor = getAiAuthor(post.aiProvider);
                         if (aiAuthor) {
                           return (
-                            <>
-                              <Image src={aiAuthor.logo} alt={`${aiAuthor.name} logo`} width={32} height={32} className="rounded-full object-cover shrink-0 bg-white" />
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                              <Image src={aiAuthor.logo} alt={`${aiAuthor.name} logo`} width={32} height={32} className="rounded-full object-cover shrink-0 bg-white border border-gray-200 shadow-sm" />
                               <span className="font-bold text-gray-800 text-lg">{aiAuthor.name}</span>
-                            </>
+                              <span className="bg-[#E8F0FE] text-[#1A73E8] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#1A73E8]/20">
+                                AI Recipe
+                              </span>
+                            </div>
                           );
                         }
                         return (
-                          <>
+                          <div className="flex items-center gap-2.5">
                             <Image
                               src={post.user?.avatarUrl ?? FALLBACK_AVATAR}
                               alt="ผู้เขียน"
                               width={32}
                               height={32}
-                              className="rounded-full object-cover shrink-0"
+                              className="rounded-full object-cover shrink-0 shadow-sm"
                             />
                             <span className="font-bold text-gray-800 text-lg">
                               {post.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
                             </span>
-                          </>
+                          </div>
                         );
                       })()}
                     </div>

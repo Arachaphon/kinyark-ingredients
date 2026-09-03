@@ -327,10 +327,13 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
 
 function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   return (
-    <div className={`bg-white px-4 sm:px-5 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] shadow-sm flex items-center gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
+    <Link
+      href="/login"
+      className={`bg-white px-4 sm:px-5 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] shadow-sm flex items-center gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition block ${anuphan.className}`}
+    >
       <div className="text-2xl sm:text-3xl">{emoji}</div>
       <span className="font-bold text-sm sm:text-base text-gray-800">{text}</span>
-    </div>
+    </Link>
   );
 }
 
