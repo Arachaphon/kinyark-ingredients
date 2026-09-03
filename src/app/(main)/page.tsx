@@ -153,9 +153,7 @@ export default function HomePage() {
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
           <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-4 text-base sm:text-lg font-bold">
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">โพสต์ทั้งหมด</span>
+
           </div>
           <div className="w-full relative">
             <input type="text" placeholder="ค้นหา..." className="w-full py-3 sm:py-4 px-6 sm:px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-base sm:text-lg" />
@@ -167,7 +165,6 @@ export default function HomePage() {
 
         {/* ปุ่มฝั่งขวา */}
         <div className="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-base sm:text-lg">+ เผยแพร่สูตรอาหาร</Link>
           <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base sm:text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
             เข้าสู่ระบบ
@@ -207,13 +204,21 @@ export default function HomePage() {
         {/* การ์ดสูตรอาหารแนะนำหลัก */}
         <div className="xl:col-span-7 flex items-center justify-center xl:justify-end relative mt-8 xl:mt-0">
           <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[88%] p-6 sm:p-12 pb-24 sm:pb-12 xl:pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10 max-w-[calc(100%-120px)] sm:max-w-none">
+            
+            {/* กล่องใส่ข้อความ ล็อกความกว้างเพื่อหลบรูปวงกลม */}
+            <div className="z-10 w-full max-w-[calc(100%-110px)] sm:max-w-[calc(100%-200px)] xl:max-w-[calc(100%-280px)]">
               <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-lg sm:text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              <h1 
+                className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 leading-tight line-clamp-2"
+                title={featured.recipeName}
+              >
+                {featured.recipeName}
+              </h1>
+              
               <div className="flex items-center gap-2 mb-6 sm:mb-8">
                 <span className="text-[#F1C40F] text-xl sm:text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-base sm:text-lg">{featured.rating.toFixed(1)}</span>
@@ -225,9 +230,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* รูปวงกลมลอยเด่น Responsive */}
-          <div className="absolute right-4 sm:right-8 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-            <Image src={featured.imageUrl} alt={featured.recipeName} fill className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" sizes="(max-width: 640px) 144px, (max-width: 1280px) 224px, 320px" priority />
+          {/* ปรับแก้: ปรับตำแหน่งให้อยู่ในขอบเขตการ์ด ไม่ล้นจนโดน overflow-x-hidden ตัดขอบแหว่ง */}
+          <div className="absolute right-2 sm:right-4 xl:-right-6 top-1/2 -translate-y-1/2 w-32 h-32 sm:w-52 sm:h-52 xl:w-72 xl:h-72 drop-shadow-2xl z-20 pointer-events-none">
+            <Image 
+              src={featured.imageUrl} 
+              alt={featured.recipeName} 
+              fill 
+              className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" 
+              sizes="(max-width: 640px) 128px, (max-width: 1280px) 208px, 288px" 
+              priority 
+            />
           </div>
         </div>
       </main>
@@ -358,7 +370,7 @@ function RecipeCard({ id, bgColor, title, image, rating }: { id: string, bgColor
       </div>
 
       <div className="relative w-full mb-5 mt-2 px-8 sm:px-10 flex items-center justify-center min-h-[64px]">
-        <span className="font-bold text-lg sm:text-2xl text-white text-center leading-snug block w-full line-clamp-2">
+        <span className="font-bold text-lg sm:text-2xl text-white text-center leading-snug block w-full line-clamp-2" title={title}>
           {title}
         </span>
 
