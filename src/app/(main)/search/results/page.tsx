@@ -156,6 +156,15 @@ function ResultsContent() {
     setIsAiLoading(false);
     setMissingAiProviders([]);
 
+    // บันทึกประวัติการค้นหาสำหรับผู้ใช้ที่ล็อกอิน (ทั้งการค้นหาด้วยคำและชุดวัตถุดิบ)
+    fetch("/api/search-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ searchQuery: queryTitle.trim() }),
+    }).catch(() => {
+      // Best-effort: history saving must never block UI
+    });
+
     const fetchResults = async () => {
       try {
         // 1. ดึงสูตรจริงจากฐานข้อมูลของผู้ใช้ขึ้นมาก่อนทันที (เร็วมาก)

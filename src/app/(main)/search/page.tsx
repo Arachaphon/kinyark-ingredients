@@ -217,6 +217,23 @@ function SearchContent() {
 
   const currentCategoryData = mergedCategoriesData.find((cat) => cat.id === activeCategory);
 
+  const handleSearchSubmit = () => {
+    if (selectedIngredients.length === 0) return;
+    const ingredientQuery = selectedIngredients.join(",");
+    const ingredientDisplay = selectedIngredients.join(", ");
+
+    // บันทึกประวัติการค้นหาเมื่อผู้ใช้ล็อกอิน (แบบ non-blocking)
+    fetch("/api/search-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ searchQuery: ingredientDisplay }),
+    }).catch(() => {
+      // ignore
+    });
+
+    router.push(`/search/results?ingredients=${encodeURIComponent(ingredientQuery)}`);
+  };
+
   return (
     <div className="w-[95%] max-w-[1200px] mx-auto px-4 mt-8 flex flex-col lg:flex-row gap-8 items-stretch">
 
@@ -296,12 +313,13 @@ function SearchContent() {
             )}
           </div>
 
-          <Link
-            href={`/search/results?ingredients=${selectedIngredients.join(",")}`}
-            className="w-full sm:w-auto px-6 py-3.5 bg-[#71B254] text-white font-extrabold text-base rounded-2xl hover:bg-[#5b9642] transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 shrink-0 text-center block"
+          <button
+            disabled={selectedIngredients.length === 0}
+            onClick={handleSearchSubmit}
+            className="w-full sm:w-auto px-6 py-3.5 bg-[#71B254] text-white font-extrabold text-base rounded-2xl hover:bg-[#5b9642] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 shrink-0 text-center cursor-pointer"
           >
             ค้นหาสูตรอาหาร <span>➔</span>
-          </Link>
+          </button>
         </div>
       </div>
     </div>
