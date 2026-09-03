@@ -18,6 +18,7 @@ export async function GET(request: Request) {
       mine: searchParams.get("mine") ?? undefined,
       publicOnly: searchParams.get("publicOnly") ?? undefined,
       aiProvider: searchParams.get("aiProvider") ?? undefined,
+      authorType: searchParams.get("authorType") ?? undefined,
     })
 
     if (!parsed.success) {
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const { page, limit, mine, publicOnly, aiProvider } = parsed.data
+    const { page, limit, mine, publicOnly, aiProvider, authorType } = parsed.data
 
     const userId = await getAuthUserId(request)
     const userRole = request.headers.get("x-user-role")
@@ -138,11 +139,21 @@ export async function GET(request: Request) {
       visibilityFilter = { visibility: { in: ["public", "protected"] } };
     }
 
-    const where: Prisma.RecipeWhereInput = aiProvider
-      ? { ...visibilityFilter, aiProvider }
-      : visibilityFilter;
+    let authorFilter: Prisma.RecipeWhereInput = {};
+    if (authorType === "user") {
+      authorFilter = { aiProvider: null };
+    } else if (authorType === "ai") {
+      authorFilter = aiProvider ? { aiProvider } : { aiProvider: { not: null } };
+    } else if (aiProvider) {
+      authorFilter = { aiProvider };
+    }
 
-    const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}`
+    const where: Prisma.RecipeWhereInput = {
+      ...visibilityFilter,
+      ...authorFilter,
+    };
+
+    const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}:${authorType ?? "all"}`
     if (process.env.NODE_ENV !== 'test') {
       const cached = cache.get(cacheKey)
       if (cached) {
@@ -150,6 +161,7 @@ export async function GET(request: Request) {
       }
     }
 
+    const isAiOnly = authorType === "ai" || Boolean(aiProvider);
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
     };
@@ -178,22 +190,24 @@ export async function GET(request: Request) {
           take: limit,
         }),
       ]),
-      Promise.all([
-        prisma.storePost.findMany({
-          where: storePostVisibilityConditions,
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-            images: { orderBy: { createdAt: "asc" } },
-            videos: { orderBy: { createdAt: "asc" } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.storePost.count({
-          where: storePostVisibilityConditions,
-        }),
-      ])
+      isAiOnly
+        ? Promise.resolve([[], 0] as [any[], number])
+        : Promise.all([
+            prisma.storePost.findMany({
+              where: storePostVisibilityConditions,
+              include: {
+                user: { select: { id: true, username: true, avatarUrl: true } },
+                images: { orderBy: { createdAt: "asc" } },
+                videos: { orderBy: { createdAt: "asc" } },
+              },
+              orderBy: { createdAt: "desc" },
+              skip: (page - 1) * limit,
+              take: limit,
+            }),
+            prisma.storePost.count({
+              where: storePostVisibilityConditions,
+            }),
+          ])
     ])
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
