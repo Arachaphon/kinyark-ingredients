@@ -167,7 +167,7 @@ export default function HomePage() {
 
         {/* ปุ่มฝั่งขวา */}
         <div className="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <button className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-base sm:text-lg">+ เผยแพร่สูตรอาหาร</button>
+          <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-base sm:text-lg">+ เผยแพร่สูตรอาหาร</Link>
           <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base sm:text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
             เข้าสู่ระบบ
@@ -315,10 +315,13 @@ function MenuCarousel({ provider, recipes }: { provider: string, recipes: Recomm
 
 function CategoryCard({ emoji, text }: { emoji: string; text: string }) {
   return (
-    <div className={`bg-white px-4 sm:px-5 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] shadow-sm flex items-center gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition ${anuphan.className}`}>
+    <Link
+      href="/login"
+      className={`bg-white px-4 sm:px-5 py-3 sm:py-4 rounded-[20px] sm:rounded-[24px] shadow-sm flex items-center gap-3 sm:gap-4 cursor-pointer hover:shadow-md transition block ${anuphan.className}`}
+    >
       <div className="text-2xl sm:text-3xl">{emoji}</div>
       <span className="font-bold text-sm sm:text-base text-gray-800">{text}</span>
-    </div>
+    </Link>
   );
 }
 
