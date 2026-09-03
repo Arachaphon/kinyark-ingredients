@@ -17,9 +17,15 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' })
-    window.location.href = '/login'
-  }
+    onClose();
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', redirect: 'manual' });
+    } catch {
+      // ignore
+    }
+    await mutate('/api/auth/me', null, { revalidate: false });
+    window.location.replace('/login');
+  };
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   
@@ -111,7 +117,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
     formEmail !== (userProfile?.email || "") ||
     avatarFile !== null;
 
-  if (!isOpen) return null;
+  if (!isOpen || !userProfile) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-fade-in font-anuphan">
@@ -609,7 +615,8 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                         setDeleteError(err.message || "เกิดข้อผิดพลาด");
                         return;
                       }
-                      router.push("/login");
+                      await mutate('/api/auth/me', null, { revalidate: false });
+                      window.location.replace('/login');
                     } catch {
                       setDeleteError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
                     } finally {

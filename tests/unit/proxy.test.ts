@@ -17,7 +17,8 @@ jest.mock('next/server', () => {
     ...actualNextServer,
     NextResponse: {
       ...actualNextServer.NextResponse,
-      next: jest.fn((options) => options || {}),
+      next: jest.fn((options) => actualNextServer.NextResponse.next(options)),
+      redirect: jest.fn((url, init) => actualNextServer.NextResponse.redirect(url, init)),
     },
   };
 });
@@ -95,5 +96,27 @@ describe('Proxy Middleware Header Injection', () => {
     const callArgs = (NextResponse.next as jest.Mock).mock.calls[0][0];
     const headers: Headers = callArgs.request.headers;
     expect(headers.get('x-user-id')).toBeNull();
+  });
+
+  it('redirects unauthenticated users attempting to access protected routes to /login', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const request = new NextRequest('http://localhost:3000/my-recipe');
+    const res = await proxy(request);
+
+    expect(NextResponse.redirect).toHaveBeenCalled();
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toBe('http://localhost:3000/login');
+    expect(res.headers.get('Cache-Control')).toContain('no-store');
+  });
+
+  it('allows unauthenticated users to access public routes like /home or /recipe/123', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+
+    const request = new NextRequest('http://localhost:3000/home');
+    const res = await proxy(request);
+
+    expect(NextResponse.next).toHaveBeenCalled();
+    expect(res.headers.get('Cache-Control')).toContain('no-store');
   });
 });

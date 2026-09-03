@@ -35,12 +35,33 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 4. ส่งต่อ Request ไปยังจุดหมายปลายทาง
-  return NextResponse.next({
+  // 4. ตรวจสอบการเข้าถึงเส้นทางที่ต้องล็อกอิน (Protected Routes)
+  const pathname = request.nextUrl.pathname
+  const isProtectedPath =
+    pathname.startsWith('/my-recipe') ||
+    pathname.startsWith('/favorites') ||
+    pathname.startsWith('/create-recipe')
+
+  if (isProtectedPath && !session?.access_token) {
+    const loginUrl = new URL('/login', request.url)
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    redirectResponse.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
+    return redirectResponse
+  }
+
+  // 5. ส่งต่อ Request ไปยังจุดหมายปลายทาง
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   })
+
+  // ป้องกัน Browser Cache สำหรับหน้าเว็บ เพื่อไม่ให้กดย้อนกลับมาดูข้อมูลเก่าหลัง Logout ได้
+  if (!pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  }
+
+  return response
 }
 
 export const config = {

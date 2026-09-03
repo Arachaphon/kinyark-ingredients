@@ -47,8 +47,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus(session ? "authenticated" : "unauthenticated");
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        refreshUser();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("pageshow", handlePageShow);
+    }
+
+    return () => {
+      subscription.unsubscribe();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("pageshow", handlePageShow);
+      }
+    };
+  }, [supabase, refreshUser]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
