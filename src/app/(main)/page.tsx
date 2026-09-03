@@ -203,22 +203,15 @@ export default function HomePage() {
 
         {/* การ์ดสูตรอาหารแนะนำหลัก */}
         <div className="xl:col-span-7 flex items-center justify-center xl:justify-end relative mt-8 xl:mt-0">
-<<<<<<< HEAD
           <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[88%] p-6 sm:p-12 pb-24 sm:pb-12 xl:pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
             
             {/* กล่องใส่ข้อความ ล็อกความกว้างเพื่อหลบรูปวงกลม */}
             <div className="z-10 w-full max-w-[calc(100%-110px)] sm:max-w-[calc(100%-200px)] xl:max-w-[calc(100%-280px)]">
-=======
-          {/* ปรับแก้: เพิ่ม padding-right ฝั่งขวา กันไม่ให้ตัวหนังสือไหลไปทับรูป */}
-          <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[92%] p-6 sm:p-12 pr-36 sm:pr-60 xl:pr-72 pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10 max-w-full">
->>>>>>> 45a9cfeb132f21a0f65d37fca8f353c86ca527f0
               <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-lg sm:text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-<<<<<<< HEAD
               <h1 
                 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 leading-tight line-clamp-2"
                 title={featured.recipeName}
@@ -226,12 +219,6 @@ export default function HomePage() {
                 {featured.recipeName}
               </h1>
               
-=======
-              {/* ปรับแก้: บังคับความกว้างสูงสุด ให้ตัดขึ้นบรรทัดใหม่อย่างเป็นระเบียบ */}
-              <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight max-w-full xl:max-w-[75%]">
-                {featured.recipeName}
-              </h1>
->>>>>>> 45a9cfeb132f21a0f65d37fca8f353c86ca527f0
               <div className="flex items-center gap-2 mb-6 sm:mb-8">
                 <span className="text-[#F1C40F] text-xl sm:text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-base sm:text-lg">{featured.rating.toFixed(1)}</span>
