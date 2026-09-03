@@ -153,9 +153,7 @@ export default function HomePage() {
         <div className="flex-grow w-full max-w-4xl flex flex-col items-center">
           <div className="flex flex-wrap justify-center gap-6 sm:gap-12 mb-4 text-base sm:text-lg font-bold">
             <span className="text-black border-b-[3px] border-black pb-1 cursor-pointer">หน้าแรก</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">สูตรอาหารของฉัน</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">รายการโปรด</span>
-            <span className="text-[#A5A5A5] hover:text-gray-700 cursor-pointer transition">โพสต์ทั้งหมด</span>
+
           </div>
           <div className="w-full relative">
             <input type="text" placeholder="ค้นหา..." className="w-full py-3 sm:py-4 px-6 sm:px-8 rounded-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:border-[#71B254] text-base sm:text-lg" />
@@ -167,7 +165,6 @@ export default function HomePage() {
 
         {/* ปุ่มฝั่งขวา */}
         <div className="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <button className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full border-2 border-[#71B254] text-white bg-[#71B254] font-bold hover:bg-[#5b9642] transition text-base sm:text-lg">+ เผยแพร่สูตรอาหาร</button>
           <Link href="/login" className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#71B254] text-white font-bold shadow-md hover:bg-[#5b9642] transition flex items-center gap-2 text-base sm:text-lg">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
             เข้าสู่ระบบ
