@@ -6,6 +6,14 @@ import { Prisma } from "@prisma/client"
 import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
 import { getAuthUserId } from "@/lib/auth-user"
 
+type OrphanedStorePost = Prisma.StorePostGetPayload<{
+  include: {
+    user: { select: { id: true; username: true; avatarUrl: true } }
+    images: true
+    videos: true
+  }
+}>
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -191,7 +199,7 @@ export async function GET(request: Request) {
         }),
       ]),
       isAiOnly
-        ? Promise.resolve([[], 0] as [any[], number])
+        ? Promise.resolve([[], 0] as [OrphanedStorePost[], number])
         : Promise.all([
             prisma.storePost.findMany({
               where: storePostVisibilityConditions,

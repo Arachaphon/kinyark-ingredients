@@ -128,6 +128,7 @@ describe('GET /api/recipes', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
+    expect(body.data).toBeDefined()
     expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
@@ -143,6 +144,7 @@ describe('GET /api/recipes', () => {
     const body = await res.json()
 
     expect(res.status).toBe(200)
+    expect(body.data).toBeDefined()
     expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {

@@ -85,63 +85,6 @@ function ResultsContent() {
     setFavorites(initialFavs);
   };
 
-  const formatRecipeItem = (item: ApiRecipeItem, index: number): RecipeItem => {
-    const isAiRecipe = !!item.aiProvider || item.isAi || false;
-    const recipeTitle = item.recipeName || item.title || "";
-
-    const imageUrl = item.image?.trim() || item.images?.[0]?.imageUrl?.trim();
-    const finalImage =
-      imageUrl && imageUrl.startsWith("http")
-        ? imageUrl
-        : getAiImageUrl(recipeTitle || queryTitle, index);
-
-    // 🟢 รวมวัตถุดิบจากทุกฟิลด์ที่ API ส่งมา
-    let tempTags: string[] = [];
-
-    if (Array.isArray(item.recipeIngredients)) {
-      item.recipeIngredients.forEach((ri) => {
-        if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
-      });
-    }
-
-    if (Array.isArray(item.ingredients)) {
-      tempTags = [...tempTags, ...item.ingredients];
-    }
-
-    if (Array.isArray(item.tags)) {
-      tempTags = [...tempTags, ...item.tags];
-    }
-
-    let mappedTags = Array.from(new Set(tempTags.filter((t) => typeof t === "string" && t.trim() !== "")));
-
-    if (mappedTags.length === 0) {
-      mappedTags = queryTitle.split(",").map((t) => t.trim()).filter(Boolean);
-    }
-
-    const aiAuthor = getAiAuthor(item.aiProvider);
-    return {
-      id: item.id,
-      title: recipeTitle,
-      image: finalImage,
-      tags: mappedTags,
-      author:
-        aiAuthor?.name ||
-        item.user?.username ||
-        item.aiProvider ||
-        item.author ||
-        "ผู้ใช้งานทั่วไป",
-      authorAvatar:
-        aiAuthor?.logo ||
-        item.user?.avatarUrl ||
-        item.authorAvatar ||
-        "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
-      likes: item.favoriteCount || item.likes || 0,
-      rating: item.rating || 0,
-      initialFavorite: false,
-      isAi: isAiRecipe,
-    };
-  };
-
   useEffect(() => {
     let isMounted = true;
 
@@ -151,6 +94,63 @@ function ResultsContent() {
       setIsAiLoading(false);
       return;
     }
+
+    const formatRecipeItem = (item: ApiRecipeItem, index: number): RecipeItem => {
+      const isAiRecipe = !!item.aiProvider || item.isAi || false;
+      const recipeTitle = item.recipeName || item.title || "";
+
+      const imageUrl = item.image?.trim() || item.images?.[0]?.imageUrl?.trim();
+      const finalImage =
+        imageUrl && imageUrl.startsWith("http")
+          ? imageUrl
+          : getAiImageUrl(recipeTitle || queryTitle, index);
+
+      // 🟢 รวมวัตถุดิบจากทุกฟิลด์ที่ API ส่งมา
+      let tempTags: string[] = [];
+
+      if (Array.isArray(item.recipeIngredients)) {
+        item.recipeIngredients.forEach((ri) => {
+          if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
+        });
+      }
+
+      if (Array.isArray(item.ingredients)) {
+        tempTags = [...tempTags, ...item.ingredients];
+      }
+
+      if (Array.isArray(item.tags)) {
+        tempTags = [...tempTags, ...item.tags];
+      }
+
+      let mappedTags = Array.from(new Set(tempTags.filter((t) => typeof t === "string" && t.trim() !== "")));
+
+      if (mappedTags.length === 0) {
+        mappedTags = queryTitle.split(",").map((t) => t.trim()).filter(Boolean);
+      }
+
+      const aiAuthor = getAiAuthor(item.aiProvider);
+      return {
+        id: item.id,
+        title: recipeTitle,
+        image: finalImage,
+        tags: mappedTags,
+        author:
+          aiAuthor?.name ||
+          item.user?.username ||
+          item.aiProvider ||
+          item.author ||
+          "ผู้ใช้งานทั่วไป",
+        authorAvatar:
+          aiAuthor?.logo ||
+          item.user?.avatarUrl ||
+          item.authorAvatar ||
+          "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+        likes: item.favoriteCount || item.likes || 0,
+        rating: item.rating || 0,
+        initialFavorite: false,
+        isAi: isAiRecipe,
+      };
+    };
 
     setIsLoading(true);
     setIsAiLoading(false);

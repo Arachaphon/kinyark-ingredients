@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from 'next/navigation'
 import { mutate } from "swr";
 
 interface SettingModalProps {
@@ -13,7 +12,6 @@ interface SettingModalProps {
 type TabType = "profile" | "preferences" | "ai";
 
 export default function SettingModal({ isOpen, onClose, userProfile }: SettingModalProps) {
-  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogout = async () => {

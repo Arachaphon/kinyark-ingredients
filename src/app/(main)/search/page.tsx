@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Navbar from "@/components/Navbar";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Anuphan } from "next/font/google";
 
