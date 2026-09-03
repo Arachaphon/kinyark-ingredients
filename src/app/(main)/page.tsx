@@ -203,14 +203,18 @@ export default function HomePage() {
 
         {/* การ์ดสูตรอาหารแนะนำหลัก */}
         <div className="xl:col-span-7 flex items-center justify-center xl:justify-end relative mt-8 xl:mt-0">
-          <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[88%] p-6 sm:p-12 pb-24 sm:pb-12 xl:pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10 max-w-[calc(100%-120px)] sm:max-w-none">
+          {/* ปรับแก้: เพิ่ม padding-right ฝั่งขวา กันไม่ให้ตัวหนังสือไหลไปทับรูป */}
+          <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[92%] p-6 sm:p-12 pr-36 sm:pr-60 xl:pr-72 pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
+            <div className="z-10 max-w-full">
               <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-lg sm:text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              {/* ปรับแก้: บังคับความกว้างสูงสุด ให้ตัดขึ้นบรรทัดใหม่อย่างเป็นระเบียบ */}
+              <h1 className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight max-w-full xl:max-w-[75%]">
+                {featured.recipeName}
+              </h1>
               <div className="flex items-center gap-2 mb-6 sm:mb-8">
                 <span className="text-[#F1C40F] text-xl sm:text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-base sm:text-lg">{featured.rating.toFixed(1)}</span>
@@ -222,9 +226,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* รูปวงกลมลอยเด่น Responsive */}
-          <div className="absolute right-4 sm:right-8 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-36 h-36 sm:w-56 sm:h-56 xl:w-80 xl:h-80 drop-shadow-2xl z-20 pointer-events-none">
-            <Image src={featured.imageUrl} alt={featured.recipeName} fill className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" sizes="(max-width: 640px) 144px, (max-width: 1280px) 224px, 320px" priority />
+          {/* ปรับแก้: ปรับตำแหน่งให้อยู่ในขอบเขตการ์ด ไม่ล้นจนโดน overflow-x-hidden ตัดขอบแหว่ง */}
+          <div className="absolute right-2 sm:right-4 xl:-right-6 top-1/2 -translate-y-1/2 w-32 h-32 sm:w-52 sm:h-52 xl:w-72 xl:h-72 drop-shadow-2xl z-20 pointer-events-none">
+            <Image 
+              src={featured.imageUrl} 
+              alt={featured.recipeName} 
+              fill 
+              className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" 
+              sizes="(max-width: 640px) 128px, (max-width: 1280px) 208px, 288px" 
+              priority 
+            />
           </div>
         </div>
       </main>
