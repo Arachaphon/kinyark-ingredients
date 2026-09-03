@@ -1546,7 +1546,7 @@ export default function CreateRecipePage() {
                         placeholder="เช่น สเต็กเนื้อวากิว, สลัดอกไก่" 
                         value={title} 
                         onChange={(e) => setTitle(e.target.value)} 
-                        maxLength={100}
+                        maxLength={50}
                         className={`w-full py-3 px-4 pr-20 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                           missingFields.includes("title") 
                             ? "border-red-500 bg-red-50/20" 
@@ -1554,7 +1554,7 @@ export default function CreateRecipePage() {
                         }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        {title.length}/100
+                        {title.length}/50
                       </span>
                     </div>
                   </div>

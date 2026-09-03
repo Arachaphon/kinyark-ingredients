@@ -204,13 +204,21 @@ export default function HomePage() {
         {/* การ์ดสูตรอาหารแนะนำหลัก */}
         <div className="xl:col-span-7 flex items-center justify-center xl:justify-end relative mt-8 xl:mt-0">
           <div className="bg-white rounded-[30px] sm:rounded-[40px] w-full xl:w-[88%] p-6 sm:p-12 pb-24 sm:pb-12 xl:pb-12 min-h-[280px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10 max-w-[calc(100%-120px)] sm:max-w-none">
+            
+            {/* กล่องใส่ข้อความ ล็อกความกว้างเพื่อหลบรูปวงกลม */}
+            <div className="z-10 w-full max-w-[calc(100%-110px)] sm:max-w-[calc(100%-200px)] xl:max-w-[calc(100%-280px)]">
               <div className="flex items-center gap-3 mb-3 sm:mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs sm:text-sm shadow-sm font-bold">✓</div>
                 <span className="font-bold text-gray-900 text-lg sm:text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              <h1 
+                className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 leading-tight line-clamp-2"
+                title={featured.recipeName}
+              >
+                {featured.recipeName}
+              </h1>
+              
               <div className="flex items-center gap-2 mb-6 sm:mb-8">
                 <span className="text-[#F1C40F] text-xl sm:text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-base sm:text-lg">{featured.rating.toFixed(1)}</span>
@@ -352,7 +360,7 @@ function RecipeCard({ id, bgColor, title, image, rating }: { id: string, bgColor
       </div>
 
       <div className="relative w-full mb-5 mt-2 px-8 sm:px-10 flex items-center justify-center min-h-[64px]">
-        <span className="font-bold text-lg sm:text-2xl text-white text-center leading-snug block w-full line-clamp-2">
+        <span className="font-bold text-lg sm:text-2xl text-white text-center leading-snug block w-full line-clamp-2" title={title}>
           {title}
         </span>
 
