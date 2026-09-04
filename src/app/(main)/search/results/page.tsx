@@ -165,13 +165,16 @@ function ResultsContent() {
       // Best-effort: history saving must never block UI
     });
 
+    const abortController = new AbortController();
+
     const fetchResults = async () => {
       try {
         // 1. ดึงสูตรจริงจากฐานข้อมูลของผู้ใช้ขึ้นมาก่อนทันที (เร็วมาก)
         const response = await fetch(
           isIngredientSearch
             ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
-            : `/api/search?q=${encodeURIComponent(queryTitle)}`
+            : `/api/search?q=${encodeURIComponent(queryTitle)}`,
+          { signal: abortController.signal }
         );
 
         if (!response.ok) {
@@ -205,6 +208,7 @@ function ResultsContent() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ ingredients: ingredientList }),
+              signal: abortController.signal,
             });
 
             if (aiResponse.ok && isMounted) {
@@ -227,27 +231,34 @@ function ResultsContent() {
                   return merged;
                 });
               }
+            } else if (aiResponse.status === 429) {
+              console.warn("AI generation rate limited");
             }
-          } catch (aiError) {
-            console.warn("AI Generate error:", aiError);
+          } catch (aiError: any) {
+            if (aiError?.name !== "AbortError") {
+              console.warn("AI Generate error:", aiError);
+            }
           } finally {
             if (isMounted) {
               setIsAiLoading(false);
             }
           }
         }
-      } catch (error) {
-        console.warn("API Search Error:", error);
-        if (isMounted) {
-          setResults([]);
-          setIsLoading(false);
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          console.warn("API Search Error:", error);
+          if (isMounted) {
+            setResults([]);
+            setIsLoading(false);
+          }
         }
       }
     };
 
     fetchResults();
     return () => { 
-      isMounted = false; 
+      isMounted = false;
+      abortController.abort();
     };
   }, [queryTitle, isIngredientSearch]);
 

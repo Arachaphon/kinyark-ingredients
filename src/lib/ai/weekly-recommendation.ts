@@ -134,7 +134,10 @@ async function callGemini(prompt: string): Promise<string> {
     throw new Error("GEMINI_API_KEY is not configured");
   }
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3.6-flash",
+    generationConfig: { maxOutputTokens: 2048, responseMimeType: "application/json" },
+  });
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
@@ -157,7 +160,7 @@ async function callGroq(prompt: string): Promise<string> {
     ],
     model: "qwen/qwen3.8-27b",
     response_format: { type: "json_object" },
-    max_tokens: 4096,
+    max_tokens: 2048,
   });
   return completion.choices[0]?.message?.content ?? "";
 }
@@ -196,8 +199,8 @@ async function requestRecipes(
 
 /**
  * คืนชุดสูตรแนะนำของสัปดาห์ปัจจุบัน.
- * - ถ้ายังไม่มีในสัปดาห์นี้ → เรียก AI 2 ตัว สร้าง ตัวละ 4 สูตร (seasonal 4 + trending 4 = 8) แล้วบันทึกเป็น Recipe จริง + WeeklyRecommendation
- * - ถ้ามีแล้ว → คืนจากฐานข้อมูล (ไม่เรียก AI ซ้ำ)
+ * - ถ้ามีทั้ง 2 หมวด (seasonal + trending) แล้ว → คืนจากฐานข้อมูลทันที 0 AI calls
+ * - ถ้ายังขาดหมวดใดหมวดหนึ่ง → เรียกเฉพาะ AI หมวดที่ยังขาด (อิสระต่อกัน)
  */
 export async function ensureWeeklyRecommendations(options?: { force?: boolean }) {
   const weekKey = getWeekKey();
@@ -206,16 +209,19 @@ export async function ensureWeeklyRecommendations(options?: { force?: boolean })
     await prisma.weeklyRecommendation.deleteMany({
       where: { weekKey },
     });
-  } else {
-    const existing = await prisma.weeklyRecommendation.findMany({
-      where: { weekKey },
-      include: { recipe: { include: { images: { orderBy: { createdAt: "asc" }, take: 1 } } } },
-      orderBy: [{ type: "asc" }, { createdAt: "asc" }],
-    });
+  }
 
-    if (existing.length >= 8) {
-      return { weekKey, recipes: existing, generated: false, missingProviders: [] };
-    }
+  const existing = await prisma.weeklyRecommendation.findMany({
+    where: { weekKey },
+    include: { recipe: { include: { images: { orderBy: { createdAt: "asc" }, take: 1 } } } },
+    orderBy: [{ type: "asc" }, { createdAt: "asc" }],
+  });
+
+  const hasSeasonal = existing.some((r) => r.type === "seasonal");
+  const hasTrending = existing.some((r) => r.type === "trending");
+
+  if (!options?.force && hasSeasonal && hasTrending) {
+    return { weekKey, recipes: existing, generated: false, missingProviders: [] };
   }
 
   const systemUserId = await getSystemUserId();
@@ -225,7 +231,6 @@ export async function ensureWeeklyRecommendations(options?: { force?: boolean })
     getTrendingIngredientNames(),
   ]);
 
-  // ถ้าไม่มีวัตถุดิบจริงเลย ให้ใช้ fallback เป็นคำกว้าง ๆ ที่สมเหตุสมผล
   const seasonalFallback =
     seasonalIngredients.length > 0
       ? seasonalIngredients
@@ -235,34 +240,53 @@ export async function ensureWeeklyRecommendations(options?: { force?: boolean })
       ? trendingIngredients
       : ["ไก่", "หมู", "ไข่"];
 
-  // เรียก AI ทั้ง 2 เจ้าคู่ขนาน (Gemini = seasonal, Groq = trending)
-  const [seasonalPrompt, trendingPrompt] = [
-    buildSeasonalPrompt(seasonalFallback),
-    buildTrendingPrompt(trendingFallback),
-  ];
+  const needSeasonal = options?.force || !hasSeasonal;
+  const needTrending = options?.force || !hasTrending;
 
-  // ⚠️ ใช้ allSettled แทน Promise.all — ถ้า AI ตัวใดตัวหนึ่งหมดโควตา/พัง
-  //    เราจะยังคงสร้าง/คืนเมนูจากตัวที่สำเร็จได้ (ไม่ล้มทั้งสัปดาห์)
-  const [seasonalResult, trendingResult] = await Promise.allSettled([
-    requestRecipes("gemini", seasonalPrompt),
-    requestRecipes("groq", trendingPrompt),
-  ]);
+  const tasks: Promise<{ type: "seasonal" | "trending"; recipes: WeeklyAiRecipe[] }>[] = [];
 
+  if (needSeasonal) {
+    tasks.push(
+      (async () => {
+        const prompt = buildSeasonalPrompt(seasonalFallback);
+        const recipes = await requestRecipes("gemini", prompt);
+        return { type: "seasonal", recipes };
+      })()
+    );
+  }
+
+  if (needTrending) {
+    tasks.push(
+      (async () => {
+        const prompt = buildTrendingPrompt(trendingFallback);
+        const recipes = await requestRecipes("groq", prompt);
+        return { type: "trending", recipes };
+      })()
+    );
+  }
+
+  const results = await Promise.allSettled(tasks);
   const missingProviders: string[] = [];
-  if (seasonalResult.status === "rejected") {
-    missingProviders.push("gemini");
-    console.error("weekly seasonal (gemini) failed:", seasonalResult.reason);
-  }
-  if (trendingResult.status === "rejected") {
-    missingProviders.push("groq");
-    console.error("weekly trending (groq) failed:", trendingResult.reason);
+
+  let newSeasonalRecipes: WeeklyAiRecipe[] = [];
+  let newTrendingRecipes: WeeklyAiRecipe[] = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === "rejected") {
+      const failedType = needSeasonal && i === 0 ? "gemini" : "groq";
+      missingProviders.push(failedType);
+      console.error(`weekly ${failedType} failed:`, result.reason);
+    } else {
+      if (result.value.type === "seasonal") {
+        newSeasonalRecipes = result.value.recipes;
+      } else {
+        newTrendingRecipes = result.value.recipes;
+      }
+    }
   }
 
-  const seasonalRecipes = seasonalResult.status === "fulfilled" ? seasonalResult.value : [];
-  const trendingRecipes = trendingResult.status === "fulfilled" ? trendingResult.value : [];
-
-  // ถ้าทั้งสองตาถึงล้มเหลว → คืนผลว่าง (ฝั่ง route จะ return [] แทนที่จะ 500)
-  if (seasonalRecipes.length === 0 && trendingRecipes.length === 0) {
+  if (newSeasonalRecipes.length === 0 && newTrendingRecipes.length === 0 && existing.length === 0) {
     return { weekKey, recipes: [], generated: false, missingProviders };
   }
 
@@ -309,20 +333,22 @@ export async function ensureWeeklyRecommendations(options?: { force?: boolean })
     };
 
     const createdSeasonal = [];
-    for (let i = 0; i < seasonalRecipes.length; i++) {
-      createdSeasonal.push(await buildPersist(seasonalRecipes[i], "gemini", "seasonal", i));
+    for (let i = 0; i < newSeasonalRecipes.length; i++) {
+      createdSeasonal.push(await buildPersist(newSeasonalRecipes[i], "gemini", "seasonal", i));
     }
     const createdTrending = [];
-    for (let i = 0; i < trendingRecipes.length; i++) {
-      createdTrending.push(await buildPersist(trendingRecipes[i], "groq", "trending", seasonalRecipes.length + i));
+    for (let i = 0; i < newTrendingRecipes.length; i++) {
+      createdTrending.push(await buildPersist(newTrendingRecipes[i], "groq", "trending", newSeasonalRecipes.length + i));
     }
 
-    await tx.weeklyRecommendation.createMany({
-      data: [
-        ...createdSeasonal.map((r, i) => ({ weekKey, type: "seasonal" as const, recipeId: r.id, createdAt: new Date(Date.now() + i) })),
-        ...createdTrending.map((r, i) => ({ weekKey, type: "trending" as const, recipeId: r.id, createdAt: new Date(Date.now() + createdSeasonal.length + i) })),
-      ],
-    });
+    if (createdSeasonal.length > 0 || createdTrending.length > 0) {
+      await tx.weeklyRecommendation.createMany({
+        data: [
+          ...createdSeasonal.map((r, i) => ({ weekKey, type: "seasonal" as const, recipeId: r.id, createdAt: new Date(Date.now() + i) })),
+          ...createdTrending.map((r, i) => ({ weekKey, type: "trending" as const, recipeId: r.id, createdAt: new Date(Date.now() + createdSeasonal.length + i) })),
+        ],
+      });
+    }
   }, {
     timeout: 120000,
     maxWait: 15000,

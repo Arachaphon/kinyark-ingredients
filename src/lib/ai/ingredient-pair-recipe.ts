@@ -51,7 +51,10 @@ async function callGemini(prompt: string): Promise<string> {
     throw new Error("GEMINI_API_KEY is not configured");
   }
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3.6-flash",
+    generationConfig: { maxOutputTokens: 1024, responseMimeType: "application/json" },
+  });
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
@@ -74,31 +77,17 @@ async function callGroq(prompt: string): Promise<string> {
     ],
     model: "qwen/qwen3.8-27b",
     response_format: { type: "json_object" },
-    max_tokens: 4096,
+    max_tokens: 1024,
   });
   return completion.choices[0]?.message?.content ?? "";
 }
 
-/** ดึงรายชื่อเมนูที่มีอยู่ในระบบ เพื่อให้ AI หลีกเลี่ยงการสร้างเมนูซ้ำ */
-async function getExistingRecipeNames(): Promise<string[]> {
-  const rows = await prisma.recipe.findMany({
-    where: { visibility: { not: "draft" } },
-    select: { recipeName: true },
-    take: 200,
-  });
-  return rows.map((r) => r.recipeName).filter(Boolean);
-}
-
 function buildPrompt(
   ingredients: string[],
-  existingNames: string[],
   provider: "gemini" | "groq"
 ): string {
   const focusList = ingredients.join(", ");
-  const existingList =
-    existingNames.length > 0 ? existingNames.join(" | ") : "(ไม่มีข้อมูล)";
-  const providerLabel =
-    provider === "gemini" ? "Gemini" : "Groq";
+  const providerLabel = provider === "gemini" ? "Gemini" : "Groq";
 
   return [
     `คุณคือ ${providerLabel} เชฟผู้เชี่ยวชาญด้านการออกแบบเมนูอาหารไทย`,
@@ -106,17 +95,16 @@ function buildPrompt(
     `วัตถุดิบที่ผู้ใช้เลือก (จับคู่กันแล้ว ใช้เป็นตัวชูโรงของเมนู): ${focusList}`,
     "",
     "กติกา:",
-    "- สร้างเมนูที่สมเหตุสมผล ทำได้จริง เหมาะสำหรับ 1 มื้อ งบประมาณจำกัด",
+    "- สร้างเมนูที่สร้างสรรค์ แปลกใหม่ สมเหตุสมผล ทำได้จริง เหมาะสำหรับ 1 มื้อ งบประมาณจำกัด",
     "- ใช้อุปกรณ์พื้นฐานในครัว (หม้อ กระทะ ไมโครเวฟ)",
     "- ระบุส่วนผสมพร้อมปริมาณและหน่วย ให้ครบถ้วน และต้องมีวัตถุดิบหลักจากรายการที่เลือกไว้อย่างน้อย 1 อย่าง",
     "- สร้างเพียง 1 เมนูเท่านั้น",
-    "- ห้ามตั้งชื่อเมนูซ้ำกับเมนูที่มีอยู่แล้วในระบบเด็ดขาด (ต้องไม่เหมือนหรือใกล้เคียงจนสับสน)",
-    `- รายชื่อเมนูที่มีอยู่ในระบบแล้ว (ห้ามซ้ำ): ${existingList}`,
+    "- ตั้งชื่อเมนูที่สร้างสรรค์ น่ารับประทาน มีเอกลักษณ์เฉพาะตัว ไม่ใช้ชื่ออาหารตามสั่งพื้นฐานทั่วไป",
     "- ตอบกลับเป็น JSON เท่านั้น โดยไม่มีข้อความอื่นปะปน ตามโครงสร้างนี้:",
     `{ "recipes": [{ "recipeName": "...", "description": "...", "instructions": "1. ...\\n2. ...", "ingredients": [{ "name": "...", "quantity": 100, "unit": "กรัม" }] }] }`,
     "",
     "ข้อกำหนดเพิ่มเติม:",
-    "- recipeName: ชื่อเมนูที่ชัดเจน และต้องไม่ซ้ำกับรายชื่อด้านบน",
+    "- recipeName: ชื่อเมนูที่ชัดเจนและสร้างสรรค์",
     "- instructions: เขียนเป็นขั้นตอนเรียงลำดับ คั่นด้วย \\n",
     "- ingredients: array ของวัตถุดิบ โดย name ตรงตามธรรมชาติ",
     "- quantity ต้องเป็นตัวเลข (number) เท่านั้น เช่น 100, 200, 1.5 ห้ามใช้เศษส่วนแบบ 1/2 หรือ 1/4",
@@ -127,13 +115,12 @@ type Provider = "gemini" | "groq";
 
 async function requestRecipe(
   provider: Provider,
-  ingredients: string[],
-  existingNames: string[]
+  ingredients: string[]
 ): Promise<WeeklyAiRecipe> {
   const raw =
     provider === "gemini"
-      ? await callGemini(buildPrompt(ingredients, existingNames, provider))
-      : await callGroq(buildPrompt(ingredients, existingNames, provider));
+      ? await callGemini(buildPrompt(ingredients, provider))
+      : await callGroq(buildPrompt(ingredients, provider));
   if (!raw) throw new Error(`${provider} returned empty response`);
 
   const parsed: unknown = JSON.parse(cleanAiJson(raw));
@@ -251,17 +238,14 @@ export async function ensureIngredientPairRecipes(
     return { recipes, generated: false, missingProviders: [] };
   }
 
-  const [existingNames, systemUserId] = await Promise.all([
-    getExistingRecipeNames(),
-    getSystemUserId(),
-  ]);
+  const systemUserId = await getSystemUserId();
 
   // 4) เรียก AI ที่จำเป็นคู่ขนาน (แต่ละตัวสร้าง 1 เมนู)
   //    เก็บ provider กำกับทุกผล (ทั้งสำเร็จ/ล้มเหลว) เพื่อให้รู้ว่า AI ตัวใดสร้างสำเร็จ
   const results = await Promise.allSettled(
     providersToGenerate.map(async (p) => {
       try {
-        const aiRecipe = await requestRecipe(p, ingredients, existingNames);
+        const aiRecipe = await requestRecipe(p, ingredients);
         return { provider: p, aiRecipe };
       } catch (err) {
         throw { provider: p, cause: err };
