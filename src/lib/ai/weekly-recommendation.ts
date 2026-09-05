@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSystemUserId } from "@/lib/ai/system-user";
 import { upsertRecipeIngredients } from "@/lib/ingredients";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callGemini } from "@/lib/ai/gemini-client";
 import OpenAI from "openai";
 import { buildSeasonalPrompt, buildTrendingPrompt } from "@/lib/ai/weekly-prompts";
 import { weeklyAiRecipeSchema, type WeeklyAiRecipe } from "@/lib/validations/weekly.schema";
@@ -129,19 +129,6 @@ async function getTrendingIngredientNames(): Promise<string[]> {
 // เรียก AI
 // ─────────────────────────────────────────────────────────────
 
-async function callGemini(prompt: string): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-3.6-flash",
-    generationConfig: { maxOutputTokens: 2048, responseMimeType: "application/json" },
-  });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-}
-
 async function callGroq(prompt: string): Promise<string> {
   if (!process.env.GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is not configured");
@@ -173,7 +160,9 @@ async function requestRecipes(
   prompt: string
 ): Promise<WeeklyAiRecipe[]> {
   const raw =
-    provider === "gemini" ? await callGemini(prompt) : await callGroq(prompt);
+    provider === "gemini"
+      ? await callGemini(prompt, { maxOutputTokens: 8192, json: true })
+      : await callGroq(prompt);
   if (!raw) throw new Error("AI returned empty response");
 
   const parsed: unknown = JSON.parse(cleanAiJson(raw));

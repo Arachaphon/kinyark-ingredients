@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSystemUserId } from "@/lib/ai/system-user";
 import { upsertRecipeIngredients } from "@/lib/ingredients";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callGemini } from "@/lib/ai/gemini-client";
 import OpenAI from "openai";
 import { weeklyAiRecipeSchema, type WeeklyAiRecipe } from "@/lib/validations/weekly.schema";
 
@@ -46,19 +46,6 @@ export function buildRecipeImageUrl(recipeName: string, seed: number): string {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&negative_prompt=${encodeURIComponent(negative)}&seed=${1000 + seed}`;
 }
 
-async function callGemini(prompt: string): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-3.6-flash",
-    generationConfig: { maxOutputTokens: 1024, responseMimeType: "application/json" },
-  });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
-}
-
 async function callGroq(prompt: string): Promise<string> {
   if (!process.env.GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is not configured");
@@ -77,7 +64,7 @@ async function callGroq(prompt: string): Promise<string> {
     ],
     model: "qwen/qwen3.8-27b",
     response_format: { type: "json_object" },
-    max_tokens: 1024,
+    max_tokens: 900,
   });
   return completion.choices[0]?.message?.content ?? "";
 }
@@ -117,19 +104,65 @@ async function requestRecipe(
   provider: Provider,
   ingredients: string[]
 ): Promise<WeeklyAiRecipe> {
-  const raw =
-    provider === "gemini"
-      ? await callGemini(buildPrompt(ingredients, provider))
-      : await callGroq(buildPrompt(ingredients, provider));
-  if (!raw) throw new Error(`${provider} returned empty response`);
-
-  const parsed: unknown = JSON.parse(cleanAiJson(raw));
-  const envelope = (parsed as { recipes?: unknown }).recipes;
-  if (!Array.isArray(envelope) || envelope.length === 0) {
-    throw new Error(`${provider} response missing 'recipes' array`);
+  let raw: string;
+  try {
+    raw =
+      provider === "gemini"
+        ? await callGemini(buildPrompt(ingredients, provider), {
+          maxOutputTokens: 4096,
+          json: true,
+        })
+        : await callGroq(buildPrompt(ingredients, provider));
+  } catch (err) {
+    throw {
+      provider,
+      stage: "generateContent",
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    };
+  }
+  if (!raw) {
+    throw {
+      provider,
+      stage: "empty",
+      message: `${provider} returned empty response`,
+    };
   }
 
-  return weeklyAiRecipeSchema.parse(envelope[0]);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleanAiJson(raw));
+  } catch (err) {
+    throw {
+      provider,
+      stage: "json-parse",
+      message: err instanceof Error ? err.message : String(err),
+      rawLength: raw.length,
+      rawPreview: raw.slice(0, 300),
+    };
+  }
+  const envelope = (parsed as { recipes?: unknown }).recipes;
+  if (!Array.isArray(envelope) || envelope.length === 0) {
+    throw {
+      provider,
+      stage: "envelope",
+      message: `${provider} response missing 'recipes' array`,
+      rawLength: raw.length,
+      rawPreview: raw.slice(0, 300),
+    };
+  }
+
+  try {
+    return weeklyAiRecipeSchema.parse(envelope[0]);
+  } catch (err) {
+    throw {
+      provider,
+      stage: "zod",
+      message: err instanceof Error ? err.message : String(err),
+      rawLength: raw.length,
+      rawPreview: raw.slice(0, 300),
+    };
+  }
 }
 
 type RecipeDto = {
@@ -259,9 +292,24 @@ export async function ensureIngredientPairRecipes(
   for (const result of results) {
     if (result.status === "rejected") {
       // ถ้า AI ตัวใดล้มเหลว ข้ามไป ไม่พังทั้งคำขอ แต่จดว่าเป็น provider ใด
-      const provider = (result.reason as { provider?: string } | null)?.provider;
+      const reason = result.reason as {
+        provider?: string;
+        cause?: unknown;
+      } | null;
+      const inner = reason?.cause ?? reason;
+      const provider =
+        (inner as { provider?: string } | null)?.provider ?? reason?.provider;
       if (provider) missingProviders.push(provider);
-      console.error(`ingredient-pair ${result.reason}`);
+      const detail =
+        inner instanceof Error
+          ? {
+              provider,
+              stage: "unknown",
+              message: inner.message,
+              stack: inner.stack,
+            }
+          : inner;
+      console.error("ingredient-pair failed", JSON.stringify(detail));
       continue;
     }
 

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callGemini as callGeminiShared } from "@/lib/ai/gemini-client";
 import OpenAI from "openai";
 import { buildIngredientPrompt } from "./prompts";
 import {
@@ -8,12 +8,8 @@ import {
   type GenerateMenuResponse,
 } from "@/lib/validations/ai.schema";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-
 async function callGemini(prompt: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return callGeminiShared(prompt);
 }
 
 async function callGroq(prompt: string): Promise<string> {

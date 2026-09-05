@@ -70,9 +70,6 @@ function ResultsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [results, setResults] = useState<RecipeItem[]>([]);
-
-  // 💡 รายชื่อ AI provider ที่ควรมีเมนูแต่ยังสร้างไม่สำเร็จ (เช่น Gemini หมดโควตา)
-  const [missingAiProviders, setMissingAiProviders] = useState<string[]>([]);
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -154,7 +151,6 @@ function ResultsContent() {
 
     setIsLoading(true);
     setIsAiLoading(false);
-    setMissingAiProviders([]);
 
     // บันทึกประวัติการค้นหาสำหรับผู้ใช้ที่ล็อกอิน (ทั้งการค้นหาด้วยคำและชุดวัตถุดิบ)
     fetch("/api/search-history", {
@@ -216,10 +212,6 @@ function ResultsContent() {
               const aiData: ApiRecipeItem[] = Array.isArray(aiJson)
                 ? aiJson
                 : (aiJson?.items ?? []);
-              const missing: string[] = Array.isArray(aiJson?.missingAiProviders)
-                ? aiJson.missingAiProviders
-                : [];
-              setMissingAiProviders(missing);
 
               if (aiData.length > 0) {
                 const aiFormatted = aiData.map((item, idx) => formatRecipeItem(item, idx));
@@ -234,8 +226,8 @@ function ResultsContent() {
             } else if (aiResponse.status === 429) {
               console.warn("AI generation rate limited");
             }
-          } catch (aiError: any) {
-            if (aiError?.name !== "AbortError") {
+          } catch (aiError: unknown) {
+            if (!(aiError instanceof Error) || aiError.name !== "AbortError") {
               console.warn("AI Generate error:", aiError);
             }
           } finally {
@@ -244,8 +236,8 @@ function ResultsContent() {
             }
           }
         }
-      } catch (error: any) {
-        if (error?.name !== "AbortError") {
+      } catch (error: unknown) {
+        if (!(error instanceof Error) || error.name !== "AbortError") {
           console.warn("API Search Error:", error);
           if (isMounted) {
             setResults([]);
@@ -314,23 +306,6 @@ function ResultsContent() {
                 สูตรใหม่จาก AI จะเพิ่มเข้ามาในหน้านี้อัตโนมัติเมื่อสร้างเสร็จ
               </p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 🔔 แจ้งเตือนเมื่อ AI ตัวใดยังสร้างเมนูไม่สำเร็จ (เช่น Gemini หมดโควตา) */}
-      {!isLoading && !isAiLoading && missingAiProviders.length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3">
-          <span className="text-xl leading-none mt-0.5">⚠️</span>
-          <div>
-            <p className="font-semibold text-amber-800">
-              {missingAiProviders.length === 1 && missingAiProviders[0]?.toLowerCase() === "gemini"
-                ? "Gemini หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก Groq ก่อน"
-                : `${missingAiProviders.join(", ")} หมดโควตาชั่วคราว — กำลังแสดงเมนูจาก provider อื่นก่อน`}
-            </p>
-            <p className="text-sm text-amber-700 mt-0.5">
-              ลองเลือกชุดวัตถุดิบเดิมอีกครั้งภายหลัง เพื่อให้เมนูที่เหลือถูกสร้างเพิ่ม
-            </p>
           </div>
         </div>
       )}
