@@ -17,9 +17,7 @@ export const weeklyAiRecipeSchema = z.object({
   recipeName: z.string().trim().min(1, "Recipe name is required").max(150),
   description: z.string().trim().max(1000).optional(),
   instructions: z.string().trim().min(1, "Instructions are required").max(20_000),
-  ingredients: z
-    .array(weeklyAiIngredientSchema)
-    .min(1, "Please provide at least one ingredient"),
+  ingredients: z.array(weeklyAiIngredientSchema).default([]),
 });
 
 export type WeeklyAiIngredient = z.infer<typeof weeklyAiIngredientSchema>;

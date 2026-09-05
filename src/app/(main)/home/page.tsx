@@ -59,7 +59,16 @@ const mockFeaturedRecipe: RecipeData = {
 
 export default function HomePage() {
   const { data: featuredData } = useSWR("/api/recipes/featured", fetcher);
-  const { data: weeklyData } = useSWR<WeeklyResponse>("/api/weekly-recommendations", fetcher);
+  const { data: weeklyData } = useSWR<WeeklyResponse>(
+    "/api/weekly-recommendations",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 300000,
+    }
+  );
   
   const isApiReady = featuredData?.data && featuredData.data.length > 0;
   const featured: RecipeData = isApiReady ? featuredData.data[0] : mockFeaturedRecipe;

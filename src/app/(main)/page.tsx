@@ -116,7 +116,16 @@ const mockFeatured = {
 };
 
 export default function HomePage() {
-  const { data: weeklyData } = useSWR<WeeklyResponse>("/api/weekly-recommendations", fetcher);
+  const { data: weeklyData } = useSWR<WeeklyResponse>(
+    "/api/weekly-recommendations",
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 300000,
+    }
+  );
 
   // แปลงเมนูที่ AI สร้างให้เป็นรูปแบบที่ MenuCarousel ใช้
   const toDisplay = (items: WeeklyRecipeItem[] | undefined): RecommendedRecipe[] =>

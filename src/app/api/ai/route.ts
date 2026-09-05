@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callGemini } from "@/lib/ai/gemini-client";
 import OpenAI from "openai"; // 👈 ใช้ไลบรารีของ OpenAI ได้เลย
 
 export async function POST(request: Request) {
@@ -10,11 +10,9 @@ export async function POST(request: Request) {
     // 🤖 ค่าย Google (Gemini)
     // ==========================================
     if (provider === "gemini") {
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      
-      const result = await model.generateContent(prompt);
-      return NextResponse.json({ success: true, text: result.response.text() });
+      const text = await callGemini(prompt);
+
+      return NextResponse.json({ success: true, text });
     }
 
     // ==========================================
