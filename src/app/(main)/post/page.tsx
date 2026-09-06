@@ -213,7 +213,6 @@ export default function PostsFeedPage() {
           {posts.map((post) => {
             const storePost = post.storePosts && post.storePosts.length > 0 ? post.storePosts[0] : null;
             const isStoreSet = Boolean(storePost);
-            const storeName = storePost?.storeName ?? "";
             const sellingPrice = storePost?.sellingPrice ?? 0;
 
             if (isStoreSet) {
