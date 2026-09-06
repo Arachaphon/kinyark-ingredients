@@ -109,13 +109,19 @@ export default function HomePage() {
 
         <div className="md:col-span-7 flex items-center justify-end relative mt-12 md:mt-0">
           <div className="bg-white rounded-[40px] w-full md:w-[88%] p-12 pr-36 md:pr-12 min-h-[300px] shadow-sm flex flex-col justify-center relative">
-            <div className="z-10">
+            <div className="z-10 w-full max-w-[calc(100%-110px)] sm:max-w-[calc(100%-200px)] xl:max-w-[calc(100%-280px)]">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#FF8585] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm shadow-sm">✓</div>
                 <span className="font-bold text-gray-900 text-xl">สูตรอาหารแนะนำ</span>
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 break-words leading-tight">{featured.recipeName}</h1>
+              {/* ปรับให้ตัดคำที่ยาวเกินและแสดงชื่อเต็มเมื่อชี้เมาส์ */}
+              <h1 
+                className="text-4xl md:text-6xl font-bold text-[#3AC9B5] mb-5 leading-tight line-clamp-2"
+                title={featured.recipeName}
+              >
+                {featured.recipeName}
+              </h1>
               <div className="flex items-center gap-2 mb-8">
                 <span className="text-[#F1C40F] text-2xl">★</span>
                 <span className="font-bold text-gray-800 text-lg">{featured.rating.toFixed(1)}</span>
@@ -363,9 +369,12 @@ function RecipeCard({
       {/* ส่วนเนื้อหา ชื่อ + ดาวเรตติ้ง (จับรวมกลุ่มกัน) */}
       <div className="flex flex-col items-center w-full px-4">
         
-        {/* ⚠️ แสดงชื่อเต็ม ไม่ตัด/ไม่ clamp เพราะชื่อสูตรอาจยาว */}
+        {/* เพิ่ม line-clamp-2 และ title ให้แสดงผลสวยงามเมื่อชื่อเมนูยาว */}
         <div className="flex items-center justify-center gap-3 w-full relative z-30 mb-3">
-          <span className="font-bold text-xl md:text-2xl text-white whitespace-normal text-center leading-snug max-w-[80%]">
+          <span 
+            className="font-bold text-xl md:text-2xl text-white whitespace-normal text-center leading-snug max-w-[80%] line-clamp-2"
+            title={title}
+          >
             {title}
           </span>
           

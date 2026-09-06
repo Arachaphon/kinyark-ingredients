@@ -123,6 +123,38 @@ describe('GET /api/recipes', () => {
     expect(body.meta.total).toBe(3)
   })
 
+  test('filters by authorType=user', async () => {
+    const res = await GET(makeRequest('?authorType=user'))
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data).toBeDefined()
+    expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          visibility: { in: ['public', 'protected'] },
+          aiProvider: null,
+        },
+      })
+    )
+  })
+
+  test('filters by authorType=ai', async () => {
+    const res = await GET(makeRequest('?authorType=ai'))
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data).toBeDefined()
+    expect(mockPrisma.recipe.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          visibility: { in: ['public', 'protected'] },
+          aiProvider: { not: null },
+        },
+      })
+    )
+  })
+
   test('returns 500 on internal server error', async () => {
     mockPrisma.recipe.findMany.mockRejectedValue(new Error('db down'))
 

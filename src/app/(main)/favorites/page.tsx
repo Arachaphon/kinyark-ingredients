@@ -108,24 +108,24 @@ export default function FavoritesPage() {
     >
       <Navbar />
 
-      <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-8">
-        <div className="bg-white border border-gray-200 rounded-sm p-8 md:p-12 shadow-sm">
+      <main className="w-[95%] max-w-[900px] mx-auto px-4 mt-8">
+        <div className="bg-white border border-gray-200 rounded-sm p-6 md:p-10 shadow-sm">
           <div className="mb-8 flex items-baseline gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">รายการโปรด</h1>
-            <span className="text-2xl font-medium text-gray-400">
+            <h1 className="text-2xl font-bold text-gray-900">รายการโปรด</h1>
+            <span className="text-xl font-medium text-gray-400">
               ({favoritesCount})
             </span>
           </div>
 
           {loading && (
-            <div className="flex flex-col items-center justify-center py-24 gap-4">
-              <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
               <p className="text-gray-500 font-medium">กำลังโหลดรายการโปรด...</p>
             </div>
           )}
 
           {!loading && unauthorized && (
-            <div className="text-center py-20">
+            <div className="text-center py-16">
               <p className="text-lg font-bold text-gray-800">
                 กรุณาเข้าสู่ระบบก่อนดูรายการโปรด
               </p>
@@ -139,7 +139,7 @@ export default function FavoritesPage() {
           )}
 
           {!loading && !unauthorized && error && (
-            <div className="text-center py-20">
+            <div className="text-center py-16">
               <p className="text-lg font-bold text-red-600">
                 เกิดข้อผิดพลาดในการโหลดข้อมูล
               </p>
@@ -153,7 +153,7 @@ export default function FavoritesPage() {
           )}
 
           {!loading && !unauthorized && !error && (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-5">
               {favoritesCount > 0 ? (
                 favorites.map((item) => {
                   const recipe = item.recipe;
@@ -164,21 +164,21 @@ export default function FavoritesPage() {
                   return (
                     <div
                       key={item.id}
-                      className="bg-white border-2 border-white rounded-sm p-8 shadow-sm mb-4 animate-fade-in"
+                      className="bg-white border border-gray-100 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow mb-2 animate-fade-in"
                     >
-                      <div className="flex flex-col md:flex-row gap-10">
-                        <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="w-full md:w-[240px] h-[240px] flex-shrink-0 relative">
                           <Image
                             src={recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
                             alt={recipe.recipeName}
                             fill
-                            className="object-cover rounded-3xl shadow-md"
-                            sizes="350px"
+                            className="object-cover rounded-2xl shadow-sm"
+                            sizes="240px"
                           />
                         </div>
 
-                        <div className="flex flex-col justify-center gap-6 min-w-0">
-                          <h1 className="text-4xl md:text-5xl font-bold text-[#71B254] leading-tight">
+                        <div className="flex flex-col justify-center gap-4 min-w-0">
+                          <h1 className="text-2xl md:text-3xl font-bold text-[#71B254] leading-snug line-clamp-2">
                             {recipe.recipeName}
                           </h1>
 
@@ -187,7 +187,7 @@ export default function FavoritesPage() {
                               {tags.map((tag, idx) => (
                                 <span
                                   key={idx}
-                                  className="bg-[#EAF5E4] text-[#5A9240] text-sm font-semibold px-3 py-1 rounded-md"
+                                  className="bg-[#EAF5E4] text-[#5A9240] text-xs font-semibold px-2.5 py-1 rounded-md"
                                 >
                                   {tag}
                                 </span>
@@ -195,14 +195,14 @@ export default function FavoritesPage() {
                             </div>
                           )}
 
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             {(() => {
                               const aiAuthor = getAiAuthor(recipe.aiProvider);
                               if (aiAuthor) {
                                 return (
                                   <>
-                                    <Image src={aiAuthor.logo} alt={`${aiAuthor.name} logo`} width={32} height={32} className="rounded-full object-cover shrink-0 bg-white" />
-                                    <span className="font-bold text-gray-800 text-lg">{aiAuthor.name}</span>
+                                    <Image src={aiAuthor.logo} alt={`${aiAuthor.name} logo`} width={24} height={24} className="rounded-full object-cover shrink-0 bg-white" />
+                                    <span className="font-bold text-gray-800 text-base">{aiAuthor.name}</span>
                                   </>
                                 );
                               }
@@ -211,11 +211,11 @@ export default function FavoritesPage() {
                                   <Image
                                     src={recipe.user?.avatarUrl ?? FALLBACK_AVATAR}
                                     alt={recipe.user?.username ?? "ผู้เขียน"}
-                                    width={32}
-                                    height={32}
+                                    width={24}
+                                    height={24}
                                     className="rounded-full object-cover shrink-0"
                                   />
-                                  <span className="font-bold text-gray-800 text-lg">
+                                  <span className="font-bold text-gray-800 text-base">
                                     {recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}
                                   </span>
                                 </>
@@ -223,19 +223,19 @@ export default function FavoritesPage() {
                             })()}
                           </div>
 
-                          <div className="flex items-center gap-8 mt-4">
+                          <div className="flex items-center gap-6 mt-1">
                             {/* 🌟 หัวใจกดลบได้ (Optimistic UI) */}
                             <div
                               onClick={(e) => {
                                 e.preventDefault();
                                 handleRemoveFavorite(recipe.id);
                               }}
-                              className="flex items-center gap-2 cursor-pointer group"
+                              className="flex items-center gap-1.5 cursor-pointer group"
                               title="ยกเลิกการบันทึกสูตรนี้"
                             >
                               <svg
-                                width="28"
-                                height="28"
+                                width="22"
+                                height="22"
                                 viewBox="0 0 24 24"
                                 fill="#FF0000"
                                 stroke="#FF0000"
@@ -246,14 +246,14 @@ export default function FavoritesPage() {
                               >
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                               </svg>
-                              <span className="font-bold text-gray-700 text-lg group-hover:text-red-500 transition-colors">
+                              <span className="font-bold text-gray-700 text-base group-hover:text-red-500 transition-colors">
                                 {recipe.favoriteCount}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5">
                               {renderStars(Math.round(recipe.rating))}
-                              <span className="font-bold text-gray-800 text-lg ml-2">
+                              <span className="font-bold text-gray-800 text-base ml-1">
                                 {recipe.rating.toFixed(1)}
                               </span>
                             </div>
@@ -261,7 +261,7 @@ export default function FavoritesPage() {
 
                           <Link
                             href={`/recipe/${recipe.id}`}
-                            className="w-fit px-6 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition shadow-sm"
+                            className="w-fit mt-1 px-5 py-2 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition shadow-sm"
                           >
                             ดูสูตรอาหาร
                           </Link>
@@ -271,7 +271,7 @@ export default function FavoritesPage() {
                   );
                 })
               ) : (
-                <div className="text-center py-20 text-gray-400 italic text-lg animate-fade-in">
+                <div className="text-center py-16 text-gray-400 italic text-base animate-fade-in">
                   คุณยังไม่ได้กดถูกใจสูตรอาหารใด ๆ
                 </div>
               )}

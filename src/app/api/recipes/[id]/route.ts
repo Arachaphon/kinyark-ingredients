@@ -319,6 +319,8 @@ export async function DELETE(
 
     cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix('recipes:mine:')
     return Response.json({ data: { success: true, id: recipeId } }, { status: 200 })
   } catch (error) {
     console.error("DELETE /api/recipes/[id] error:", error)
@@ -615,6 +617,8 @@ export async function PATCH(
 
     cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix('recipes:mine:')
     return Response.json({ data: updatedRecipe })
   } catch (error) {
     console.error("PATCH /api/recipes/[id] error:", error)

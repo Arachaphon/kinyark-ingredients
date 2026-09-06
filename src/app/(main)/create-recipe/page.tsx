@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { mutate } from "swr";
 import Navbar from "@/components/Navbar"; 
 import Link from "next/link";
 import type { Map, Marker, LeafletMouseEvent } from "leaflet";
@@ -103,9 +104,36 @@ export default function CreateRecipePage() {
     if (existing) return existing;
 
     const promise = (async () => {
-      if (!user) return { url: null, error: "ยังไม่ได้ล็อกอิน" };
-      const result = await uploadRecipeMedia(createClient(), file, user.id);
-      if (result.error) return { url: null, error: result.error };
+      const supabase = createClient();
+      let activeUserId = user?.id;
+
+      if (!activeUserId) {
+        const { data: sessionData } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+        activeUserId = sessionData?.session?.user?.id;
+      }
+
+      if (!activeUserId) {
+        try {
+          const meRes = await fetch("/api/auth/me");
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            activeUserId = meData?.user?.id;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!activeUserId) {
+        delete uploadPromisesRef.current[key];
+        return { url: null, error: "ยังไม่ได้เข้าสู่ระบบ กรุณาเข้าสู่ระบบก่อนอัปโหลดรูปภาพ" };
+      }
+
+      const result = await uploadRecipeMedia(supabase, file, activeUserId);
+      if (result.error) {
+        delete uploadPromisesRef.current[key];
+        return { url: null, error: result.error };
+      }
       return { url: result.url };
     })();
 
@@ -968,6 +996,12 @@ export default function CreateRecipePage() {
 
       const result = await response.json();
       console.log("Success:", result);
+
+      await mutate(
+        (key) => typeof key === "string" && key.startsWith("/api/recipes"),
+        undefined,
+        { revalidate: true }
+      );
       
       if (isDraft) {
         router.push("/my-recipe");
@@ -1546,7 +1580,7 @@ export default function CreateRecipePage() {
                         placeholder="เช่น สเต็กเนื้อวากิว, สลัดอกไก่" 
                         value={title} 
                         onChange={(e) => setTitle(e.target.value)} 
-                        maxLength={100}
+                        maxLength={50}
                         className={`w-full py-3 px-4 pr-20 border rounded-md focus:outline-none focus:ring-1 text-gray-700 placeholder-gray-400 bg-white ${
                           missingFields.includes("title") 
                             ? "border-red-500 bg-red-50/20" 
@@ -1554,7 +1588,7 @@ export default function CreateRecipePage() {
                         }`}
                       />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        {title.length}/100
+                        {title.length}/50
                       </span>
                     </div>
                   </div>

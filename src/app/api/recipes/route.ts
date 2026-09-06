@@ -6,6 +6,14 @@ import { Prisma } from "@prisma/client"
 import { cache, TTL_RECIPES_LIST, TTL_RECIPES_MINE } from "@/lib/cache"
 import { getAuthUserId } from "@/lib/auth-user"
 
+type OrphanedStorePost = Prisma.StorePostGetPayload<{
+  include: {
+    user: { select: { id: true; username: true; avatarUrl: true } }
+    images: true
+    videos: true
+  }
+}>
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -18,6 +26,7 @@ export async function GET(request: Request) {
       mine: searchParams.get("mine") ?? undefined,
       publicOnly: searchParams.get("publicOnly") ?? undefined,
       aiProvider: searchParams.get("aiProvider") ?? undefined,
+      authorType: searchParams.get("authorType") ?? undefined,
     })
 
     if (!parsed.success) {
@@ -27,7 +36,7 @@ export async function GET(request: Request) {
       )
     }
 
-    const { page, limit, mine, publicOnly, aiProvider } = parsed.data
+    const { page, limit, mine, publicOnly, aiProvider, authorType } = parsed.data
 
     const userId = await getAuthUserId(request)
     const userRole = request.headers.get("x-user-role")
@@ -121,40 +130,38 @@ export async function GET(request: Request) {
     }
 
     // Determine visibility filter based on user role
-    // STORE role users cannot see protected recipes, unless they own the recipe
+    // In public feed, drafts and private posts are NEVER shown to anyone
     let visibilityFilter: Prisma.RecipeWhereInput;
 
     if (publicOnly) {
       visibilityFilter = { visibility: "public" };
+    } else if (user && userRole === "STORE") {
+      // Store users can see public recipes and their own protected recipes
+      visibilityFilter = {
+        OR: [
+          { visibility: "public" },
+          { userId: user.id, visibility: "protected" },
+        ]
+      };
     } else {
-      if (user) {
-        if (userRole === "STORE") {
-          // Store users cannot see protected recipes, unless they own the recipe
-          visibilityFilter = {
-            OR: [
-              { visibility: "public" },
-              { userId: user.id },
-            ]
-          };
-        } else {
-          visibilityFilter = {
-            OR: [
-              { visibility: { in: ["public", "protected"] } },
-              { userId: user.id },
-            ]
-          };
-        }
-      } else {
-        // Not logged in — show both public and protected
-        visibilityFilter = { visibility: { in: ["public", "protected"] } };
-      }
+      visibilityFilter = { visibility: { in: ["public", "protected"] } };
     }
 
-    const where: Prisma.RecipeWhereInput = aiProvider
-      ? { ...visibilityFilter, aiProvider }
-      : visibilityFilter;
+    let authorFilter: Prisma.RecipeWhereInput = {};
+    if (authorType === "user") {
+      authorFilter = { aiProvider: null };
+    } else if (authorType === "ai") {
+      authorFilter = aiProvider ? { aiProvider } : { aiProvider: { not: null } };
+    } else if (aiProvider) {
+      authorFilter = { aiProvider };
+    }
 
-    const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}`
+    const where: Prisma.RecipeWhereInput = {
+      ...visibilityFilter,
+      ...authorFilter,
+    };
+
+    const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}:${authorType ?? "all"}`
     if (process.env.NODE_ENV !== 'test') {
       const cached = cache.get(cacheKey)
       if (cached) {
@@ -162,23 +169,17 @@ export async function GET(request: Request) {
       }
     }
 
+    const isAiOnly = authorType === "ai" || Boolean(aiProvider);
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
       recipeId: null,
     };
     
     // Check auth for visibility filtering of orphaned store posts
-    if (user) {
-      if (userRole === "STORE") {
-        storePostVisibilityConditions.OR = [
-          { visibility: "public" },
-          { userId: user.id }
-        ];
-      } else {
-        storePostVisibilityConditions.OR = [
-          { visibility: { in: ["public", "protected"] } },
-          { userId: user.id }
-        ];
-      }
+    if (user && userRole === "STORE") {
+      storePostVisibilityConditions.OR = [
+        { visibility: "public" },
+        { userId: user.id, visibility: "protected" }
+      ];
     } else {
       storePostVisibilityConditions.visibility = { in: ["public", "protected"] };
     }
@@ -197,22 +198,24 @@ export async function GET(request: Request) {
           take: limit,
         }),
       ]),
-      Promise.all([
-        prisma.storePost.findMany({
-          where: storePostVisibilityConditions,
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-            images: { orderBy: { createdAt: "asc" } },
-            videos: { orderBy: { createdAt: "asc" } },
-          },
-          orderBy: { createdAt: "desc" },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.storePost.count({
-          where: storePostVisibilityConditions,
-        }),
-      ])
+      isAiOnly
+        ? Promise.resolve([[], 0] as [OrphanedStorePost[], number])
+        : Promise.all([
+            prisma.storePost.findMany({
+              where: storePostVisibilityConditions,
+              include: {
+                user: { select: { id: true, username: true, avatarUrl: true } },
+                images: { orderBy: { createdAt: "asc" } },
+                videos: { orderBy: { createdAt: "asc" } },
+              },
+              orderBy: { createdAt: "desc" },
+              skip: (page - 1) * limit,
+              take: limit,
+            }),
+            prisma.storePost.count({
+              where: storePostVisibilityConditions,
+            }),
+          ])
     ])
 
     const dummyRecipesForOrphans = orphanedStorePosts.map((sp) => ({
