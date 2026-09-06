@@ -128,7 +128,6 @@ export default function ViewRecipePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
 
-  // 🌟 Ref สำหรับให้เลื่อนหน้าจอมายังจุดแสดงคอมเมนต์อัตโนมัติ
   const commentSectionRef = useRef<HTMLDivElement>(null);
 
   const [queryRecipe, setQueryRecipe] = useState<QueryRecipeData | null>(null);
@@ -235,7 +234,6 @@ export default function ViewRecipePage() {
       ];
     }
 
-    // สร้างข้อมูลคอมเมนต์จำลองสำหรับสูตร AI ให้หน้าเว็บมีตัวอย่างการแสดงผล
     const mockAiReviews = [
       { id: "mock-r1", user: { username: "สายกินฟินเว่อร์", avatarUrl: FALLBACK_AVATAR }, rating: 5, comment: "สูตรนี้เข้าใจง่ายมากครับ ทำตามแล้วรสชาติออกมาดีเยี่ยมเลย", isAnonymous: false },
       { id: "mock-r2", user: { username: "แม่ครัวฝึกหัด", avatarUrl: FALLBACK_AVATAR }, rating: 4, comment: "ใช้เวลาเตรียมนิดหน่อย แต่ออกมาหน้าตาดี รสชาติถูกปากค่ะ", isAnonymous: false }
@@ -487,9 +485,7 @@ export default function ViewRecipePage() {
           ...prev,
           rating: newAvg,
           reviewCount: newCount,
-          reviews: prev.reviews.map((r: any) =>
-            r.id === tempId ? { ...r, ...savedReview, user: savedReview?.user ?? r.user } : r
-          ),
+          reviews: [savedReview, ...prev.reviews.filter(r => r.id !== tempId)], // เอาข้อมูลใหม่ขึ้นบน
         };
       });
     } catch (e) {
@@ -581,7 +577,6 @@ export default function ViewRecipePage() {
   const authorAvatar = recipe?.user?.avatarUrl ?? FALLBACK_AVATAR;
   const canSubmit = !!commentText.trim() && ratingValue > 0 && !isSubmitting;
 
-  // 🌟 ฟังก์ชันจัดการปุ่มกดเปิดคอมเมนต์ พร้อมพาเลื่อนจอ (Auto-Scroll) ลงไปที่ช่องพิมพ์อัตโนมัติ
   const openCommentsAndScroll = () => {
     setIsCommentOpen(true);
     setTimeout(() => {
@@ -595,7 +590,6 @@ export default function ViewRecipePage() {
       <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-6">
         {queryRecipe ? (
           <>
-            {/* ✨ โหมดสูตรแนะนำจากหน้าค้นหา/AI (ข้อมูลส่งมาทาง query params) */}
             <div className="bg-white border border-[#71B254] rounded-sm p-8 shadow-sm relative mb-6">
               <button
                 onClick={() => router.back()}
@@ -748,7 +742,6 @@ export default function ViewRecipePage() {
               )}
             </div>
 
-            {/* 🌟 พรีวิวคอมเมนต์ 1-2 รายการ (แสดงตอนยังไม่กดเปิดโหมดเต็ม) สำหรับ AI */}
             {!isCommentOpen && (
               <div className="w-full mt-4">
                 {queryRecipe.reviews && queryRecipe.reviews.length > 0 ? (
@@ -767,8 +760,8 @@ export default function ViewRecipePage() {
                     </div>
                     <div className="flex flex-col gap-4">
                       {queryRecipe.reviews.slice(0, 2).map((review: any) => (
-                        <div key={review.id} className="flex gap-3">
-                          <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt="avatar" width={32} height={32} className="rounded-full object-cover shrink-0 border border-gray-100" />
+                        <div key={review.id} className="flex items-start gap-3">
+                          <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt="avatar" width={32} height={32} className="rounded-full object-cover shrink-0 border border-gray-100 min-w-[32px] h-[32px]" />
                           <div className="flex flex-col w-full bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-sm text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
@@ -797,15 +790,14 @@ export default function ViewRecipePage() {
               </div>
             )}
 
-            {/* ความคิดเห็นฉบับเต็ม */}
             {isCommentOpen && (
               <div ref={commentSectionRef} className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top scroll-mt-24">
                 <h2 className="text-2xl font-bold text-[#71B254] mb-8">ความคิดเห็น ({queryRecipe.reviewCount})</h2>
                 {queryRecipe.reviews && queryRecipe.reviews.length > 0 ? (
                   <div className="flex flex-col gap-6">
                     {queryRecipe.reviews.map((review: any) => (
-                      <div key={review.id} className="flex gap-4 animate-fade-in">
-                        <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0" />
+                      <div key={review.id} className="flex items-start gap-4 animate-fade-in">
+                        <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0 min-w-[40px] h-[40px]" />
                         <div className="flex flex-col w-full">
                           <div className="flex items-center gap-4 flex-wrap">
                             <span className="font-bold text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
@@ -824,7 +816,6 @@ export default function ViewRecipePage() {
           </>
         ) : (
           <>
-            {/* 📖 โหมดสูตรอาหารจริงจากฐานข้อมูล */}
             {loading && (
               <div className="flex flex-col items-center justify-center py-32 gap-4">
                 <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
@@ -848,7 +839,6 @@ export default function ViewRecipePage() {
 
             {!loading && !error && !notFound && recipe && (
               <>
-                {/* 🏪 กล่องเซ็ทอาหารร้านค้า */}
                 {recipe.storePosts && recipe.storePosts.length > 0 && (() => {
                     const storePost = recipe.storePosts[0];
                     const storeName = storePost.storeName || "ร้านค้า";
@@ -941,7 +931,6 @@ export default function ViewRecipePage() {
                     );
                   })()}
 
-                {/* 📖 รายละเอียดสูตรอาหาร */}
                 <div className="bg-white border border-[#71B254] rounded-sm p-8 relative mb-6 flex flex-col gap-8">
                   <div className="absolute top-4 right-4 bg-[#71B254] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10"><span>รายละเอียดสูตรอาหาร</span></div>
 
@@ -999,7 +988,6 @@ export default function ViewRecipePage() {
                               <span className="font-bold text-gray-700 text-sm">{recipe.favoriteCount}</span>
                             </div>
 
-                            {/* 🌟 กดแล้วพุ่งลงล่างทันที */}
                             <div onClick={openCommentsAndScroll} className="flex items-center gap-2 bg-white border border-[#71B254]/30 px-3.5 py-1.5 rounded-xl cursor-pointer hover:bg-[#EAF5E4]/50 transition">
                               <svg width="22" height="22" viewBox="0 0 24 24" fill={isCommentOpen ? "#71B254" : "none"} stroke="#71B254" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                               <span className="font-bold text-[#5A9240] text-xs">ความคิดเห็น</span>
@@ -1065,7 +1053,6 @@ export default function ViewRecipePage() {
                   </div>
                 </div>
 
-                {/* 🌟 พรีวิวคอมเมนต์ 1-2 รายการแรก (แสดงตอนที่ยังไม่ได้เปิดคอมเมนต์ทั้งหมด) */}
                 {!isCommentOpen && (
                   <div className="w-full mt-4">
                     {recipe.reviews && recipe.reviews.length > 0 ? (
@@ -1084,8 +1071,8 @@ export default function ViewRecipePage() {
                         </div>
                         <div className="flex flex-col gap-4">
                           {recipe.reviews.slice(0, 2).map((review: any) => (
-                            <div key={review.id} className="flex gap-3">
-                              <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt="avatar" width={32} height={32} className="rounded-full object-cover shrink-0 border border-gray-100" />
+                            <div key={review.id} className="flex items-start gap-3">
+                              <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt="avatar" width={32} height={32} className="rounded-full object-cover shrink-0 border border-gray-100 min-w-[32px] h-[32px]" />
                               <div className="flex flex-col w-full bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-bold text-sm text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
@@ -1114,25 +1101,19 @@ export default function ViewRecipePage() {
                   </div>
                 )}
 
-                {/* ============================================================== */}
-                {/* 💬 ส่วนแสดงความคิดเห็นฉบับเต็ม (มี Ref สำหรับ Scroll ลงมา) */}
-                {/* ============================================================== */}
                 {isCommentOpen && (
                   <div ref={commentSectionRef} className="bg-white border border-[#71B254] rounded-sm p-8 md:p-10 shadow-sm animate-fade-in origin-top scroll-mt-24">
                     <h2 className="text-2xl font-bold text-[#71B254] mb-8">ความคิดเห็น ({recipe.reviewCount})</h2>
                     
-                    {/* 📝 กล่องพิมพ์คอมเมนต์ (Input & Submit) */}
                     <div className="pb-8 border-b border-gray-100 mb-8 flex gap-4 items-start">
                       <div className="flex flex-col w-full gap-3">
                         <span className="font-bold text-gray-900">{myReview ? "แก้ไขรีวิวของคุณ" : "เขียนความคิดเห็นของคุณ"}</span>
                         
-                        {/* ระบบกดให้คะแนนดาว */}
                         <div className="flex items-center gap-4">
                           {renderInputStars()}
                           {ratingValue > 0 && <span className="text-xs text-[#F1C40F] font-bold">ให้ {ratingValue} ดาว</span>}
                         </div>
                         
-                        {/* ช่องกรอกข้อความและปุ่มส่ง */}
                         <div className="relative w-full">
                           <input 
                             type="text" 
@@ -1152,12 +1133,10 @@ export default function ViewRecipePage() {
                           </button>
                         </div>
 
-                        {/* ⚠️ ข้อความแจ้งเตือน (inline) */}
                         {commentError && (
                           <p className="text-sm font-bold text-red-600">{commentError}</p>
                         )}
 
-                        {/* 🗑️ โซนจัดการรีวิวของตัวเอง */}
                         {myReview && (
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs text-gray-500">คุณรีวิวสูตรนี้ไปแล้ว — สามารถแก้ไขหรือลบรีวิวได้</span>
@@ -1173,12 +1152,11 @@ export default function ViewRecipePage() {
                       </div>
                     </div>
 
-                    {/* 📋 รายการคอมเมนต์ทั้งหมด */}
                     {recipe.reviews && recipe.reviews.length > 0 ? (
                       <div className="flex flex-col gap-6">
                         {recipe.reviews.map((review: any) => (
-                          <div key={review.id} className="flex gap-4 animate-fade-in">
-                            <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0" />
+                          <div key={review.id} className="flex items-start gap-4 animate-fade-in">
+                            <Image src={review.user?.avatarUrl ?? FALLBACK_AVATAR} alt={review.user?.username ?? "ผู้แสดงความคิดเห็น"} width={40} height={40} className="rounded-full object-cover shrink-0 min-w-[40px] h-[40px]" />
                             <div className="flex flex-col w-full">
                                 <div className="flex items-center gap-4 flex-wrap">
                                 <span className="font-bold text-gray-900">{review.isAnonymous ? "ผู้ไม่ประสงค์ออกนาม" : (review.user?.username ?? "ผู้ใช้")}</span>
