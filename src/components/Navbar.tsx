@@ -153,7 +153,7 @@ export default function Navbar() {
           <input
             id="search-recipe" // 👈 เพิ่ม ID ตรงนี้
             type="text"
-            placeholder="ค้นหา..."
+            placeholder="กรอกสูตรอาหาหารหรือวัตถุดิบที่ต้องการค้นหา..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -228,19 +228,19 @@ export default function Navbar() {
       </div>
 
       {/* 3. ปุ่ม Create และ รูปโปรไฟล์ / ปุ่มเข้าสู่ระบบ */}
-      <div className="flex-shrink-0 flex items-center gap-4">
+      <div className="flex-shrink-0 flex items-center gap-4 xl:translate-y-[32px]">
         {userProfile ? (
           <>
             <Link
               href="/create-recipe"
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-sm sm:text-base md:text-lg"
+              className="h-[50px] sm:h-[60px] px-4 sm:px-6 inline-flex items-center justify-center whitespace-nowrap rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-sm sm:text-base md:text-lg"
             >
               + เผยแพร่สูตรอาหาร
             </Link>
 
             <div
               onClick={() => setIsSettingOpen(true)}
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
+              className="w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] shrink-0 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
             >
               {userProfile?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
@@ -261,7 +261,7 @@ export default function Navbar() {
         ) : (
           <Link
             href="/login"
-            className="px-5 py-2 sm:px-7 sm:py-2.5 rounded-full border-2 border-[#71B254] text-[#71B254] font-bold hover:bg-[#71B254] hover:text-white transition text-sm sm:text-base md:text-lg"
+            className="h-[50px] sm:h-[60px] px-5 sm:px-7 inline-flex items-center justify-center whitespace-nowrap rounded-full border-2 border-[#71B254] text-[#71B254] font-bold hover:bg-[#71B254] hover:text-white transition text-sm sm:text-base md:text-lg"
           >
             เข้าสู่ระบบ
           </Link>
