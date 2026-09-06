@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
+import ContentCard from "@/components/ContentCard";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import type { FavoriteListResponse } from "@/types/recipes";
@@ -108,14 +109,8 @@ export default function FavoritesPage() {
     >
       <Navbar />
 
-      <main className="w-[95%] max-w-[900px] mx-auto px-4 mt-8">
-        <div className="bg-white border border-gray-200 rounded-sm p-6 md:p-10 shadow-sm">
-          <div className="mb-8 flex items-baseline gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">รายการโปรด</h1>
-            <span className="text-xl font-medium text-gray-400">
-              ({favoritesCount})
-            </span>
-          </div>
+      <main className="w-[95%] max-w-[900px] mx-auto px-4 -mt-3 md:-mt-8 xl:-mt-24">
+        <ContentCard title="รายการโปรด" count={favoritesCount}>
 
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -277,7 +272,7 @@ export default function FavoritesPage() {
               )}
             </div>
           )}
-        </div>
+        </ContentCard>
       </main>
     </div>
   );
