@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>k6 Breaking Point Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;background:#f4f6f8;margin:0;padding:24px;color:#222}
+h1{margin:0 0 4px}.sub{color:#666;margin-bottom:16px;font-size:14px}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.highlight{background:#fff8e1;border-left:6px solid #f5a623;padding:14px 18px;border-radius:8px;font-size:16px;margin-bottom:16px;line-height:1.6}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border-bottom:1px solid #eee;padding:6px 8px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+tr.bad td{background:#fdecea;color:#a11}
+tr.good td{background:#eafaf0}
+</style></head><body>
+<h1>k6 Breaking Point Report</h1>
+<div class="sub">สร้างเมื่อ 8/9/2569 01:51:28 · ไฟล์ต้นทาง: breaking-point-write-raw.json · เกณฑ์ p95 &lt; 800ms, error &lt; 1%</div>
+
+<div class="highlight"><strong>สรุปผล:</strong><br>ระบบรองรับผู้ใช้งานพร้อมกันได้สูงสุดประมาณ N/A VUs และเริ่มมีประสิทธิภาพลดลง (p95 > 800ms หรือ error rate > 1%) เมื่อผู้ใช้งานพร้อมกันถึง 5 VUs</div>
+
+<section class="card"><h2>VUs vs Response Time</h2><canvas id="chart" height="100"></canvas></section>
+
+<section class="card"><h2>ตารางสรุปต่อระดับ VUs</h2>
+<table><thead><tr><th>VUs</th><th>Requests</th><th>Avg (ms)</th><th>p90 (ms)</th><th>p95 (ms)</th><th>p99 (ms)</th><th>Error %</th></tr></thead>
+<tbody>
+<tr class="bad">
+  <td>5</td><td>67</td><td>1379.9</td><td>2568.4</td><td>3389.5</td><td>4275.1</td><td>0%</td>
+</tr>
+<tr class="bad">
+  <td>10</td><td>144</td><td>1167</td><td>1230.6</td><td>1258.9</td><td>1573.6</td><td>0%</td>
+</tr>
+<tr class="bad">
+  <td>20</td><td>294</td><td>1738.9</td><td>1353.8</td><td>9955.1</td><td>10918.8</td><td>0%</td>
+</tr>
+<tr class="bad">
+  <td>30</td><td>275</td><td>2526.2</td><td>2538.8</td><td>2566.3</td><td>11333.3</td><td>0%</td>
+</tr>
+<tr class="bad">
+  <td>50</td><td>286</td><td>5069.5</td><td>4810.7</td><td>11512.3</td><td>27183.1</td><td>2.1%</td>
+</tr>
+<tr class="bad">
+  <td>75</td><td>288</td><td>7438</td><td>7606.7</td><td>13520.9</td><td>26077</td><td>5.56%</td>
+</tr>
+<tr class="bad">
+  <td>100</td><td>327</td><td>10249.8</td><td>15257.6</td><td>15425.5</td><td>15557.4</td><td>16.21%</td>
+</tr>
+<tr class="bad">
+  <td>150</td><td>312</td><td>13352.6</td><td>16574.9</td><td>16980.9</td><td>21121</td><td>43.59%</td>
+</tr>
+</tbody></table>
+</section>
+
+<script>
+const rows = [{"vus":5,"requests":67,"avg_ms":1379.9,"p90_ms":2568.4,"p95_ms":3389.5,"p99_ms":4275.1,"error_rate":0},{"vus":10,"requests":144,"avg_ms":1167,"p90_ms":1230.6,"p95_ms":1258.9,"p99_ms":1573.6,"error_rate":0},{"vus":20,"requests":294,"avg_ms":1738.9,"p90_ms":1353.8,"p95_ms":9955.1,"p99_ms":10918.8,"error_rate":0},{"vus":30,"requests":275,"avg_ms":2526.2,"p90_ms":2538.8,"p95_ms":2566.3,"p99_ms":11333.3,"error_rate":0},{"vus":50,"requests":286,"avg_ms":5069.5,"p90_ms":4810.7,"p95_ms":11512.3,"p99_ms":27183.1,"error_rate":2.1},{"vus":75,"requests":288,"avg_ms":7438,"p90_ms":7606.7,"p95_ms":13520.9,"p99_ms":26077,"error_rate":5.56},{"vus":100,"requests":327,"avg_ms":10249.8,"p90_ms":15257.6,"p95_ms":15425.5,"p99_ms":15557.4,"error_rate":16.21},{"vus":150,"requests":312,"avg_ms":13352.6,"p90_ms":16574.9,"p95_ms":16980.9,"p99_ms":21121,"error_rate":43.59}];
+new Chart(document.getElementById('chart'), {
+  type: 'line',
+  data: {
+    labels: rows.map(r => r.vus),
+    datasets: [
+      { label: 'avg (ms)', data: rows.map(r => r.avg_ms), borderColor: '#4c9aff', tension: 0.2 },
+      { label: 'p95 (ms)', data: rows.map(r => r.p95_ms), borderColor: '#e05353', tension: 0.2 },
+      { label: 'p99 (ms)', data: rows.map(r => r.p99_ms), borderColor: '#f5a623', tension: 0.2, borderDash: [5,5] },
+      { label: 'threshold (800ms)', data: rows.map(() => 800), borderColor: '#999', borderDash: [2,2], pointRadius: 0 },
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: 'Virtual Users (VUs)' } },
+      y: { title: { display: true, text: 'Response time (ms)' }, beginAtZero: true },
+    }
+  }
+});
+</script>
+</body></html>
