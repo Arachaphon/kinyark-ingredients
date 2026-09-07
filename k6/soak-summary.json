@@ -1,0 +1,164 @@
+{
+    "metrics": {
+        "iteration_duration": {
+            "avg": 5117.656443983043,
+            "min": 5071.1644,
+            "med": 5109.5740000000005,
+            "max": 5696.7145,
+            "p(90)": 5138.887710000001,
+            "p(95)": 5169.726685
+        },
+        "vus_max": {
+            "min": 10,
+            "max": 10,
+            "value": 10
+        },
+        "http_req_connecting": {
+            "avg": 0.0026593389830508467,
+            "min": 0,
+            "med": 0,
+            "max": 1.7389,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0
+        },
+        "http_req_duration": {
+            "med": 19.99275,
+            "max": 368.8357,
+            "p(90)": 30.9583,
+            "p(95)": 35.60408,
+            "avg": 22.771317898305103,
+            "min": 9.218,
+            "thresholds": {
+                "p(95)<800": false
+            }
+        },
+        "http_req_blocked": {
+            "avg": 0.03599064406779661,
+            "min": 0,
+            "med": 0,
+            "max": 20.7579,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_receiving": {
+            "avg": 0.5228578983050851,
+            "min": 0,
+            "med": 0.52525,
+            "max": 8.3588,
+            "p(90)": 1.0365800000000003,
+            "p(95)": 1.3186100000000005
+        },
+        "data_sent": {
+            "rate": 901.8971923605227,
+            "count": 545160
+        },
+        "http_req_sending": {
+            "avg": 0.0032514915254237293,
+            "min": 0,
+            "med": 0,
+            "max": 4.2559,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "data_received": {
+            "count": 240135900,
+            "rate": 397274.0002842601
+        },
+        "http_req_waiting": {
+            "min": 9.218,
+            "med": 19.481749999999998,
+            "max": 367.4963,
+            "p(90)": 30.34439,
+            "p(95)": 35.029175,
+            "avg": 22.245208508474622
+        },
+        "checks": {
+            "passes": 5900,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_reqs": {
+            "rate": 9.760792125113882,
+            "count": 5900
+        },
+        "vus": {
+            "value": 4,
+            "min": 4,
+            "max": 10
+        },
+        "iterations": {
+            "count": 1180,
+            "rate": 1.9521584250227764
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 22.771317898305103,
+            "min": 9.218,
+            "med": 19.99275,
+            "max": 368.8357,
+            "p(90)": 30.9583,
+            "p(95)": 35.60408
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 5900,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "health status 200": {
+                    "id": "54cc6b20b1977b24d2246b3d411f7567",
+                    "passes": 1180,
+                    "fails": 0,
+                    "name": "health status 200",
+                    "path": "::health status 200"
+                },
+                "ingredients status 200": {
+                    "name": "ingredients status 200",
+                    "path": "::ingredients status 200",
+                    "id": "5d26c3b7750fbf598af88115bb5fbb83",
+                    "passes": 1180,
+                    "fails": 0
+                },
+                "search status 200": {
+                    "path": "::search status 200",
+                    "id": "644a0e6ab046e4cf31ebf297a7476450",
+                    "passes": 1180,
+                    "fails": 0,
+                    "name": "search status 200"
+                },
+                "recipes status 200": {
+                    "name": "recipes status 200",
+                    "path": "::recipes status 200",
+                    "id": "71482a2b42d9b49e3a68969cda9dd1b2",
+                    "passes": 1180,
+                    "fails": 0
+                },
+                "featured status 200": {
+                    "fails": 0,
+                    "name": "featured status 200",
+                    "path": "::featured status 200",
+                    "id": "8a9df2316d7e7e8ce120e6db839c015e",
+                    "passes": 1180
+                }
+            },
+        "name": ""
+    }
+}

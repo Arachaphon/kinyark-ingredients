@@ -20,6 +20,18 @@ const EXPECTED = {
     { metric: 'http_req_failed', kind: 'ratemax', value: 0.05, label: 'failed < 5%' },
     { metric: 'checks', kind: 'ratemin', value: 0.95, label: 'checks > 95%' },
   ],
+  soak: [
+    { metric: 'http_req_duration', kind: 'p95max', value: 800, label: 'p95 < 800ms' },
+    { metric: 'http_req_failed', kind: 'ratemax', value: 0.01, label: 'failed < 1%' },
+    { metric: 'checks', kind: 'ratemin', value: 0.99, label: 'checks > 99%' },
+  ],
+  spike: [
+    { metric: 'http_req_failed', kind: 'ratemax', value: 0.1, label: 'failed < 10%' },
+    { metric: 'checks', kind: 'ratemin', value: 0.9, label: 'checks > 90%' },
+  ],
+  'breaking-point': [
+    { metric: 'http_req_failed', kind: 'ratemax', value: 0.3, label: 'failed < 30%' },
+  ],
 };
 
 function num(v, d = 0) {
