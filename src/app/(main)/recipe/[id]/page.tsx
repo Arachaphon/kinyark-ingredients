@@ -327,10 +327,15 @@ export default function ViewRecipePage() {
 
     flip();
 
+    // Orphan set detail (id `orphan-<uuid>`) has no recipe row — like the set itself.
+    const orphanStoreId =
+      recipe.id.startsWith("orphan-") ? recipe.storePosts?.[0]?.id : undefined;
     fetch("/api/favorites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipeId: recipe.id }),
+      body: JSON.stringify(
+        orphanStoreId ? { storePostId: orphanStoreId } : { recipeId: recipe.id }
+      ),
     })
       .then(async (res) => {
         if (!res.ok) {

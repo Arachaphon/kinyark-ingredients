@@ -277,6 +277,7 @@ export async function GET(request: Request) {
         recipeId: "",
         storeName: sp.storeName,
         sellingPrice: sp.sellingPrice,
+        favoriteCount: sp.favoriteCount,
         storeDescription: sp.storeDescription,
         storeLocation: sp.storeLocation,
         contactInfo: sp.contactInfo,

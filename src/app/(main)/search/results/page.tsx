@@ -269,11 +269,15 @@ function ResultsContent() {
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
 
     // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    // การ์ดเซ็ทไร้สูตร (id `orphan-<uuid>`) ไม่มี recipe row — ไลค์ที่ตัวเซ็ตแทน
     const revert = () => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    const likeBody = id.startsWith("orphan-")
+      ? { storePostId: id.slice("orphan-".length) }
+      : { recipeId: id };
     fetch("/api/favorites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipeId: id }),
+      body: JSON.stringify(likeBody),
     })
       .then((res) => {
         if (!res.ok) {

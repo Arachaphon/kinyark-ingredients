@@ -57,7 +57,7 @@ async function pickRecommended(
     where: { userId: user.id },
     select: { recipeId: true },
   });
-  const favoriteIds = [...new Set(favorites.map((f) => f.recipeId))];
+  const favoriteIds = [...new Set(favorites.map((f) => f.recipeId).filter((v): v is string => !!v))];
 
   // Within every tier: rating first (priority 3), then favoriteCount (priority 4).
   const rankOrderBy: Prisma.RecipeOrderByWithRelationInput[] = [
