@@ -162,12 +162,9 @@ export async function GET(request: Request) {
     };
 
     const cacheKey = `recipes:list:${page}:${limit}:${aiProvider ?? "all"}:${authorType ?? "all"}`
-    if (process.env.NODE_ENV !== 'test') {
-      const cached = cache.get(cacheKey)
-      if (cached) {
-        return Response.json(cached)
-      }
-    }
+    const useCache = process.env.NODE_ENV !== 'test'
+
+    const loadList = async () => {
 
     const isAiOnly = authorType === "ai" || Boolean(aiProvider);
     const storePostVisibilityConditions: Prisma.StorePostWhereInput = {
@@ -255,8 +252,13 @@ export async function GET(request: Request) {
       data: combinedData,
       meta: { page, limit, total: totalWithOrphans, totalPages },
     }
-    cache.set(cacheKey, listResponse, TTL_RECIPES_LIST)
-    return Response.json(listResponse)
+    return listResponse
+    }
+
+    const data = useCache
+      ? await cache.getOrSet(cacheKey, TTL_RECIPES_LIST, TTL_RECIPES_LIST, loadList)
+      : await loadList()
+    return Response.json(data)
   } catch (error) {
     console.error("Error fetching recipes:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })

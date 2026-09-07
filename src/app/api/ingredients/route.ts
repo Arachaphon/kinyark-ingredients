@@ -80,13 +80,9 @@ export async function GET(request: Request) {
     const { id, categoryId, category, search } = parsed.data
 
     const cacheKey = `ingredient:${id ?? ''}:${categoryId ?? ''}:${category ?? ''}:${search ?? ''}`
-    if (process.env.NODE_ENV !== 'test') {
-      const cached = cache.get(cacheKey)
-      if (cached) {
-        return Response.json({ data: cached })
-      }
-    }
+    const useCache = process.env.NODE_ENV !== 'test'
 
+    const loadIngredients = async () => {
     const where: Prisma.IngredientWhereInput = {
       ...(id !== undefined && { id }),
       ...(search !== undefined && {
@@ -107,10 +103,14 @@ export async function GET(request: Request) {
       },
       orderBy: { name: "asc" },
     })
+    return ingredients
+    }
 
-    cache.set(cacheKey, ingredients, TTL_INGREDIENTS)
+    const data = useCache
+      ? await cache.getOrSet(cacheKey, TTL_INGREDIENTS, TTL_INGREDIENTS, loadIngredients)
+      : await loadIngredients()
 
-    return Response.json({ data: ingredients })
+    return Response.json({ data })
   } catch (error) {
     console.error("Error fetching ingredients:", error)
     return Response.json({ error: "Internal server error" }, { status: 500 })
