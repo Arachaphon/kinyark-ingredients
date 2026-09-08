@@ -1050,7 +1050,7 @@ export default function CreateRecipePage() {
                   postAs === "user" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
                 }`}
               >
-                คนทั่วไป
+                สูตรอาหาร
               </button>
               <button
                 type="button"
@@ -1060,7 +1060,7 @@ export default function CreateRecipePage() {
                   postAs === "store" ? "bg-[#71B254] text-white" : "text-gray-500 hover:bg-gray-50"
                 }`}
               >
-                ร้านค้า
+                เซ็ทอาหาร
               </button>
             </div>
           )}

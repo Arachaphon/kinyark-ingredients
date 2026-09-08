@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { recipeListItemSelect } from "@/lib/recipes";
 import { getAuthUserId } from "@/lib/auth-user";
 import type { Prisma } from "@prisma/client";
+import { cache, TTL_SEARCH_ANON } from "@/lib/cache";
 
 // Build a bigram list (2-character sliding window) from a string.
 // Works for Thai (no spaces between words) and Latin alike.
@@ -113,7 +114,33 @@ export async function GET(request: Request) {
     // Split by spaces or commas
     const keywords = cleanQuery.split(/[\s,]+/).filter(Boolean);
 
-    const recipes = await prisma.recipe.findMany({
+    // Anonymous view is deterministic (public/protected only), so cache it
+    // with stale-while-revalidate. Logged-in users vary by private
+    // recipes — never cache those.
+    const anonCacheKey = `search:anon:${cleanQuery}:${ingredientsParam ?? ''}`;
+    const useAnonCache = !userId && process.env.NODE_ENV !== 'test';
+
+    const loadSearch = async () => {
+
+    // Search orphaned Store Posts (not linked to a Recipe), respecting visibility.
+    const storeVisibility: Prisma.StorePostWhereInput = {
+      AND: [
+        { visibility: { not: "draft" } },
+        {
+          OR: isStore
+            ? [
+                { visibility: "public" },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ]
+            : [
+                { visibility: { in: ["public", "protected"] } },
+                ...(userId ? [{ userId, visibility: "private" as const }] : []),
+              ],
+        },
+      ],
+    };
+
+    const recipesPromise = prisma.recipe.findMany({
       where: {
         ...recipeVisibility,
         OR: [
@@ -157,6 +184,22 @@ export async function GET(request: Request) {
       take: 50,
     });
 
+    const orphansPromise = prisma.storePost.findMany({
+      where: {
+        recipeId: null,
+        ...storeVisibility,
+      },
+      include: {
+        user: { select: { id: true, username: true, avatarUrl: true } },
+        images: { orderBy: { createdAt: "asc" } },
+        videos: { orderBy: { createdAt: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+
+    const [recipes, orphanStorePosts] = await Promise.all([recipesPromise, orphansPromise]);
+
     let searchResults = recipes;
 
     // Thai has no word separators, so exact-phrase `contains` often misses
@@ -194,24 +237,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // Search orphaned Store Posts (not linked to a Recipe), respecting visibility.
-    const storeVisibility: Prisma.StorePostWhereInput = {
-      AND: [
-        { visibility: { not: "draft" } },
-        {
-          OR: isStore
-            ? [
-                { visibility: "public" },
-                ...(userId ? [{ userId, visibility: "private" as const }] : []),
-              ]
-            : [
-                { visibility: { in: ["public", "protected"] } },
-                ...(userId ? [{ userId, visibility: "private" as const }] : []),
-              ],
-        },
-      ],
-    };
-
     // setIngredients is a JSON array of `{ name, amount }`. Prisma cannot do an
     // exact name match inside the JSON array, so we pull a candidate pool and
     // filter in JS by storeName (contains) OR exact ingredient name.
@@ -226,20 +251,6 @@ export async function GET(request: Request) {
         sp.storeName.toLowerCase().includes(term.toLowerCase()) ||
         items.some((item) => item.name === term);
     };
-
-    const orphanStorePosts = await prisma.storePost.findMany({
-      where: {
-        recipeId: null,
-        ...storeVisibility,
-      },
-      include: {
-        user: { select: { id: true, username: true, avatarUrl: true } },
-        images: { orderBy: { createdAt: "asc" } },
-        videos: { orderBy: { createdAt: "asc" } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    });
 
     const orphanedStorePosts = orphanStorePosts
       .filter((sp) => {
@@ -266,6 +277,7 @@ export async function GET(request: Request) {
         recipeId: "",
         storeName: sp.storeName,
         sellingPrice: sp.sellingPrice,
+        favoriteCount: sp.favoriteCount,
         storeDescription: sp.storeDescription,
         storeLocation: sp.storeLocation,
         contactInfo: sp.contactInfo,
@@ -278,7 +290,13 @@ export async function GET(request: Request) {
       }],
     }));
 
-    return Response.json([...searchResults, ...dummyRecipesForOrphans]);
+      return [...searchResults, ...dummyRecipesForOrphans];
+    };
+
+    const payload = useAnonCache
+      ? await cache.getOrSet(anonCacheKey, TTL_SEARCH_ANON, TTL_SEARCH_ANON, loadSearch)
+      : await loadSearch();
+    return Response.json(payload);
   } catch (error) {
     console.error("GET /api/search error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });

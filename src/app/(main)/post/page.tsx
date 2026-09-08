@@ -31,6 +31,7 @@ export default function PostsFeedPage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [favoritedIds, setFavoritedIds] = useState<Set<string>>(new Set());
+  const [favoritedStoreIds, setFavoritedStoreIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let isMounted = true;
@@ -38,8 +39,12 @@ export default function PostsFeedPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((body) => {
         if (!isMounted || !body?.data) return;
+        const rows = body.data as Array<{ recipeId: string | null; storePostId: string | null }>;
         setFavoritedIds(
-          new Set((body.data as Array<{ recipeId: string }>).map((f) => f.recipeId))
+          new Set(rows.map((f) => f.recipeId).filter((v): v is string => !!v))
+        );
+        setFavoritedStoreIds(
+          new Set(rows.map((f) => f.storePostId).filter((v): v is string => !!v))
         );
       })
       .catch(() => {
@@ -65,13 +70,15 @@ export default function PostsFeedPage() {
     setPage(targetPage);
   };
 
-  // ❤️ ปุ่มหัวใจแบบ Toggle (Optimistic UI)
+  // ❤️ ปุ่มหัวใจแบบ Toggle (Optimistic UI) — ส่ง storePostId เมื่อเป็นการ์ดเซ็ทอาหาร
   function FavoriteHeartButton({
     recipeId,
+    storePostId,
     favoriteCount,
     initialIsFavorite = false,
   }: {
-    recipeId: string;
+    recipeId?: string;
+    storePostId?: string;
     favoriteCount: number;
     initialIsFavorite?: boolean;
   }) {
@@ -95,7 +102,7 @@ export default function PostsFeedPage() {
       fetch("/api/favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId }),
+        body: JSON.stringify(storePostId ? { storePostId } : { recipeId }),
       })
         .then((res) => {
           if (!res.ok) {
@@ -267,7 +274,7 @@ export default function PostsFeedPage() {
 
                       {/* แถวล่างสุด (หัวใจ, ดาว, คนเขียน, ปุ่ม) */}
                       <div className="flex items-center gap-3 sm:gap-4 mt-auto pt-2 flex-wrap w-full">
-                        <FavoriteHeartButton recipeId={post.id} favoriteCount={post.favoriteCount} initialIsFavorite={favoritedIds.has(post.id)} />
+                        <FavoriteHeartButton storePostId={storePost?.id} favoriteCount={storePost?.favoriteCount ?? post.favoriteCount} initialIsFavorite={!!storePost?.id && favoritedStoreIds.has(storePost.id)} />
                         
                         <div className="flex items-center gap-1">
                           {renderStars(Math.round(post.rating))}

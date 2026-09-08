@@ -45,6 +45,99 @@ async function runWithRetries<T>(fn: () => Promise<T>, retries = 3, baseDelay = 
 
 export const dynamic = "force-dynamic"
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// Orphan store-post detail (/recipe/orphan-<storePostId>): sets that are not
+// linked to any recipe have no recipe row, so they are served directly in the
+// same dummy shape the list endpoint uses (id `orphan-<id>` + full storePosts).
+// Visibility rules mirror the recipe detail + public list: drafts/private are
+// owner-only, protected is hidden from other STORE users only.
+async function getOrphanDetail(storePostId: string, userId: string | null, userRole: string | null) {
+  if (!UUID_RE.test(storePostId)) {
+    return Response.json({ error: "Invalid recipe ID" }, { status: 400 })
+  }
+
+  const sp = await prisma.storePost.findUnique({
+    where: { id: storePostId },
+    include: {
+      user: { select: { id: true, username: true, avatarUrl: true } },
+      images: { orderBy: { createdAt: "asc" } },
+      videos: { orderBy: { createdAt: "asc" } },
+    },
+  })
+
+  // Gone, or linked to a recipe again (then the canonical URL is /recipe/<recipeId>)
+  if (!sp || sp.recipeId !== null) {
+    return Response.json({ error: "Recipe not found" }, { status: 404 })
+  }
+
+  const isOwner = !!userId && sp.userId === userId
+  if ((sp.visibility === "draft" || sp.visibility === "private") && !isOwner) {
+    return Response.json({ error: "Recipe not found" }, { status: 404 })
+  }
+  if (sp.visibility === "protected" && userId && !isOwner && userRole === "STORE") {
+    return Response.json({ error: "Recipe not found" }, { status: 404 })
+  }
+
+  const createdAt = sp.createdAt.toISOString()
+  const isFavorite = userId
+    ? !!(await prisma.favorite.findUnique({
+        where: { userId_storePostId: { userId, storePostId: sp.id } },
+      }))
+    : false
+  return Response.json(
+    {
+      data: {
+        id: `orphan-${sp.id}`,
+        userId: sp.userId,
+        recipeName: "",
+        description: null,
+        instructions: null,
+        rating: 0,
+        reviewCount: 0,
+        favoriteCount: sp.favoriteCount,
+        bgColor: null,
+        aiProvider: null,
+        visibility: sp.visibility,
+        createdAt,
+        isFavorite,
+        user: sp.user,
+        recipeIngredients: [],
+        equipmentItems: [],
+        images: [],
+        videos: [],
+        reviews: [],
+        ratingBreakdown: { "5": 0, "4": 0, "3": 0, "2": 0, "1": 0 },
+        referenceRecipe: null,
+        storePosts: [
+          {
+            id: sp.id,
+            userId: sp.userId,
+            recipeId: null,
+            storeName: sp.storeName,
+            sellingPrice: sp.sellingPrice,
+            favoriteCount: sp.favoriteCount,
+            storeDescription: sp.storeDescription,
+            storeLocation: sp.storeLocation,
+            contactInfo: sp.contactInfo,
+            setIngredients: sp.setIngredients as unknown as Array<{
+              name: string
+              quantity: string | number
+              unit: string
+            }> | null,
+            visibility: sp.visibility,
+            createdAt,
+            user: sp.user,
+            images: sp.images,
+            videos: sp.videos,
+          },
+        ],
+      },
+    },
+    { status: 200 }
+  )
+}
+
 export async function GET(
   _request: Request,
   props: { params: Promise<{ id: string }> | { id: string } }
@@ -53,6 +146,15 @@ export async function GET(
     const params = await props.params
     const id = params?.id
 
+    const userId = await getAuthUserId(_request)
+    const userRole = _request.headers.get("x-user-role")
+    const user = userId ? { id: userId, role: userRole } : null
+
+    // Orphan store-post detail: /recipe/orphan-<storePostId>
+    if (typeof id === "string" && id.startsWith("orphan-")) {
+      return getOrphanDetail(id.slice("orphan-".length), userId, userRole)
+    }
+
     const parsed = recipeIdParamSchema.safeParse({ id })
 
     if (!parsed.success) {
@@ -60,10 +162,6 @@ export async function GET(
     }
 
     const recipeId = parsed.data.id
-
-    const userId = await getAuthUserId(_request)
-    const userRole = _request.headers.get("x-user-role")
-    const user = userId ? { id: userId, role: userRole } : null
 
     const cacheKey = `recipe:${recipeId}`
 
