@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "eslint",
     "clean:users": "node -r dotenv/config -r ts-node/register scripts/clean-users.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "k6:test": "powershell -NoProfile -Command \"$b=$env:BASE_URL; if(-not $b){$b='http://localhost:3000'}; $env:K6_WEB_DASHBOARD='true'; $env:K6_WEB_DASHBOARD_EXPORT='tests/k6/dashboard.html'; k6 run tests/k6/test.js -e BASE_URL=$b --summary-export tests/k6/summary.json --out json=tests/k6/raw.json\"",
+    "k6:breaking": "powershell -NoProfile -Command \"$b=$env:BASE_URL; if(-not $b){$b='http://localhost:3000'}; $m=$env:MAX_VUS; if(-not $m){$m='150'}; $s=$env:STAGE_MIN; if(-not $s){$s='1'}; $env:K6_WEB_DASHBOARD='true'; $env:K6_WEB_DASHBOARD_EXPORT='tests/k6/breaking-point-dashboard.html'; k6 run tests/k6/breaking-point-test.js -e BASE_URL=$b -e MAX_VUS=$m -e STAGE_MIN=$s --summary-export tests/k6/breaking-point-summary.json --out json=tests/k6/breaking-point-raw.json\""
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

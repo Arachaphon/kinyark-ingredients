@@ -8,6 +8,20 @@ export async function proxy(request: NextRequest) {
   requestHeaders.delete('x-user-id')
   requestHeaders.delete('x-user-role')
 
+  // 1b. ทางลัด request นิรนาม: ถ้าไม่มี auth cookie ของ Supabase เลย
+  // session ต้องเป็น null อยู่แล้ว ข้าม createServerClient + getSession ไปได้
+  // ผลลัพธ์ downstream เหมือนเดิมทุกประการ (ไม่มี verified userId ให้ set)
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))
+  if (!hasAuthCookie) {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,

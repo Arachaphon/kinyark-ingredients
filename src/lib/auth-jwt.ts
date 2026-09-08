@@ -30,7 +30,9 @@ export async function verifySupabaseJWT(token: string) {
       error: null,
     }
   } catch (error) {
-    console.error('Local JWT verification error:', error)
+    // debug แทน error: จุดนี้ทำงานทุก request ที่ token ใช้ไม่ได้ (รวมถึงตอนโหลดเทส)
+    // พ่น error ทุกครั้งทำให้ log ท่วมและหน่วง server — return value เหมือนเดิม
+    console.debug('Local JWT verification error:', error)
     return {
       userId: null,
       email: null,

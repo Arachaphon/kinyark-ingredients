@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>k6 Report — tests/k6/test.js · Kinyark</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+body{font-family:system-ui,sans-serif;background:#f4f6f8;margin:0;padding:24px;color:#222}
+h1{margin:0 0 4px}.sub{color:#666;margin-bottom:16px}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card.fail{border-left:6px solid #e05353}
+.highlight-red{background:#fdecea;border-left:6px solid #e05353;padding:14px 18px;border-radius:8px;font-size:15px;margin-bottom:16px;line-height:1.7}
+.highlight-green{background:#eafaf0;border-left:6px solid #2f9e44;padding:14px 18px;border-radius:8px;font-size:15px;margin-bottom:16px;line-height:1.7}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.badge{padding:4px 10px;border-radius:999px;font-size:13px;background:#eee}
+.badge.ok{background:#dff5e1;color:#1c7a2e}.badge.bad{background:#fbdcdc;color:#a11}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.grid div{background:#f7f9fb;border-radius:8px;padding:10px;text-align:center}
+.grid b{display:block;font-size:18px}.grid span{font-size:12px;color:#666}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+thead th{background:#f1f5f9}
+tr.slow td{background:#fff8e1}
+tr.bad td{background:#fdecea;color:#a11}
+td.bad{background:#fdecea;color:#a11;font-weight:bold}
+td.good{background:#eafaf0}
+details{margin-top:10px;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px;background:#fbfdff}
+summary{cursor:pointer;font-weight:bold}
+code{background:#eef;padding:2px 6px;border-radius:4px}
+pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto;font-size:13px}
+pre code{background:none;padding:0}
+</style></head><body>
+<h1>k6 Report — <code>tests/k6/test.js</code></h1>
+<div class="sub">รันเมื่อ 8/9/2569 ~11:05 · BASE_URL=http://localhost:3000 · stages 1 → 10 → 25 → 50 → 100 → 0 (10/10/15/20/30/30s, รวม ~115s) · 873 iterations · <b>FAIL</b></div>
+
+<section class="card fail">
+  <h2>สรุปผลรวม <span class="badge bad">FAIL</span></h2>
+  <div class="badges">
+    <span class="badge bad">✗ p95 &lt; 800ms (1227.0 ms)</span>
+    <span class="badge ok">✓ failed &lt; 1% (0.00%)</span>
+    <span class="badge bad">✗ checks &gt; 99% (89.02%)</span>
+  </div>
+  <div class="grid">
+    <div><b>5244</b><span>requests</span></div>
+    <div><b>477.1 ms</b><span>avg</span></div>
+    <div><b>441.7 ms</b><span>med</span></div>
+    <div><b>975.5 ms</b><span>p90</span></div>
+    <div><b>1227.0 ms</b><span>p95</span></div>
+    <div><b>1.95 s</b><span>max</span></div>
+    <div><b>0.00%</b><span>failed (0/5244)</span></div>
+    <div><b>89.02%</b><span>checks (9326/1150)</span></div>
+  </div>
+  <p style="color:#666;font-size:13px">ที่มา: <code>tests/k6/summary.json</code> (k6 v2.2.0) · VUs สูงสุด 100 · ไฟล์ auto จาก k6-reporter: <code>tests/k6/report-k6reporter.html</code></p>
+</section>
+
+<div class="highlight-green"><strong>ฝั่งที่ไม่พัง (รองรับได้):</strong><br>
+• ภาพรวมรองรับปลอดภัยถึง <b>50 VUs</b> (p95 575.9ms, slow แค่ 0.26%)<br>
+• ราย API — ผ่านถึง: health / ingredients / search / recipes / featured = <b>50 VUs</b> · search-ingredients-kai = <b>25 VUs</b> (เริ่มมี slow 1.6% ที่ 50 VUs)<br>
+• status 200 ผ่าน <b>100% ทุกรอบทุก API</b> (5244/5244) — ไม่มี error เลย</div>
+
+<div class="highlight-red"><strong>ฝั่งที่พัง (เริ่มช้า/เริ่ม fail):</strong><br>
+• จุดแตกหักที่วินาที <b>60-70 (VUs ~66, ก้าวเข้า stage 100)</b> — p95 รวมกระโดด 660.2 → <b>944.5 ms</b> เกิน 800 ครั้งแรก พีค <b>1575 ms</b> ที่วินาที 80-90<br>
+• stage 100: ทุก API p95 เกิน 800 หมด (855-1526ms) slow รวม 28.16% · <code>search-ingredients-kai</code> หนักสุด: checks ผ่านแค่ <b>52.00%</b> (454/419), slow 69.4% ที่ 100 VUs</div>
+
+<section class="card"><h2>ไทม์ไลน์: p95 ราย API ทุก 10 วินาที</h2><canvas id="timeChart" height="110"></canvas>
+<p style="color:#666;font-size:13px">เส้นประ = threshold 800ms · คลิกชื่อเส้นเพื่อซ่อน/โชว์ · รวมจาก <code>tests/k6/raw.json</code> ด้วย <code>python tests/k6/analyze_timeline.py tests/k6/raw.json --bucket 10</code></p></section>
+
+<section class="card"><h2>เทียบราย stage: avg/p95 รวม (ms)</h2><canvas id="stageChart" height="100"></canvas></section>
+
+<section class="card">
+  <h2>ตารางราย stage (รวมทุก API)</h2>
+  <table><thead><tr><th>stage</th><th>VUs</th><th>requests</th><th>avg (ms)</th><th>p95 (ms)</th><th>max (ms)</th><th>fail %</th><th>slow&gt;800 %</th><th>หมายเหตุ</th></tr></thead>
+  <tbody>
+    <tr><td>1 (0-10s)</td><td>1</td><td>16</td><td>126.4</td><td>595.3</td><td>607.3</td><td>0.00%</td><td>0.00%</td><td>baseline</td></tr>
+    <tr><td>2 (10-20s)</td><td>10</td><td>86</td><td>94.3</td><td>543.7</td><td>684.7</td><td>0.00%</td><td>0.00%</td><td>นิ่ง</td></tr>
+    <tr><td>3 (20-35s)</td><td>25</td><td>422</td><td>106.5</td><td>559.0</td><td>679.2</td><td>0.00%</td><td>0.00%</td><td>นิ่ง</td></tr>
+    <tr><td>4 (35-55s)</td><td>50</td><td>1133</td><td>156.8</td><td>575.9</td><td>1191.0</td><td>0.00%</td><td>0.26%</td><td>ยังไหว</td></tr>
+    <tr class="bad"><td>5 (55-85s)</td><td>100</td><td>1946</td><td>629.8</td><td>1327.5</td><td>1949.4</td><td>0.00%</td><td>28.16%</td><td>✗ แตกหัก</td></tr>
+    <tr class="slow"><td>6 (85-115s)</td><td>0 (ลง)</td><td>1635</td><td>634.9</td><td>1390.2</td><td>1932.5</td><td>0.00%</td><td>36.64%</td><td>ramp-down (ระบายของค้าง)</td></tr>
+  </tbody></table>
+</section>
+
+<section class="card">
+  <h2>p95 ราย API × ราย stage (ms) — แดง = เกิน 800</h2>
+  <table><thead><tr><th>API</th><th>1 VU</th><th>10 VUs</th><th>25 VUs</th><th>50 VUs</th><th>100 VUs</th><th>ramp-down</th></tr></thead>
+  <tbody>
+    <tr><td>health</td><td class="good">12.2</td><td class="good">27.5</td><td class="good">59.7</td><td class="good">194.7</td><td class="bad">855.6</td><td class="bad">1021.4</td></tr>
+    <tr><td>ingredients</td><td class="good">16.6</td><td class="good">42.9</td><td class="good">51.4</td><td class="good">189.2</td><td class="bad">923.7</td><td class="bad">981.7</td></tr>
+    <tr><td>search</td><td class="good">26.7</td><td class="good">52.5</td><td class="good">63.1</td><td class="good">208.1</td><td class="bad">947.9</td><td class="bad">1031.8</td></tr>
+    <tr><td>search-ingredients-kai</td><td class="good">605.7</td><td class="good">637.6</td><td class="good">657.4</td><td class="good">730.5</td><td class="bad">1526.8</td><td class="bad">1713.1</td></tr>
+    <tr><td>recipes</td><td class="good">22.1</td><td class="good">44.2</td><td class="good">72.4</td><td class="good">211.8</td><td class="bad">932.5</td><td class="bad">1059.0</td></tr>
+    <tr><td>featured</td><td class="good">28.7</td><td class="good">40.0</td><td class="good">60.9</td><td class="good">202.5</td><td class="bad">946.0</td><td class="bad">1023.6</td></tr>
+  </tbody></table>
+  <p style="color:#666;font-size:13px">รวมจาก <code>python tests/k6/analyze_by_api.py tests/k6/raw.json --durations "10,10,15,20,30,30" --targets 1,10,25,50,100,0</code></p>
+</section>
+
+<section class="card">
+  <h2>ราย API: ผ่านถึงไหน / เริ่มช้าตรงไหน</h2>
+  <table><thead><tr><th>API</th><th>ผ่านถึง (VUs)</th><th>เริ่มช้าที่</th><th>slow%</th><th>p95</th></tr></thead>
+  <tbody>
+    <tr><td>health</td><td class="good">50</td><td>stage 5 (100 VUs)</td><td>13.62%</td><td>855.6</td></tr>
+    <tr><td>ingredients</td><td class="good">50</td><td>stage 5 (100 VUs)</td><td>19.24%</td><td>923.7</td></tr>
+    <tr><td>search</td><td class="good">50</td><td>stage 5 (100 VUs)</td><td>20.19%</td><td>947.9</td></tr>
+    <tr><td>search-ingredients-kai</td><td class="good">25</td><td>stage 4 (50 VUs)</td><td>1.60%</td><td>730.5</td></tr>
+    <tr><td>recipes</td><td class="good">50</td><td>stage 5 (100 VUs)</td><td>23.15%</td><td>932.5</td></tr>
+    <tr><td>featured</td><td class="good">50</td><td>stage 5 (100 VUs)</td><td>25.32%</td><td>946.0</td></tr>
+  </tbody></table>
+  <p style="color:#666;font-size:13px">"ผ่านถึง" = ขั้นสุดท้ายที่ p95&lt;800 และ slow=0% · fail (non-200) = 0 ทุก API ทุก stage</p>
+</section>
+
+<section class="card">
+  <h2>ราย check (จาก root_group.checks ใน summary.json)</h2>
+  <table><thead><tr><th>check</th><th>passes</th><th>fails</th><th>rate</th></tr></thead>
+  <tbody>
+    <tr><td>health status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr><td>health duration &lt;800ms</td><td>764</td><td>109</td><td>87.51%</td></tr>
+    <tr><td>ingredients status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr><td>ingredients duration &lt;800ms</td><td>736</td><td>137</td><td>84.31%</td></tr>
+    <tr><td>search status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr><td>search duration &lt;800ms</td><td>720</td><td>153</td><td>82.47%</td></tr>
+    <tr><td>search-ingredients-kai status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr class="bad"><td>search-ingredients-kai duration &lt;800ms</td><td>454</td><td>419</td><td>52.00%</td></tr>
+    <tr><td>recipes status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr><td>recipes duration &lt;800ms</td><td>714</td><td>159</td><td>81.79%</td></tr>
+    <tr><td>featured status 200</td><td>873</td><td>0</td><td>100.00%</td></tr>
+    <tr><td>featured duration &lt;800ms</td><td>700</td><td>173</td><td>80.18%</td></tr>
+  </tbody></table>
+</section>
+
+<section class="card">
+  <h2>ตารางละเอียดราย API ตามเวลา (กางดูได้)</h2>
+  <details><summary>API: health</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>3</td><td>11.8</td><td>12.2</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>18</td><td>15.5</td><td>27.5</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>77</td><td>21.0</td><td>59.7</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>35-55s</td><td>50</td><td>198</td><td>81.6</td><td>194.7</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>345</td><td>522.3</td><td>855.6</td><td>47 (13.62%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>232</td><td>546.4</td><td>1021.4</td><td>62 (26.72%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+  <details><summary>API: ingredients</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>3</td><td>15.1</td><td>16.6</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>17</td><td>17.4</td><td>42.9</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>76</td><td>21.9</td><td>51.4</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>35-55s</td><td>50</td><td>193</td><td>76.0</td><td>189.2</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>343</td><td>531.3</td><td>923.7</td><td>66 (19.24%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>241</td><td>533.0</td><td>981.7</td><td>71 (29.46%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+  <details><summary>API: search</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>3</td><td>21.5</td><td>26.7</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>16</td><td>28.9</td><td>52.5</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>72</td><td>27.4</td><td>63.1</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>35-55s</td><td>50</td><td>193</td><td>84.3</td><td>208.1</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>322</td><td>551.2</td><td>947.9</td><td>65 (20.19%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>267</td><td>564.2</td><td>1031.8</td><td>88 (32.96%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+  <details open><summary>API: search-ingredients-kai (ตัวช้าสุด)</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>3</td><td>596.1</td><td>605.7</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>12</td><td>545.0</td><td>637.6</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>68</td><td>530.9</td><td>657.4</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="slow"><td>35-55s</td><td>50</td><td>187</td><td>529.1</td><td>730.5</td><td>3 (1.60%)</td><td>OK (เริ่มมี slow)</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>317</td><td>1061.1</td><td>1526.8</td><td>220 (69.40%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>286</td><td>1089.4</td><td>1713.1</td><td>196 (68.53%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+  <details><summary>API: recipes</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>2</td><td>21.3</td><td>22.1</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>12</td><td>24.8</td><td>44.2</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>65</td><td>31.4</td><td>72.4</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>35-55s</td><td>50</td><td>185</td><td>86.7</td><td>211.8</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>311</td><td>572.7</td><td>932.5</td><td>72 (23.15%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>298</td><td>542.7</td><td>1059.0</td><td>87 (29.19%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+  <details><summary>API: featured</summary><table><thead><tr><th>window</th><th>VUs</th><th>reqs</th><th>avg</th><th>p95</th><th>slow&gt;800</th><th>verdict</th></tr></thead><tbody>
+    <tr><td>0-10s</td><td>1</td><td>2</td><td>23.4</td><td>28.7</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>10-20s</td><td>10</td><td>11</td><td>21.1</td><td>40.0</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>20-35s</td><td>25</td><td>64</td><td>24.3</td><td>60.9</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr><td>35-55s</td><td>50</td><td>177</td><td>88.0</td><td>202.5</td><td>0 (0.00%)</td><td>OK</td></tr>
+    <tr class="bad"><td>55-85s</td><td>100</td><td>308</td><td>555.9</td><td>946.0</td><td>78 (25.32%)</td><td>SLOW</td></tr>
+    <tr class="bad"><td>85-115s</td><td>0↓</td><td>311</td><td>510.9</td><td>1023.6</td><td>95 (30.55%)</td><td>SLOW</td></tr>
+  </tbody></table></details>
+</section>
+
+<section class="card">
+  <h2>Config ที่ทดสอบ (จาก test.js)</h2>
+  <table><thead><tr><th>option</th><th>value</th></tr></thead><tbody>
+    <tr><td>stages</td><td>10s→1, 10s→10, 15s→25, 20s→50, 30s→100, 30s→0</td></tr>
+    <tr><td>threshold http_req_duration</td><td>p(95)&lt;800 → ✗ (1227.0)</td></tr>
+    <tr><td>threshold http_req_failed</td><td>rate&lt;0.01 → ✓ (0.00%)</td></tr>
+    <tr><td>threshold checks</td><td>rate&gt;0.99 → ✗ (89.02%)</td></tr>
+    <tr><td>console เสริม</td><td>metrics รายเซลล์ (API×stage) + ตาราง 14 ตารางใน handleSummary + k6-reporter → report-k6reporter.html</td></tr>
+  </tbody></table>
+</section>
+
+<section class="card"><h2>วิธีรันซ้ำ + วิเคราะห์</h2>
+<pre><code>k6 run tests/k6/test.js -e BASE_URL=http://localhost:3000 --summary-export tests/k6/summary.json --out json=tests/k6/raw.json
+python tests/k6/analyze_by_api.py tests/k6/raw.json --durations "10,10,15,20,30,30" --targets 1,10,25,50,100,0 --out tests/k6/by-api.json
+python tests/k6/analyze_timeline.py tests/k6/raw.json --bucket 10 --out tests/k6/timeline.json</code></pre>
+</section>
+
+<script>
+const tLabels = [0,10,20,30,40,50,60,70,80,90,100,110];
+const tOverall = [595.3,543.7,555.8,555.4,542.7,660.2,944.5,1376.9,1575.0,1376.2,814.1,592.6];
+const tApi = {
+  'health': [12.2,27.5,27.9,88.7,174.5,333.3,586.8,847.2,1038.7,907.2,457.5,41.5],
+  'ingredients': [16.6,42.9,27.4,82.6,161.3,343.9,573.1,840.8,1024.2,918.7,503.0,38.6],
+  'search': [26.7,52.5,38.3,80.1,179.5,391.1,639.3,852.6,1120.6,928.9,547.2,51.8],
+  'search-ingredients-kai': [605.7,637.6,658.5,718.9,695.5,754.1,1111.1,1509.2,1813.7,1671.4,963.1,711.2],
+  'recipes': [22.1,44.2,43.1,97.6,191.0,355.5,610.7,921.8,1129.2,982.1,483.1,90.3],
+  'featured': [28.7,40.0,38.2,110.8,180.6,325.3,614.7,921.3,1077.4,969.8,549.1,65.1],
+};
+const colors = {'health':'#4c9aff','ingredients':'#36b37e','search':'#6554c0','search-ingredients-kai':'#e05353','recipes':'#ff8b00','featured':'#00b8d9'};
+const ds = [{ label: 'p95 รวม', data: tOverall, borderColor: '#111', borderWidth: 2.5, tension: 0.2 }];
+for (const [name, arr] of Object.entries(tApi)) ds.push({ label: 'p95 ' + name, data: arr, borderColor: colors[name], tension: 0.2 });
+ds.push({ label: 'threshold (800ms)', data: tLabels.map(() => 800), borderColor: '#999', borderDash: [5,5], pointRadius: 0 });
+new Chart(document.getElementById('timeChart'), { type: 'line',
+  data: { labels: tLabels, datasets: ds },
+  options: { responsive: true, interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: 'วินาทีที่ (0-115)' } },
+      y: { title: { display: true, text: 'p95 (ms)' } } } }
+});
+const stg = { labels: ['1','10','25','50','100','ลง'],
+  avg: [126.4,94.3,106.5,156.8,629.8,634.9], p95: [595.3,543.7,559.0,575.9,1327.5,1390.2] };
+new Chart(document.getElementById('stageChart'), { type: 'line',
+  data: { labels: stg.labels, datasets: [
+    { label: 'avg (ms)', data: stg.avg, borderColor: '#4c9aff', tension: 0.2 },
+    { label: 'p95 (ms)', data: stg.p95, borderColor: '#e05353', tension: 0.2 },
+    { label: 'threshold (800ms)', data: stg.labels.map(() => 800), borderColor: '#999', borderDash: [5,5], pointRadius: 0 },
+  ] },
+  options: { responsive: true, interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: 'VUs target ต่อ stage' } },
+      y: { title: { display: true, text: 'ms' } } } }
+});
+</script></body></html>
