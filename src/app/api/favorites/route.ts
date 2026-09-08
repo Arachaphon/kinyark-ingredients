@@ -3,14 +3,31 @@ import { z } from "zod"
 import { cache, REC_CACHE_PREFIX } from "@/lib/cache"
 import { getAuthUserId } from "@/lib/auth-user"
 
-const uuid = z.string().uuid("Invalid ID")
+const recipeUuid = z.string().uuid("Invalid recipe ID")
+const storePostUuid = z.string().uuid("Invalid store post ID")
 
-const toggleSchema = z.object({
-  recipeId: uuid.optional(),
-  storePostId: uuid.optional(),
-}).refine((v) => Boolean(v.recipeId) !== Boolean(v.storePostId), {
-  message: "Provide exactly one of recipeId or storePostId",
-})
+// Exactly one target must be provided. Missing/invalid recipeId keeps the
+// legacy "Invalid recipe ID" message for backward compatibility.
+const exactlyOneTarget = (
+  v: { recipeId?: string; storePostId?: string },
+  ctx: z.RefinementCtx
+) => {
+  if (v.recipeId && v.storePostId) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Provide exactly one of recipeId or storePostId",
+    })
+  } else if (!v.recipeId && !v.storePostId) {
+    ctx.addIssue({ code: "custom", message: "Invalid recipe ID" })
+  }
+}
+
+const toggleSchema = z
+  .object({
+    recipeId: recipeUuid.optional(),
+    storePostId: storePostUuid.optional(),
+  })
+  .superRefine(exactlyOneTarget)
 
 // Visibility guard shared with the recipe/orphan detail endpoints:
 // drafts/private are owner-only, protected is hidden from other STORE users.
@@ -159,20 +176,19 @@ export async function POST(request: Request) {
 export async function GET(request?: Request) {
   try {
     const searchParams = request ? new URL(request.url).searchParams : new URLSearchParams()
-    const recipeId = searchParams.get("recipeId")
-    const storePostId = searchParams.get("storePostId")
-    const action = searchParams.get("action")
+    // Normalize missing params to undefined: zod .optional() rejects null.
+    const recipeId = searchParams.get("recipeId") ?? undefined
+    const storePostId = searchParams.get("storePostId") ?? undefined
+    const action = searchParams.get("action") ?? undefined
 
     if (recipeId || storePostId || action) {
       const parsed = z.object({
-        recipeId: uuid.optional(),
-        storePostId: uuid.optional(),
+        recipeId: recipeUuid.optional(),
+        storePostId: storePostUuid.optional(),
         action: z.enum(["status", "count"], {
           message: "Invalid action. Must be 'status' or 'count'",
         })
-      }).refine((v) => Boolean(v.recipeId) !== Boolean(v.storePostId), {
-        message: "Provide exactly one of recipeId or storePostId",
-      }).safeParse({ recipeId, action })
+      }).superRefine(exactlyOneTarget).safeParse({ recipeId, storePostId, action })
 
       if (!parsed.success) {
         return Response.json(

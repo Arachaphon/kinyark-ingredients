@@ -82,7 +82,7 @@ export function setup() {
   return { t0: Date.now() };
 }
 
-export default function (data) {
+export default function test(data) {
   const elapsed = (Date.now() - (data && data.t0)) / 1000;
   const si = stageOf(elapsed);
   for (const t of TARGETS) {

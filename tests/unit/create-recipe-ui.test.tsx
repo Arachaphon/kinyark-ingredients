@@ -72,7 +72,7 @@ describe("CreateRecipePage UI Authorization", () => {
     });
 
     // The store toggle button should not be rendered
-    expect(screen.queryByText("ร้านค้า")).not.toBeInTheDocument();
+    expect(screen.queryByText("เซ็ทอาหาร")).not.toBeInTheDocument();
   });
 
   test("STORE can access Store Recipe toggle", async () => {
@@ -81,7 +81,7 @@ describe("CreateRecipePage UI Authorization", () => {
     render(<CreateRecipePage />);
 
     await waitFor(() => {
-      expect(screen.getByText("ร้านค้า")).toBeInTheDocument();
+      expect(screen.getByText("เซ็ทอาหาร")).toBeInTheDocument();
     });
   });
 
@@ -91,7 +91,7 @@ describe("CreateRecipePage UI Authorization", () => {
     render(<CreateRecipePage />);
 
     await waitFor(() => {
-      expect(screen.getByText("ร้านค้า")).toBeInTheDocument();
+      expect(screen.getByText("เซ็ทอาหาร")).toBeInTheDocument();
     });
   });
 });
