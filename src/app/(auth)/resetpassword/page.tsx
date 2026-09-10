@@ -2,9 +2,10 @@
 
 // 🛠️ อิมพอร์ต React, useRouter และ Google Font (Anuphan)
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Anuphan } from "next/font/google";
 import { createClient } from "@/lib/supabase/client";
+import { resetPasswordSchema } from "@/lib/validations/auth.schema";
 
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
@@ -21,38 +22,62 @@ export default function ResetPasswordPage() {
   
   // เพิ่ม state สำหรับจัดการข้อความ Error เพื่อใช้แสดงผลบน UI สไตล์เดียวกับหน้า Login
   const [errorMessage, setErrorMessage] = useState("");
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [succeeded, setSucceeded] = useState(false);
+  // true เมื่อเปิดหน้านี้โดยไม่มี recovery session (ลิงก์หมดอายุ/เปิดตรงโดยไม่ผ่านอีเมล)
+  const [linkInvalid, setLinkInvalid] = useState(false);
+
   const supabase = createClient();
 
+  // เช็กตั้งแต่เปิดหน้าว่ามี recovery session หรือไม่ ถ้าไม่มีให้บอกตั้งแต่ต้น
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled && !data.session) {
+        setLinkInvalid(true);
+        setErrorMessage("ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง กรุณากดขอส่งลิงก์ใหม่");
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 🛠️ เปลี่ยนมาใช้ React.SyntheticEvent ครอบจักรวาลตามมาตรฐานของทีมเรา
-  const handleSubmit = (e: React.SyntheticEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setErrorMessage(""); // รีเซ็ตข้อความแจ้งเตือนทุกครั้งที่กด Submit
 
-    // 1. ตรวจสอบเงื่อนไขความปลอดภัยของรหัสผ่าน (พิมพ์ใหญ่ 1, พิมพ์เล็ก 1, ตัวเลข 1, อักษรพิเศษ 1, ยาวอย่างน้อย 8 ตัว)
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    if (password.length < 8 || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
-      setErrorMessage("รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร และประกอบด้วยตัวพิมพ์ใหญ่, ตัวพิมพ์เล็ก, ตัวเลข และอักขระพิเศษอย่างละ 1 ตัว");
+    // 1. ตรวจสอบกฏรหัสผ่านด้วย schema กลาง (กฏเดียวกับหน้าสมัครสมาชิก) + ยืนยันรหัสผ่าน
+    const result = resetPasswordSchema.safeParse({ password, confirmPassword });
+    if (!result.success) {
+      setErrorMessage(result.error.issues[0]?.message ?? "รหัสผ่านไม่ถูกต้อง");
       return;
     }
 
-    // 2. ตรวจสอบว่ารหัสผ่านทั้งสองช่องตรงกันหรือไม่
-    if (password !== confirmPassword) {
-      setErrorMessage("รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน");
-      return;
-    }
+    // 2. ต้องมี recovery session จากลิงก์ในอีเมลก่อนถึงจะเปลี่ยนรหัสได้
+    setIsSubmitting(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        setLinkInvalid(true);
+        setErrorMessage("ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง กรุณากดขอส่งลิงก์ใหม่");
+        return;
+      }
 
-    console.log({
-      password,
-      confirmPassword,
-    });
-    
-    // TODO: Supabase Reset Password
-    // พออัปเดตรหัสผ่านเสร็จจริง สามารถใช้ window.location.href = "/login" ตรงนี้ได้เลยครับ
+      // 3. อัปเดตรหัสผ่านจริงผ่าน Supabase
+      const { error } = await supabase.auth.updateUser({ password: result.data.password });
+      if (error) {
+        setErrorMessage(error.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      await supabase.auth.signOut();
+      setSucceeded(true);
+    } catch {
+      setErrorMessage("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,6 +95,7 @@ export default function ResetPasswordPage() {
               src="/photo/logo.png" 
               alt="Kin Yark Logo" 
               fill 
+              sizes="(max-width: 1280px) 288px, 320px"
               className="object-contain animate-scale-up" 
             />
           </div>
@@ -88,7 +114,7 @@ export default function ResetPasswordPage() {
         >
           {/* ขนาดโลโก้เวอร์ชันมือถือ (ถอดจากหน้า Login) */}
           <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all relative">
-            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill className="object-contain" />
+            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill sizes="(max-width: 640px) 192px, 224px" className="object-contain" />
           </div>
 
           <h1 className="text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">
@@ -97,7 +123,7 @@ export default function ResetPasswordPage() {
 
           {/* กล่องข้อความแจ้งเตือน Error สไตล์เดียวกับหน้า Login */}
           {errorMessage && (
-            <p className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-3 rounded-lg w-full border border-red-100 animate-fade-in leading-relaxed">
+            <p data-testid="reset-error-message" className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-3 rounded-lg w-full border border-red-100 animate-fade-in leading-relaxed">
               {errorMessage}
             </p>
           )}
@@ -106,6 +132,7 @@ export default function ResetPasswordPage() {
             {/* Password Field */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                data-testid="reset-password-input"
                 type={showPassword ? "text" : "password"}
                 placeholder="รหัสผ่านใหม่"
                 value={password}
@@ -134,6 +161,7 @@ export default function ResetPasswordPage() {
             {/* Confirm Password Field */}
             <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
               <input
+                data-testid="reset-confirm-input"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="ยืนยันรหัสผ่านใหม่"
                 value={confirmPassword}
@@ -160,20 +188,46 @@ export default function ResetPasswordPage() {
             </div>
           </div>
 
-          <button
-            type="button" 
-            onClick={async () => { await supabase.auth.signOut(); window.location.href = "/login"; }}
-            className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
-          >
-            กลับสู่หน้าเข้าสู่ระบบ
-          </button>
+          {succeeded ? (
+            <>
+              <p className="text-sm text-center mb-6 font-semibold bg-green-50 text-green-700 px-4 py-3 rounded-lg w-full border border-green-200 animate-fade-in leading-relaxed">
+                ตั้งรหัสผ่านใหม่สำเร็จแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่
+              </p>
+              <button
+                type="button"
+                onClick={() => { window.location.href = "/login"; }}
+                className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
+              >
+                ไปหน้าเข้าสู่ระบบ
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (linkInvalid) {
+                    window.location.href = "/forgotpassword";
+                  } else {
+                    await supabase.auth.signOut();
+                    window.location.href = "/login";
+                  }
+                }}
+                className="text-gray-900 font-bold text-sm mb-6 md:mb-8 hover:underline transition-all bg-transparent border-none cursor-pointer"
+              >
+                {linkInvalid ? "ขอส่งลิงก์ใหม่" : "กลับสู่หน้าเข้าสู่ระบบ"}
+              </button>
 
-          <button
-            type="submit"
-            className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
-          >
-            ยืนยัน
-          </button>
+              <button
+                data-testid="reset-submit-button"
+                type="submit"
+                disabled={isSubmitting}
+                className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] disabled:opacity-60 disabled:cursor-not-allowed text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
+              >
+                {isSubmitting ? "กำลังบันทึก..." : "ยืนยัน"}
+              </button>
+            </>
+          )}
         </form>
       </div>
     </div>

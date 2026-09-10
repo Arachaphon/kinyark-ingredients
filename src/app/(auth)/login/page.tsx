@@ -44,7 +44,7 @@ export default function LoginPage() {
       >
         <div className="flex flex-col items-center text-center max-w-sm">
           <div className="w-72 h-72 xl:w-80 xl:h-80 mb-8 relative flex items-center justify-center scale-110 transition-all duration-300">
-            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill className="object-contain animate-scale-up" />
+            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill sizes="(max-width: 1280px) 288px, 320px" className="object-contain animate-scale-up" />
           </div>
           <h2 className="text-3xl md:text-4xl font-extrabold text-black mb-3 tracking-tight">สวัสดี ยินดีต้อนรับ</h2>
           <p className="text-gray-700 text-base font-semibold mb-6">ไม่มีบัญชีใช่ไหม ?</p>
@@ -68,7 +68,7 @@ export default function LoginPage() {
           className="w-full max-w-[380px] flex flex-col items-center"
         >
           <div className="md:hidden w-48 h-48 sm:w-56 sm:h-56 mb-4 flex items-center justify-center scale-105 transition-all relative">
-            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill className="object-contain" />
+            <Image src="/photo/logo.png" alt="Kin Yark Logo" fill sizes="(max-width: 640px) 192px, 224px" className="object-contain" />
           </div>
 
           <h1 className="text-3xl md:text-4xl text-gray-900 mb-8 md:mb-12 tracking-wide font-medium">

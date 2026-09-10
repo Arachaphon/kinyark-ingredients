@@ -239,7 +239,7 @@ export default function MyRecipePage() {
                         <div className="w-full md:w-36 h-36 flex-shrink-0 relative">
                           <Image
                             src={recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                            alt={recipe.recipeName}
+                            alt={recipe.recipeName ?? "สูตรอาหาร"}
                             fill
                             className="object-cover rounded-lg"
                             sizes="144px"
@@ -339,7 +339,7 @@ export default function MyRecipePage() {
                             <div className="w-full md:w-36 h-36 flex-shrink-0 relative">
                               <Image
                                 src={sp.images?.[0]?.imageUrl ?? recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                                alt={sp.storeName}
+                                alt={sp.storeName ?? "เซ็ทอาหารร้านค้า"}
                                 fill
                                 className="object-cover rounded-lg"
                                 sizes="144px"

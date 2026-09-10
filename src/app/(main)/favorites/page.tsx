@@ -252,7 +252,7 @@ export default function FavoritesPage() {
                         <div className="w-full sm:w-[140px] h-[180px] sm:h-[140px] flex-shrink-0 relative">
                           <Image
                             src={recipe.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                            alt={recipe.recipeName}
+                            alt={recipe.recipeName ?? "สูตรอาหาร"}
                             fill
                             className="object-cover rounded-lg border border-gray-100"
                             sizes="(max-width: 640px) 100vw, 140px"

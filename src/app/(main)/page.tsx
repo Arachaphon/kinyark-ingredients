@@ -155,7 +155,7 @@ export default function HomePage() {
         
         {/* โลโก้ */}
         <div className="flex-shrink-0 flex items-center justify-center w-36 h-36 sm:w-48 sm:h-48 xl:w-64 xl:h-64 relative">
-          <Image src="/photo/logo.png" alt="Kin Yark" fill className="object-contain" priority />
+          <Image src="/photo/logo.png" alt="Kin Yark" fill sizes="(max-width: 640px) 144px, (max-width: 1280px) 192px, 256px" className="object-contain" priority />
         </div>
 
         {/* ส่วนค้นหาและลิงก์เมนูตรงกลาง */}
@@ -238,12 +238,11 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-
           {/* ปรับแก้: ปรับตำแหน่งให้อยู่ในขอบเขตการ์ด ไม่ล้นจนโดน overflow-x-hidden ตัดขอบแหว่ง */}
           <div className="absolute right-2 sm:right-4 xl:-right-6 top-1/2 -translate-y-1/2 w-32 h-32 sm:w-52 sm:h-52 xl:w-72 xl:h-72 drop-shadow-2xl z-20 pointer-events-none">
             <Image 
               src={featured.imageUrl} 
-              alt={featured.recipeName} 
+              alt={featured.recipeName ?? "เมนูแนะนำ"} 
               fill 
               className="object-cover rounded-full border-[8px] sm:border-[12px] border-white shadow-xl" 
               sizes="(max-width: 640px) 128px, (max-width: 1280px) 208px, 288px" 
@@ -371,7 +370,7 @@ function RecipeCard({ id, bgColor, title, image, rating }: { id: string, bgColor
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-36 h-36 sm:w-40 sm:h-40 z-20 hover:rotate-6 transition duration-300">
         <Image
           src={image}
-          alt={title}
+          alt={title ?? "เมนูแนะนำ"}
           fill
           className="object-cover rounded-full shadow-lg border-[8px] sm:border-[10px] border-[#F4EFE5]"
           sizes="160px"

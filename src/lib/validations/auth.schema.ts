@@ -1,12 +1,22 @@
 import { z } from 'zod'
 
-const passwordSchema = z
+export const passwordSchema = z
   .string()
   .min(8, 'รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร')
   .regex(/[A-Z]/, 'รหัสผ่านต้องมีอักษรตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว')
   .regex(/[a-z]/, 'รหัสผ่านต้องมีอักษรตัวพิมพ์เล็กอย่างน้อย 1 ตัว')
   .regex(/\d/, 'รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว')
   .regex(/[^a-zA-Z0-9]/, 'รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว')
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, 'กรุณายืนยันรหัสผ่าน'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน',
+    path: ['confirmPassword'],
+  })
 
 export const registerSchema = z.object({
   email: z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
@@ -83,5 +93,6 @@ export const updateProfileSchema = z
 
 export type RegisterInput = z.infer<typeof registerSchema>
 export type LoginInput = z.infer<typeof loginSchema>
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>
 export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
