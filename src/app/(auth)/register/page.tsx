@@ -95,6 +95,7 @@ export default function RegisterPage() {
               src="/photo/logo.png"
               alt="Kin Yark Logo"
               fill
+              sizes="(max-width: 640px) 192px, 224px"
               className="object-contain"
             />
           </div>
@@ -319,6 +320,7 @@ export default function RegisterPage() {
               src="/photo/logo.png"
               alt="Kin Yark Ingredients Logo"
               fill
+              sizes="(max-width: 1280px) 288px, 320px"
               className="object-contain animate-scale-up"
             />
           </div>

@@ -115,7 +115,13 @@ async function cleanupUser(userId: string, email: string) {
 }
 
 async function main() {
-  const arg = process.argv[2]
+  // `--dry-run` (ตำแหนใดก็ได้) = แสดงรายการที่จะลบอย่างเดียว ไม่ลบจริง
+  const rawArgs = process.argv.slice(2)
+  const dryRun = rawArgs.includes('--dry-run')
+  const arg = rawArgs.find((a) => a !== '--dry-run')
+  if (dryRun) {
+    console.log('DRY-RUN mode: only listing matches, nothing will be deleted.')
+  }
 
   const allUsers = await listAllUsers()
 
@@ -153,6 +159,12 @@ async function main() {
     console.log(`Found ${testUsers.length} test account(s):`)
     testUsers.forEach((u) => console.log(` - ${u.email}`))
 
+    if (dryRun) {
+      console.log(`\nDRY-RUN: would delete ${testUsers.length} account(s). Re-run without --dry-run to delete.`)
+      await prisma.$disconnect()
+      return
+    }
+
     let successCount = 0
     for (const user of testUsers) {
       const ok = await cleanupUser(user.id, user.email || user.id)
@@ -171,6 +183,12 @@ async function main() {
       return
     }
 
+    if (dryRun) {
+      console.log(`DRY-RUN: would delete ${targetUser.email} (${targetUser.id}). Re-run without --dry-run to delete.`)
+      await prisma.$disconnect()
+      return
+    }
+
     await cleanupUser(targetUser.id, targetUser.email!)
   } else {
     console.log(`
@@ -179,10 +197,12 @@ async function main() {
     npx tsx scripts/clean-users.ts --list
 
   • Delete specific email:
-    npx tsx scripts/clean-users.ts email@example.com
+    npx tsx scripts/clean-users.ts email@example.com [--dry-run]
 
   • Delete ALL test accounts:
-    npx tsx scripts/clean-users.ts --all-test
+    npx tsx scripts/clean-users.ts --all-test [--dry-run]
+
+  Add --dry-run (any position) to preview matches without deleting.
 `)
   }
 

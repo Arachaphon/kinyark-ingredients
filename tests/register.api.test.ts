@@ -109,6 +109,31 @@ describe("signup server action", () => {
     });
   });
 
+  test("normalizes email to lowercase before duplicate check and create", async () => {
+    mockPrisma.user.findUnique.mockResolvedValue(null);
+    mockSupabaseAuth.signUp.mockResolvedValue({
+      data: { user: { id: "new-uuid" } },
+      error: null,
+    });
+    mockPrisma.user.create.mockResolvedValue({ id: "new-uuid" });
+
+    const fd = createFormData({ email: "Focus@Example.com" });
+    const result = await signup({ message: "" }, fd);
+    expect(result.success).toBe(true);
+    expect(mockSupabaseAuth.signUp).toHaveBeenCalledWith({
+      email: "focus@example.com",
+      password: "StrongP@ss1",
+    });
+    expect(mockPrisma.user.create).toHaveBeenCalledWith({
+      data: {
+        id: "new-uuid",
+        email: "focus@example.com",
+        username: "newuser",
+        role: "USER",
+      },
+    });
+  });
+
   test("creates user with STORE role when role is store", async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
     mockSupabaseAuth.signUp.mockResolvedValue({

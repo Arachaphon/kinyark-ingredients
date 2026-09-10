@@ -83,6 +83,7 @@ export default function Navbar() {
           src="/photo/logo.png"
           alt="Kin Yark"
           fill
+          sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 192px, 256px"
           className="object-contain"
         />
       </div>

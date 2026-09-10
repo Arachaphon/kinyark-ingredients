@@ -113,7 +113,7 @@ export default function HomePage() {
             </div>
           </div>
           <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 md:translate-x-16 w-40 h-40 md:w-80 md:h-80 drop-shadow-2xl z-20 pointer-events-none">
-              <Image src={featured.images?.[0]?.imageUrl || mockFeaturedRecipe.images[0].imageUrl} alt={featured.recipeName} fill className="object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" sizes="(max-width: 768px) 160px, 320px" />
+              <Image src={featured.images?.[0]?.imageUrl || mockFeaturedRecipe.images[0].imageUrl} alt={featured.recipeName ?? "เมนูแนะนำ"} fill className="object-cover rounded-full border-[6px] md:border-[12px] border-white shadow-xl" sizes="(max-width: 768px) 160px, 320px" />
           </div>
         </div>
       </main>
@@ -340,7 +340,7 @@ function RecipeCard({
     <div className={`${bgColor} w-full max-w-[280px] sm:w-[280px] rounded-[36px] flex flex-col items-center relative pt-28 pb-10 shadow-lg transition hover:-translate-y-2 overflow-visible`}>
       
       <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 h-40 z-20 hover:rotate-6 transition duration-300">
-        <Image src={image} alt={title} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
+        <Image src={image} alt={title ?? "เมนูแนะนำ"} fill className="object-cover rounded-full shadow-lg border-[10px] border-white" sizes="160px" />
       </div>
 
       <div className="flex items-center justify-center gap-3 mb-5 mt-2 px-4 w-full relative z-30">

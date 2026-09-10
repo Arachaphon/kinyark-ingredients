@@ -14,21 +14,39 @@ const anuphan = Anuphan({
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const router = useRouter(); 
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
-    
-    // 🌟 เรียกใช้งาน API หลังบ้าน (ที่เช็คผ่าน Schema) โดยปล่อยให้ทำงานอยู่เบื้องหลัง
-    fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }).catch(console.error);
-    
-    // 🌟 เปลี่ยนหน้าไปเช็คอีเมลทันที ไม่รอโหลด เพื่อประสบการณ์ใช้งานที่ลื่นไหล
-    router.push(`/check-email?email=${encodeURIComponent(email)}`);
+    setErrorMessage("");
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage("กรุณากรอกอีเมล");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMessage(data.error || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+      router.push(`/check-email?email=${encodeURIComponent(trimmedEmail)}`);
+    } catch {
+      setErrorMessage("เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,6 +61,7 @@ export default function ForgotPasswordPage() {
             src="/photo/logo.png"
             alt="Kin Yark Logo"
             fill
+            sizes="(max-width: 1280px) 288px, 320px"
             className="object-contain animate-scale-up"
           />
         </div>
@@ -69,6 +88,7 @@ export default function ForgotPasswordPage() {
                 src="/photo/logo.png"
                 alt="Kin Yark Logo"
                 fill
+                sizes="(max-width: 640px) 192px, 224px"
                 className="object-contain"
               />
             </div>
@@ -77,15 +97,21 @@ export default function ForgotPasswordPage() {
               ลืมรหัสผ่าน
             </h1>
 
+            {errorMessage && (
+              <p data-testid="forgot-error-message" className="text-red-500 text-sm text-center mb-5 font-semibold bg-red-50 px-4 py-3 rounded-lg w-full border border-red-100 animate-fade-in leading-relaxed">
+                {errorMessage}
+              </p>
+            )}
+
             <div className="w-full relative mb-5 space-y-5">
               <div className="relative shadow-[0_4px_12px_rgba(0,0,0,0.03)] rounded-full">
                 <input
+                  data-testid="forgot-email-input"
                   type="email"
                   placeholder="อีเมล"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#FBFBFB] border border-gray-100 rounded-full py-3.5 pl-6 pr-12 text-sm focus:outline-none focus:ring-1 focus:ring-amber-200 transition-all"
-                  required
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   <svg
@@ -109,20 +135,22 @@ export default function ForgotPasswordPage() {
             </button>
 
             <button
+              data-testid="forgot-submit-button"
               type="submit"
-              className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
+              disabled={isSubmitting}
+              className="w-44 py-2.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] disabled:opacity-60 disabled:cursor-not-allowed text-gray-800 font-extrabold text-base rounded-xl shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 text-center cursor-pointer"
             >
-              ยืนยัน
+              {isSubmitting ? "กำลังส่ง..." : "ยืนยัน"}
             </button>
 
             <p className="md:hidden mt-6 text-sm text-gray-600 font-medium">
-              {"Don't have an account?"}
+              ยังไม่มีบัญชีใช่ไหม?
               <button
                 type="button"
                 onClick={() => router.push("/register")}
                 className="text-amber-700 font-bold underline"
               >
-                Register
+                สมัครสมาชิก
               </button>
             </p>
           </form>

@@ -123,7 +123,7 @@ export default function PostsFeedPage() {
                     <div className="w-full md:w-[380px] h-[350px] flex-shrink-0 relative">
                       <Image
                         src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                        alt={post.recipeName}
+                        alt={post.recipeName ?? "โพสต์สูตรอาหาร"}
                         fill
                         priority={index === 0}
                         className="object-cover rounded-3xl shadow-md border border-[#71B254]/20"
@@ -231,7 +231,7 @@ export default function PostsFeedPage() {
                   <div className="w-full md:w-[350px] h-[350px] flex-shrink-0 relative">
                     <Image
                       src={post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                      alt={post.recipeName}
+                      alt={post.recipeName ?? "โพสต์สูตรอาหาร"}
                       fill
                       className="object-cover rounded-3xl shadow-md"
                       sizes="350px"

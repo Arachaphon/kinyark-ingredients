@@ -342,8 +342,9 @@ function ResultsContent() {
                 <div className="w-full md:w-[180px] h-[160px] flex-shrink-0 relative">
                   <Image
                     src={recipe.image}
-                    alt={recipe.title}
+                    alt={recipe.title ?? "ผลการค้นหา"}
                     fill
+                    sizes="(max-width: 768px) 100vw, 180px"
                     unoptimized
                     className="object-cover rounded-lg"
                   />
@@ -375,8 +376,9 @@ function ResultsContent() {
                     <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-100 shrink-0 relative">
                       <Image
                         src={recipe.authorAvatar}
-                        alt={recipe.author}
+                        alt={recipe.author ?? "ผู้เขียน"}
                         fill
+                        sizes="32px"
                         unoptimized
                         className="object-cover"
                       />

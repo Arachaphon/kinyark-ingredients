@@ -275,7 +275,7 @@ export default function ViewRecipePage() {
                       <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#16A34A]/30 w-full">
                         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
                           <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-xl flex-shrink-0 min-w-[140px]">
-                            <div className="w-16 h-16 relative"><Image src={storeUserAvatar} alt={storeName} fill className="rounded-full object-cover border-2 border-[#16A34A]" /></div>
+                            <div className="w-16 h-16 relative"><Image src={storeUserAvatar} alt={storeName ?? "ร้านค้า"} fill sizes="64px" className="rounded-full object-cover border-2 border-[#16A34A]" /></div>
                             <span className="text-xs font-extrabold text-white bg-[#16A34A] px-2.5 py-0.5 rounded-full">ร้านค้า</span>
                             <span className="font-extrabold text-[#15803D] text-sm text-center leading-tight">{storeName}</span>
                             <span className="text-xs text-gray-500 text-center font-medium">@{storeUsername}</span>
@@ -360,7 +360,7 @@ export default function ViewRecipePage() {
                 <div className="flex flex-col gap-6 bg-white/90 p-6 rounded-2xl border border-[#71B254]/30 w-full">
                   <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 w-full">
                     <div className="flex flex-col items-center gap-2 px-5 py-4 rounded-xl flex-shrink-0 min-w-[140px]">
-                      <div className="w-16 h-16 relative"><Image src={authorAvatar} alt="ผู้เขียน" fill className="rounded-full object-cover border-2 border-[#71B254]" /></div>
+                      <div className="w-16 h-16 relative"><Image src={authorAvatar} alt="ผู้เขียน" fill sizes="64px" className="rounded-full object-cover border-2 border-[#71B254]" /></div>
                       <span className="text-xs font-extrabold text-white bg-[#71B254] px-2.5 py-0.5 rounded-full">เจ้าของสูตร</span>
                       <span className="font-extrabold text-gray-800 text-sm text-center leading-tight">{recipe.user?.username ?? "ผู้ไม่ประสงค์ออกนาม"}</span>
                     </div>
