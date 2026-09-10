@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureIngredientPairRecipes } from "@/lib/ai/ingredient-pair-recipe";
+import { throttle, AI_GENERATE_COOLDOWN_MS } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +10,18 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "กรุณาระบุวัตถุดิบอย่างน้อย 1 ชนิด" },
         { status: 400 }
+      );
+    }
+
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "anon";
+    const userId = req.headers.get("x-user-id") || clientIp;
+    const throttleKey = `ai-gen:${userId}`;
+    const limit = throttle(throttleKey, AI_GENERATE_COOLDOWN_MS);
+
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: "ส่งคำขอบ่อยเกินไป กรุณารอสักครู่", retryAfterMs: limit.retryAfterMs },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)) } }
       );
     }
 

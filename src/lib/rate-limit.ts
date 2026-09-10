@@ -5,6 +5,7 @@
  */
 
 const FAVORITE_TOGGLE_COOLDOWN_MS = 2000
+const AI_GENERATE_COOLDOWN_MS = 5000
 
 const lastHit = new Map<string, number>()
 
@@ -34,4 +35,4 @@ export function resetRateLimits(): void {
   lastHit.clear()
 }
 
-export { FAVORITE_TOGGLE_COOLDOWN_MS }
+export { FAVORITE_TOGGLE_COOLDOWN_MS, AI_GENERATE_COOLDOWN_MS }

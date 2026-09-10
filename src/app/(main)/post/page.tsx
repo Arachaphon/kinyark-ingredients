@@ -147,9 +147,9 @@ export default function PostsFeedPage() {
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
-      <main className="w-[95%] max-w-[900px] mx-auto px-4 mt-8">
-        {/* Category Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/80 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-gray-100">
+      <main className="w-[95%] max-w-[900px] mx-auto px-4 -mt-3 md:-mt-8 xl:-mt-24">
+        {/* Category Tabs: ทั้งหมด, ผู้ใช้งาน, สร้างโดย AI */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/80 backdrop-blur-sm p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-gray-700 font-bold text-sm hidden sm:inline mr-2">หมวดหมู่:</span>
             <button
@@ -213,7 +213,6 @@ export default function PostsFeedPage() {
           {posts.map((post) => {
             const storePost = post.storePosts && post.storePosts.length > 0 ? post.storePosts[0] : null;
             const isStoreSet = Boolean(storePost);
-            const storeName = storePost?.storeName ?? "";
             const sellingPrice = storePost?.sellingPrice ?? 0;
 
             if (isStoreSet) {
@@ -224,7 +223,7 @@ export default function PostsFeedPage() {
                     <div className="w-full sm:w-[140px] h-[180px] sm:h-[140px] flex-shrink-0 relative">
                       <Image
                         src={storePost?.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                        alt={post.recipeName}
+                        alt={post.recipeName ?? "โพสต์สูตรอาหาร"}
                         fill
                         className="object-cover rounded-lg border border-gray-100"
                         sizes="(max-width: 640px) 100vw, 140px"
@@ -297,7 +296,7 @@ export default function PostsFeedPage() {
                   <div className="w-full sm:w-[140px] h-[180px] sm:h-[140px] flex-shrink-0 relative">
                     <Image
                       src={post.images[0]?.imageUrl ?? FALLBACK_IMAGE}
-                      alt={post.recipeName}
+                      alt={post.recipeName ?? "โพสต์สูตรอาหาร"}
                       fill
                       className="object-cover rounded-lg border border-gray-100"
                       sizes="(max-width: 640px) 100vw, 140px"

@@ -3,8 +3,12 @@
 import Image from "next/image";
 import { Anuphan } from "next/font/google";
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+
+const RESEND_COOLDOWN_SECONDS = 60;
+const cooldownKey = (mail: string) => `reset-cooldown:${mail.trim().toLowerCase()}`;
+
 const anuphan = Anuphan({
   weight: ["300", "400", "500", "600", "700"],
   subsets: ["thai", "latin"],
@@ -18,25 +22,58 @@ function CheckEmailContent() {
 
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  // Cooldown กันกดส่งรัวจนโดน rate limit (เก็บใน localStorage ผูกกับ email กัน refresh แล้วยิงซ้ำ)
+  const [cooldownLeft, setCooldownLeft] = useState(0);
+
+  useEffect(() => {
+    if (!email) {
+      setCooldownLeft(0);
+      return;
+    }
+    const update = () => {
+      const exp = Number(localStorage.getItem(cooldownKey(email)) ?? 0);
+      setCooldownLeft(Math.max(0, Math.ceil((exp - Date.now()) / 1000)));
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [email]);
+
+  const startCooldown = () => {
+    localStorage.setItem(cooldownKey(email), String(Date.now() + RESEND_COOLDOWN_SECONDS * 1000));
+    setCooldownLeft(RESEND_COOLDOWN_SECONDS);
+  };
 
   const handleResend = async () => {
-    if (isResending) return;
+    if (isResending || !email || cooldownLeft > 0) return;
     setIsResending(true);
     setResendMessage("");
 
+    let respondedStatus: number | null = null;
     try {
-      // TODO: เชื่อมกับ API ส่งอีเมลยืนยันอีกครั้ง
-      // await fetch("/api/resend-verification", {
-      //   method: "POST",
-      //   body: JSON.stringify({ email }),
-      // });
+      // ยิงผ่าน API เส้นเดียวกับปุ่มแรก: ได้ทั้ง prisma check, logging, และ 429 ที่แยกเคสแล้ว
+      // (ยิง Supabase ตรงจะเลี่ยงเช็กพวกนี้ แถมเปิดช่องเดาบัญชีผ่านพฤติกรรมที่ต่างกัน)
+      const res = await fetch("/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      respondedStatus = res.status;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       setResendMessage("ส่งอีเมลยืนยันอีกครั้งเรียบร้อยแล้ว");
-    } catch {
-      setResendMessage("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } catch (error) {
+      setResendMessage(error instanceof Error ? error.message : "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsResending(false);
+      // cooldown เฉพาะตอน server ตอบกลับ (สำเร็จ 200 / โดน rate limit 429) กันกดรัว
+      // network error (ไม่มี response) ให้กดลองใหม่ได้ทันที
+      if ((respondedStatus === 200 || respondedStatus === 429) && email) {
+        startCooldown();
+      }
     }
   };
 
@@ -47,6 +84,7 @@ function CheckEmailContent() {
             src="/photo/logo.png"
             alt="Kin Yark Logo"
             fill
+            sizes="(max-width: 1280px) 288px, 320px"
             className="object-contain"
           />
         </div>
@@ -89,18 +127,19 @@ function CheckEmailContent() {
         </p>
 
         {resendMessage && (
-          <p className="text-sm mb-4 bg-[#F5ECD7]/60 px-4 py-2 rounded-lg w-full text-center font-semibold text-amber-800 border border-amber-100 animate-fade-in">
+          <p data-testid="checkemail-resend-message" className={`text-sm mb-4 px-4 py-2 rounded-lg w-full text-center font-semibold border animate-fade-in ${resendMessage.includes("เรียบร้อย") ? "bg-[#F5ECD7]/60 text-amber-800 border-amber-100" : "bg-red-50 text-red-600 border-red-200"}`}>
             {resendMessage}
           </p>
         )}
 
         <button
           type="button"
+          data-testid="checkemail-resend-button"
           onClick={handleResend}
-          disabled={isResending}
+          disabled={isResending || cooldownLeft > 0}
           className="w-full py-3.5 bg-[#EFE7D3] hover:bg-[#e4dcbf] disabled:opacity-60 disabled:cursor-not-allowed text-gray-800 font-extrabold text-base rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.06)] active:scale-95 transition-all duration-200 cursor-pointer"
         >
-          {isResending ? "กำลังส่ง..." : "ส่งอีเมลยืนยันอีกครั้ง"}
+          {isResending ? "กำลังส่ง..." : cooldownLeft > 0 ? `ส่งอีกครั้งใน ${cooldownLeft}s` : "ส่งอีเมลยืนยันอีกครั้ง"}
         </button>
 
         <button

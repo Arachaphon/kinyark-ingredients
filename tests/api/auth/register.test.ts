@@ -5,6 +5,32 @@
 
 import { registerSchema } from "@/lib/validations/auth.schema";
 
+jest.mock("next/cache", () => ({
+  revalidatePath: jest.fn(),
+}));
+
+const mockPrismaAction = {
+  user: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+  },
+};
+jest.mock("@/lib/prisma", () => ({
+  prisma: mockPrismaAction,
+}));
+
+const mockSupabaseAuthAction = {
+  signUp: jest.fn(),
+  signOut: jest.fn(),
+};
+jest.mock("@/lib/supabase/server", () => ({
+  createClient: jest.fn(() => ({
+    auth: mockSupabaseAuthAction,
+  })),
+}));
+
+import { signup } from "@/app/(auth)/register/actions";
+
 // ---------------------------------------------------------------------------
 // Unit: Validation Schema
 // ---------------------------------------------------------------------------
@@ -148,5 +174,46 @@ describe("register — role mapping", () => {
   test("maps any other value to 'USER'", () => {
     expect(mapRole("admin")).toBe("USER");
     expect(mapRole("random")).toBe("USER");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// signup server action: email normalization (mocked dependencies)
+// ---------------------------------------------------------------------------
+describe("signup server action", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockPrismaAction.user.findUnique.mockResolvedValue(null);
+    mockSupabaseAuthAction.signUp.mockResolvedValue({
+      data: { user: { id: "new-uuid" } },
+      error: null,
+    });
+    mockPrismaAction.user.create.mockResolvedValue({ id: "new-uuid" });
+  });
+
+  function createFormData(overrides: Record<string, string> = {}): FormData {
+    const fd = new FormData();
+    fd.set("email", overrides.email ?? "new@example.com");
+    fd.set("password", overrides.password ?? "StrongP@ss1");
+    fd.set("username", overrides.username ?? "newuser");
+    fd.set("role", overrides.role ?? "user");
+    return fd;
+  }
+
+  test("normalizes email to lowercase before duplicate check and create", async () => {
+    const result = await signup({ message: "" }, createFormData({ email: "Focus@Example.com" }));
+    expect(result.success).toBe(true);
+    expect(mockSupabaseAuthAction.signUp).toHaveBeenCalledWith({
+      email: "focus@example.com",
+      password: "StrongP@ss1",
+    });
+    expect(mockPrismaAction.user.create).toHaveBeenCalledWith({
+      data: {
+        id: "new-uuid",
+        email: "focus@example.com",
+        username: "newuser",
+        role: "USER",
+      },
+    });
   });
 });

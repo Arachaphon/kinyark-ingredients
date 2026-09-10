@@ -10,7 +10,8 @@ export async function signup(
   formData: FormData
 ) {
   const raw = {
-    email: formData.get("email") as string,
+    // Normalize email ตั้งแต่ต้นทาง: เก็บ lowercase เสมอ กันบั๊ก case-sensitive ตอนค้นหา (เช่น reset password)
+    email: ((formData.get("email") as string) ?? "").trim().toLowerCase(),
     password: formData.get("password") as string,
     username: formData.get("username") as string,
     role: formData.get("role") as string || "user",
