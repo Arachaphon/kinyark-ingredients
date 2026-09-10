@@ -192,7 +192,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           </div>
         </div>
 
-        <div className="flex-grow p-5 sm:p-6 md:p-8 relative flex flex-col overflow-y-auto bg-white min-h-0">
+        <div className="flex-grow p-5 sm:p-6 md:p-6 relative flex flex-col overflow-y-auto bg-white min-h-0">
           
           <button 
             onClick={onClose}
@@ -206,11 +206,11 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
           </button>
 
           {activeTab === "profile" && (
-            <div className="flex flex-col gap-4 md:gap-6 h-full justify-between">
+            <div className="flex flex-col gap-3 h-full justify-between">
               <div className="overflow-y-auto md:overflow-visible pr-1">
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 md:mb-6">โปรไฟล์</h3>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">โปรไฟล์</h3>
                 
-                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-4 md:mb-6">
+                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-3">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -262,12 +262,22 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-3">
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ชื่อผู้ใช้งาน</label>
                     <input type="text" value={formUsername} onChange={(e) => setFormUsername(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
                   </div>
-                  
+
+                  <div>
+                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
+                    <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
+                  </div>
+                </div>
+
+                {/* ส่วนเปลี่ยนรหัสผ่าน: รหัสผ่านใหม่ + ยืนยัน อยู่แถวเดียวกัน */}
+                <div className="border-t border-gray-100 pt-2 mb-2">
+                  <h4 className="font-bold text-gray-800 mb-2.5 text-sm sm:text-base">เปลี่ยนรหัสผ่าน</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {/* ช่องรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่านใหม่</label>
@@ -301,11 +311,6 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                     )}
                   </div>
 
-                  <div>
-                    <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ที่อยู่อีเมล</label>
-                    <input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} className="w-full p-2.5 bg-gray-100 rounded-md border border-transparent focus:outline-none focus:bg-white focus:border-[#FFC700] text-gray-800 text-sm" />
-                  </div>
-
                   {/* ช่องยืนยันรหัสผ่านใหม่ พร้อมไอคอนลูกตา */}
                   <div>
                     <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">ยืนยันรหัสผ่านใหม่</label>
@@ -335,10 +340,13 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       </button>
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 {/* ช่องรหัสผ่านปัจจุบัน พร้อมไอคอนลูกตา */}
-                <div className="relative">
+                <div>
+                  <label className="block text-gray-700 font-bold mb-1 text-xs sm:text-sm">รหัสผ่านปัจจุบัน</label>
+                  <div className="relative">
                   <input 
                     type={showFormCurrentPassword ? "text" : "password"} 
                     value={formCurrentPassword} 
@@ -362,6 +370,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                       </svg>
                     )}
                   </button>
+                  </div>
                 </div>
 
                 {currentPasswordError && (
@@ -388,7 +397,7 @@ export default function SettingModal({ isOpen, onClose, userProfile }: SettingMo
                 </button>
               </div>
 
-              <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 mt-2">
+              <div className="flex justify-end gap-3 border-t border-gray-100 pt-4 pb-6 mt-2 m-4">
                 <button onClick={onClose} className="px-5 py-2 sm:px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold rounded-md transition-colors text-xs sm:text-sm">ยกเลิก</button>
                 <button
                   disabled={!isFormValid || !hasChanges || isSaving || (formPassword.length > 0 && formPassword !== formConfirmPassword) || !!passwordError}
