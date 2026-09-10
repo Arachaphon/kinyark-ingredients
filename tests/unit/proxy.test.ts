@@ -69,7 +69,10 @@ describe('Proxy Middleware Header Injection', () => {
       error: null,
     });
 
-    const request = new NextRequest('http://localhost:3000/api/recipes');
+    // Authenticated requests carry the Supabase auth cookie in production
+    const request = new NextRequest('http://localhost:3000/api/recipes', {
+      headers: { cookie: 'sb-test-auth-token=some-access-token' },
+    });
     await proxy(request);
 
     expect(verifySupabaseJWT).toHaveBeenCalledWith('valid-token');
@@ -90,7 +93,10 @@ describe('Proxy Middleware Header Injection', () => {
       error: 'Invalid or expired token',
     });
 
-    const request = new NextRequest('http://localhost:3000/api/recipes');
+    // Authenticated requests carry the Supabase auth cookie in production
+    const request = new NextRequest('http://localhost:3000/api/recipes', {
+      headers: { cookie: 'sb-test-auth-token=some-access-token' },
+    });
     await proxy(request);
 
     const callArgs = (NextResponse.next as jest.Mock).mock.calls[0][0];

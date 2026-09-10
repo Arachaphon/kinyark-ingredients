@@ -55,17 +55,24 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [fetchFavorites]);
 
-  // 🌟 ฟังก์ชันยกเลิกการบันทึกสูตรอาหาร (Optimistic UI - การ์ดหายทันที)
-  const handleRemoveFavorite = async (recipeId: string) => {
-    // 1. อัปเดต UI ทันที: กรองเอาการ์ดสูตรอาหารที่กดออกไปจากหน้าจอ
-    setFavorites((prev) => prev.filter((item) => item.recipe.id !== recipeId));
+  // 🌟 ฟังก์ชันยกเลิกการบันทึก (Optimistic UI - การ์ดหายทันที)
+  const handleRemoveFavorite = async (item: FavoriteListResponse["data"][number]) => {
+    const key = item.storePost ? `sp:${item.storePost.id}` : `r:${item.recipe?.id}`;
+    // 1. อัปเดต UI ทันที: กรองเอาการ์ดที่กดออกไปจากหน้าจอ
+    setFavorites((prev) =>
+      prev.filter((it) =>
+        it.storePost ? `sp:${it.storePost.id}` !== key : `r:${it.recipe?.id}` !== key
+      )
+    );
 
     try {
       // 2. ยิง API สลับสถานะ (Toggle) เพื่อยกเลิกการบันทึกในฐานข้อมูล
       const res = await fetch("/api/favorites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId }),
+        body: JSON.stringify(
+          item.storePost ? { storePostId: item.storePost.id } : { recipeId: item.recipe?.id }
+        ),
       });
 
       if (!res.ok) {
@@ -151,7 +158,86 @@ export default function FavoritesPage() {
             <div className="flex flex-col gap-3 bg-white/50 border border-gray-100 rounded-xl p-2 sm:p-4">
               {favoritesCount > 0 ? (
                 favorites.map((item) => {
+                  // ---- การ์ดเซ็ทอาหารที่กดไลค์ไว้ ----
+                  if (item.storePost) {
+                    const sp = item.storePost;
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow mb-1 animate-fade-in"
+                      >
+                        <div className="flex flex-col sm:flex-row gap-4 h-full">
+                          <div className="w-full sm:w-[140px] h-[180px] sm:h-[140px] flex-shrink-0 relative">
+                            <Image
+                              src={sp.images[0]?.imageUrl ?? FALLBACK_IMAGE}
+                              alt={sp.storeName}
+                              fill
+                              className="object-cover rounded-lg border border-gray-100"
+                              sizes="(max-width: 640px) 100vw, 140px"
+                            />
+                          </div>
+                          <div className="flex flex-col flex-1 min-w-0 py-0.5">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <h1 className="text-lg sm:text-xl font-bold text-gray-900 line-clamp-1">
+                                เซ็ท {sp.storeName}
+                              </h1>
+                              <span className="bg-[#EAF5E4] text-[#5A9240] text-[10px] font-bold px-2 py-0.5 rounded">
+                                เซ็ทอาหารร้านค้า
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-gray-600 mb-2 mt-1">
+                              <div><span className="font-medium">ราคา: </span><span className="font-bold text-[#71B254]">฿{sp.sellingPrice}</span></div>
+                            </div>
+                            <div className="flex items-center gap-3 sm:gap-4 mt-auto pt-2 flex-wrap w-full">
+                              <div
+                                onClick={() => handleRemoveFavorite(item)}
+                                className="flex items-center gap-1 cursor-pointer group"
+                                title="ยกเลิกการบันทึกเซ็ทนี้"
+                              >
+                                <svg
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 24 24"
+                                  fill="#FF0000"
+                                  stroke="#FF0000"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="group-hover:scale-110 group-active:scale-95 transition-transform"
+                                >
+                                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                                <span className="font-medium text-gray-600 text-sm group-hover:text-red-500 transition-colors">
+                                  {sp.favoriteCount}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 border-l border-gray-200 pl-3">
+                                <Image
+                                  src={sp.user?.avatarUrl ?? FALLBACK_AVATAR}
+                                  alt="author"
+                                  width={20}
+                                  height={20}
+                                  className="rounded-full object-cover border border-gray-100"
+                                />
+                                <span className="font-medium text-gray-500 text-xs truncate max-w-[100px]">
+                                  {sp.user?.username ?? "ร้านค้า"}
+                                </span>
+                              </div>
+                              <Link
+                                href={item.recipeId ? `/recipe/${item.recipeId}` : `/recipe/orphan-${sp.id}`}
+                                className="ml-auto px-4 py-1.5 border border-[#71B254] text-[#71B254] rounded-full text-xs font-bold hover:bg-[#71B254] hover:text-white transition shadow-sm"
+                              >
+                                ดูเซ็ทอาหาร
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const recipe = item.recipe;
+                  if (!recipe) return null;
                   const tags = recipe.recipeIngredients
                     .slice(0, 5)
                     .map((ri) => ri.ingredient.name);
@@ -212,11 +298,11 @@ export default function FavoritesPage() {
                           <div className="flex items-center gap-3 sm:gap-4 mt-auto pt-2 flex-wrap w-full">
                             
                             {/* ปุ่มหัวใจกดยกเลิก */}
-                            <div
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleRemoveFavorite(recipe.id);
-                              }}
+                              <div
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleRemoveFavorite(item);
+                                }}
                               className="flex items-center gap-1 cursor-pointer group"
                               title="ยกเลิกการบันทึกสูตรนี้"
                             >

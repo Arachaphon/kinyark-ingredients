@@ -80,6 +80,7 @@ export interface StorePostItem {
   recipeId: string | null
   storeName: string
   sellingPrice: number
+  favoriteCount: number
   storeDescription: string | null
   storeLocation: string | null
   contactInfo: string | null
@@ -136,12 +137,25 @@ export interface FavoriteRecipe {
   recipeIngredients: RecipeIngredientItem[]
 }
 
+export interface FavoriteStorePost {
+  id: string
+  storeName: string
+  sellingPrice: number
+  favoriteCount: number
+  visibility: string
+  createdAt: string
+  images: RecipeImage[]
+  user: RecipeUser
+}
+
 export interface FavoriteItem {
   id: string
   userId: string
-  recipeId: string
+  recipeId: string | null
+  storePostId: string | null
   createdAt: string
-  recipe: FavoriteRecipe
+  recipe: FavoriteRecipe | null
+  storePost?: FavoriteStorePost | null
 }
 
 export interface FavoriteListResponse {

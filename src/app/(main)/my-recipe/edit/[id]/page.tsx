@@ -1040,10 +1040,6 @@ export default function EditRecipePage() {
     submitForm(true);
   };
 
-  const handleCancelEdit = () => {
-    router.push(`/recipe/${recipeId}`);
-  };
-
   const handleSubmitRecipe = async () => {
     submitForm(false);
   };
@@ -1214,7 +1210,7 @@ export default function EditRecipePage() {
           storeImages,
           storeVideos,
           setIngredients: validSetIngredients.length > 0 ? validSetIngredients : undefined,
-          visibility: storeVisibility,
+          visibility: isDraft ? "draft" : storeVisibility,
         };
 
         // Store-only editor may switch the base recipe, or link the store post
@@ -2611,10 +2607,10 @@ export default function EditRecipePage() {
               {isStoreOnlyEdit && (
                 <button 
                   type="button" 
-                  onClick={handleCancelEdit}
-                  className="w-full py-3.5 border-2 border-gray-300 text-gray-500 rounded-md font-bold hover:bg-gray-50 hover:-translate-y-0.5 active:translate-y-0 transition-all text-center bg-white text-lg"
+                  onClick={handleSaveDraft}
+                  className="w-full py-3.5 border-2 border-[#71B254] text-[#71B254] rounded-md font-bold hover:bg-[#F4FAF1] hover:-translate-y-0.5 active:translate-y-0 transition-all text-center bg-white text-lg"
                 >
-                  ยกเลิก
+                  บันทึกฉบับร่าง
                 </button>
               )}
               
@@ -2638,7 +2634,7 @@ export default function EditRecipePage() {
                     กำลังอัปโหลดข้อมูล...
                   </span>
                 ) : (
-                  isStoreOnlyEdit ? "บันทึกการเปลี่ยนแปลง" : postAs === "store" ? "เผยแพร่เซ็ทอาหาร" : "เผยแพร่สูตรอาหาร"
+                  isStoreOnlyEdit ? "เผยแพร่เซ็ทอาหาร" : postAs === "store" ? "เผยแพร่เซ็ทอาหาร" : "เผยแพร่สูตรอาหาร"
                 )}
               </button>
             </div>

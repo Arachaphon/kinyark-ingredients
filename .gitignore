@@ -56,3 +56,12 @@ opencode.json
 .agents/
 .claude/
 sounds/
+
+# k6 generated artifacts (regenerable via npm run k6:* — keep only scripts in git)
+tests/k6/*.html
+tests/k6/raw.json
+tests/k6/*-raw.json
+tests/k6/summary.json
+tests/k6/*-summary.json
+tests/k6/by-*.json
+tests/k6/timeline.json

@@ -57,7 +57,7 @@ async function pickRecommended(
     where: { userId: user.id },
     select: { recipeId: true },
   });
-  const favoriteIds = [...new Set(favorites.map((f) => f.recipeId))];
+  const favoriteIds = [...new Set(favorites.map((f) => f.recipeId).filter((v): v is string => !!v))];
 
   // Within every tier: rating first (priority 3), then favoriteCount (priority 4).
   const rankOrderBy: Prisma.RecipeOrderByWithRelationInput[] = [
@@ -128,12 +128,8 @@ export async function GET(request: Request) {
     // Anonymous: top public recipe (freshness via in-memory cache)
     if (!user) {
       const anonKey = "featured:anon";
-      if (process.env.NODE_ENV !== "test") {
-        const cached = cache.get(anonKey);
-        if (cached) {
-          return Response.json({ data: cached, total: (cached as unknown[]).length, cursor: 0 });
-        }
-      }
+      const useCache = process.env.NODE_ENV !== "test";
+      const loadFeatured = async () => {
       const anonymous = await prisma.recipe.findMany({
         relationLoadStrategy: "join",
         where: { visibility: "public" },
@@ -141,8 +137,12 @@ export async function GET(request: Request) {
         orderBy: [{ rating: "desc" }, { favoriteCount: "desc" }],
         take: 1,
       });
-      cache.set(anonKey, anonymous, TTL_FEATURED);
-      return Response.json({ data: anonymous, total: anonymous.length, cursor: 0 });
+      return anonymous
+      }
+      const data = useCache
+        ? await cache.getOrSet(anonKey, TTL_FEATURED, TTL_FEATURED, loadFeatured)
+        : await loadFeatured();
+      return Response.json({ data, total: (data as unknown[]).length, cursor: 0 });
     }
 
     let visibility: Prisma.RecipeWhereInput;

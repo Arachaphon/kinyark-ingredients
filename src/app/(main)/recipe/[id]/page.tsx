@@ -134,6 +134,19 @@ export default function ViewRecipePage() {
   const [paramsChecked, setParamsChecked] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  // โหมดดูเซ็ท (?set=<storePostId>): เปิดสูตรธรรมดาโชว์แค่สูตร,
+  // เปิดพร้อม ?set= ที่ตรงกับเซ็ทของสูตรนั้นโชว์ทั้งสูตร+เซ็ท
+  const [setParam, setSetParam] = useState<string | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sync = () => {
+      setSetParam(new URLSearchParams(window.location.search).get("set"));
+    };
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
   const myReview = useMemo(
     () => (user && recipe ? recipe.reviews.find((r: any) => r.userId === user.id) ?? null : null),
     [user, recipe]
@@ -327,10 +340,15 @@ export default function ViewRecipePage() {
 
     flip();
 
+    // Orphan set detail (id `orphan-<uuid>`) has no recipe row — like the set itself.
+    const orphanStoreId =
+      recipe.id.startsWith("orphan-") ? recipe.storePosts?.[0]?.id : undefined;
     fetch("/api/favorites", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ recipeId: recipe.id }),
+      body: JSON.stringify(
+        orphanStoreId ? { storePostId: orphanStoreId } : { recipeId: recipe.id }
+      ),
     })
       .then(async (res) => {
         if (!res.ok) {
@@ -582,6 +600,29 @@ export default function ViewRecipePage() {
     setTimeout(() => {
       commentSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
+  };
+
+  // เซ็ทที่กำลังดูอยู่: orphan โชว์เซ็ทของมันเองเสมอ, สูตรธรรมดาโชว์เซ็ท
+  // ก็ต่อเมื่อ ?set= ตรงกับ id ของเซ็ทในสูตรนั้น (ไม่งั้นโชว์แค่สูตร)
+  const isOrphanRecipe = recipe?.id?.startsWith("orphan-") ?? false;
+  const activeStorePost = (() => {
+    const posts = recipe?.storePosts ?? [];
+    if (posts.length === 0) return null;
+    if (isOrphanRecipe) return posts[0];
+    if (!setParam) return null;
+    return posts.find((sp: any) => sp.id === setParam) ?? null;
+  })();
+  const showSetSection = activeStorePost !== null;
+
+  const openSetView = (storePostId: string) => {
+    if (!recipe) return;
+    setSetParam(storePostId);
+    router.push(`/recipe/${recipe.id}?set=${storePostId}`);
+  };
+  const backToRecipeView = () => {
+    if (!recipe) return;
+    setSetParam(null);
+    router.push(`/recipe/${recipe.id}`);
   };
 
   return (
@@ -839,8 +880,8 @@ export default function ViewRecipePage() {
 
             {!loading && !error && !notFound && recipe && (
               <>
-                {recipe.storePosts && recipe.storePosts.length > 0 && (() => {
-                    const storePost = recipe.storePosts[0];
+                {showSetSection && activeStorePost && (() => {
+                    const storePost = activeStorePost;
                     const storeName = storePost.storeName || "ร้านค้า";
                     const sellingPrice = storePost.sellingPrice || 0;
                     const storeDescription = storePost.storeDescription || "เซ็ทอาหารพิเศษจากทางร้าน คัดสรรวัตถุดิบสดใหม่พร้อมปรุง";
@@ -852,6 +893,9 @@ export default function ViewRecipePage() {
                     return (
                       <div className="bg-white border-2 border-[#16A34A] rounded-sm p-8 relative mb-6 animate-fade-in flex flex-col gap-8">
                         <div className="absolute top-4 right-4 bg-[#16A34A] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10"><span>รายละเอียดเซ็ทอาหารร้านค้า</span></div>
+                        {!isOrphanRecipe && (
+                          <button onClick={backToRecipeView} className="absolute top-4 left-4 bg-white border border-[#16A34A] text-[#15803D] text-xs font-bold px-3 py-1.5 rounded-full hover:bg-[#DCFCE7] transition z-10">← ดูเฉพาะสูตรอาหาร</button>
+                        )}
                         
                         <div className="flex flex-col gap-4 mt-12 md:mt-6 w-full">
                           <div className="flex flex-col gap-6 bg-white p-6 rounded-2xl border border-[#16A34A]/30 w-full">
@@ -930,6 +974,26 @@ export default function ViewRecipePage() {
                       </div>
                     );
                   })()}
+
+                {!showSetSection && !isOrphanRecipe && recipe.storePosts && recipe.storePosts.length > 0 && (
+                  <div className="bg-white border-2 border-[#16A34A]/60 rounded-sm p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4 animate-fade-in">
+                    <div className="flex-1">
+                      <p className="font-bold text-[#15803D]">เซ็ทอาหารพร้อมปรุงจากร้านค้า ({recipe.storePosts.length} ร้าน)</p>
+                      <p className="text-sm text-gray-500">กดดูเซ็ทเพื่อเห็นทั้งสูตรและเซ็ทอาหาร</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {recipe.storePosts.map((sp: any) => (
+                        <button
+                          key={sp.id}
+                          onClick={() => openSetView(sp.id)}
+                          className="px-4 py-2 bg-[#16A34A] text-white text-sm font-bold rounded-full hover:bg-[#15803D] transition shadow-sm"
+                        >
+                          ดูเซ็ท{sp.storeName ? ` ${sp.storeName}` : ""}{sp.sellingPrice ? ` • ฿${sp.sellingPrice}` : ""}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-white border border-[#71B254] rounded-sm p-8 relative mb-6 flex flex-col gap-8">
                   <div className="absolute top-4 right-4 bg-[#71B254] text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 z-10"><span>รายละเอียดสูตรอาหาร</span></div>
@@ -1022,10 +1086,10 @@ export default function ViewRecipePage() {
 
                   <div className="space-y-6 mt-2 flex flex-col w-full">
                     <div className="w-full p-6 rounded-2xl border border-[#71B254]/30">
-                      <h3 className="text-xl font-bold text-[#5A9240] mb-4">{recipe.storePosts && recipe.storePosts.length > 0 ? "ส่วนผสมในเซ็ทขาย" : "ส่วนผสม"}</h3>
+                      <h3 className="text-xl font-bold text-[#5A9240] mb-4">{showSetSection ? "ส่วนผสมในเซ็ทขาย" : "ส่วนผสม"}</h3>
                       <div className="flex flex-wrap gap-2.5">
                         {(() => {
-                          const sp = recipe.storePosts && recipe.storePosts.length > 0 ? recipe.storePosts[0] : null;
+                          const sp = showSetSection ? activeStorePost : null;
                           if (sp && sp.setIngredients && Array.isArray(sp.setIngredients) && sp.setIngredients.length > 0) {
                             return sp.setIngredients.map((ri: any, idx: number) => (
                               <span key={idx} className="px-3.5 py-1.5 border border-[#71B254]/40 rounded-xl text-sm font-medium text-gray-800 bg-white">

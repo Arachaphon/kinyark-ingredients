@@ -52,31 +52,36 @@ export function recipeListItemSelect(
           },
         }
       : {}),
-    storePosts: opts.storePostUserId ? {
-      where: { userId: opts.storePostUserId },
+    storePosts: {
+      // Owner view (mine=true) sees their own posts incl. drafts.
+      // Public feeds (post/featured/search) must never leak draft store posts,
+      // so exclude them when no owner scoping is requested.
+      ...(opts.storePostUserId
+        ? { where: { userId: opts.storePostUserId } }
+        : { where: { visibility: { not: "draft" } } }),
       take: 1,
       select: {
         id: true,
         storeName: true,
         sellingPrice: true,
+        favoriteCount: true,
         setIngredients: true,
+        visibility: true,
+        storeDescription: true,
+        storeLocation: true,
+        contactInfo: true,
+        createdAt: true,
+        user: {
+          select: { id: true, username: true, avatarUrl: true },
+        },
         images: {
           orderBy: { createdAt: "asc" as const },
           take: 1,
           select: { id: true, imageUrl: true },
         },
-      },
-    } : {
-      take: 1,
-      select: {
-        id: true,
-        storeName: true,
-        sellingPrice: true,
-        setIngredients: true,
-        images: {
+        videos: {
           orderBy: { createdAt: "asc" as const },
-          take: 1,
-          select: { id: true, imageUrl: true },
+          select: { id: true, videoUrl: true },
         },
       },
     },
