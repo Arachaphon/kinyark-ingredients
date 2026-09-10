@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && next build",
     "test": "jest --ci",
     "start": "next start",
     "lint": "eslint",
@@ -49,6 +49,7 @@
     "jest-environment-jsdom": "^29",
     "jest-util": "^30.4.1",
     "tailwindcss": "^4",
+    "testcontainers": "^12.1.0",
     "ts-jest": "^29",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

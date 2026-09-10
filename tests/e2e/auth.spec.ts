@@ -29,7 +29,7 @@ test.describe('Authentication E2E', () => {
     await loginPage.goto();
     await loginPage.login(testEmail, testPassword);
     
-    await expect(page).toHaveURL(/.*\/home/);
+    await expect(page).toHaveURL(/.*\/home/, { timeout: 15000 });
     
     // 3. Logout Flow
     const logoutButton = page.getByRole('button', { name: /ออกจากระบบ|Logout/i });

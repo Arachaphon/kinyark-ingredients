@@ -3,6 +3,7 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
+import ContentCard from "@/components/ContentCard";
 import Link from "next/link";
 import { Anuphan } from "next/font/google";
 import useSWR from "swr";
@@ -133,8 +134,8 @@ export default function MyRecipePage() {
     >
       <Navbar />
 
-      <main className="w-[95%] max-w-[1000px] mx-auto px-4 mt-8">
-        <div className="bg-white border border-[#71B254] rounded-sm p-6 md:p-10 shadow-sm">
+      <main className="w-[95%] max-w-[900px] mx-auto px-4 -mt-3 md:-mt-8 xl:-mt-24">
+        <ContentCard>
           {loading && (
             <div className="flex flex-col items-center justify-center py-24 gap-4">
               <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin" />
@@ -435,7 +436,7 @@ export default function MyRecipePage() {
               </div>
             </>
           )}
-        </div>
+        </ContentCard>
       </main>
 
       {deleteModal.isOpen && (

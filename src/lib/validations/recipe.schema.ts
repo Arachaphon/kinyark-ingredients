@@ -69,6 +69,8 @@ export const recipeListQuerySchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "true" || v === "1"),
+  aiProvider: z.string().trim().toLowerCase().optional(),
+  authorType: z.enum(["all", "user", "ai"]).default("all").optional(),
 })
 
 // Validates the :id path param for GET /api/recipes/[id]

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
+import { getAiAuthor } from "@/lib/ai-author";
 
 // =========================================
 // 📐 Interfaces
@@ -32,6 +33,7 @@ interface ApiRecipeItem {
   images?: { imageUrl: string }[];
   image?: string;
   recipeIngredients?: { ingredient?: { name: string } }[];
+  ingredients?: string[];
   tags?: string[];
   user?: { username?: string; avatarUrl?: string };
   author?: string;
@@ -53,103 +55,24 @@ const anuphan = Anuphan({
 // =========================================
 // 🎨 ฟังก์ชันดึงรูปภาพ API อัตโนมัติสำหรับ AI
 // =========================================
-const getAiImageUrl = (recipeName: string) => {
-  const prompt = `${recipeName} delicious food photography realistic`;
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true`;
-};
-
-// =========================================
-// 🍱 ข้อมูลจำลองเมนู (Mock Data)
-// =========================================
-const mockSearchResults: RecipeItem[] = [
-  {
-    id: "mock-1",
-    title: "สลัดซีซาร์สวนผัก",
-    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=300&q=80",
-    tags: ["มะเขือเทศ", "หัวหอมหวาน", "พริกไทย", "กะหล่ำปลี"],
-    author: "Alice",
-    authorAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-    likes: 22,
-    rating: 3.0,
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-2",
-    title: "สลัด (ง่ายและสดใหม่)",
-    image: getAiImageUrl("สลัด ง่ายและสดใหม่"),
-    tags: ["แตงกวา", "มะเขือเทศ", "แครอท", "ผักสลัด"],
-    author: "Deep Seek", 
-    authorAvatar: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=150&q=80", 
-    likes: 52,
-    rating: 4.5,
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-3",
-    title: "สลัดผลไม้สดชื่น",
-    image: getAiImageUrl("สลัดผลไม้สดชื่น"),
-    tags: ["สับปะรด", "สตรอว์เบอร์รี", "องุ่น", "ส้ม", "กีวี"],
-    author: "Gemini", 
-    authorAvatar: "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg",
-    likes: 65,
-    rating: 4.8, 
-    initialFavorite: false,
-    isAi: true, 
-  },
-  {
-    id: "mock-4",
-    title: "สลัดอกไก่ย่างคลีนๆ",
-    image: "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?auto=format&fit=crop&w=300&q=80",
-    tags: ["อกไก่", "ผักกาดหอม", "แครอท", "น้ำสลัดงา"],
-    author: "Chef_Pond",
-    authorAvatar: "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=150&q=80",
-    likes: 120,
-    rating: 4.9, 
-    initialFavorite: false,
-    isAi: false, 
-  },
-  {
-    id: "mock-5",
-    title: "สลัดอะโวคาโดกุ้งย่าง",
-    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=300&q=80",
-    tags: ["อะโวคาโด", "กุ้ง", "มะนาว", "ผักร็อกเก็ต"],
-    author: "HealthyGirl",
-    authorAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-    likes: 85,
-    rating: 4.2,
-    initialFavorite: false,
-    isAi: false, 
-  },
-];
-
-// =========================================
-// 🔄 ฟังก์ชันจัดเรียง (AI ขึ้นก่อน เรียงตามเรตติ้ง)
-// =========================================
-const formatAndSortResults = (dataList: RecipeItem[]): RecipeItem[] => {
-  const aiRecipes = dataList.filter((item) => item.isAi);
-  const userRecipes = dataList.filter((item) => !item.isAi);
-
-  aiRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  userRecipes.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-
-  return [
-    ...aiRecipes.slice(0, 2),
-    ...userRecipes.slice(0, 3)
-  ];
+const getAiImageUrl = (recipeName: string, index: number = 0) => {
+  const prompt = `${recipeName} top-down flat lay photo on an empty table, only the dish, food photography, no text`;
+  const negative = "people, person, hands, face, crowd, text, watermark, logo";
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=400&height=300&nologo=true&negative_prompt=${encodeURIComponent(negative)}&seed=${1000 + index}`;
 };
 
 function ResultsContent() {
   const searchParams = useSearchParams();
-  const queryTitle = searchParams.get("query") || searchParams.get("ingredients") || "สลัด";
+  const ingredientsParam = searchParams.get("ingredients");
+  const isIngredientSearch = ingredientsParam !== null;
+  const queryTitle = searchParams.get("query") || searchParams.get("q") || ingredientsParam || "";
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [results, setResults] = useState<RecipeItem[]>([]);
   
   // 🌟 เพิ่มสถานะสำหรับ Favorite (การกดถูกใจ) แบบแยกแต่ละ ID
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [isLiking, setIsLiking] = useState<Record<string, boolean>>({});
 
   const setupFavorites = (dataArray: RecipeItem[]) => {
     const initialFavs = dataArray.reduce(
@@ -161,121 +84,240 @@ function ResultsContent() {
 
   useEffect(() => {
     let isMounted = true;
+
+    if (!queryTitle.trim()) {
+      setResults([]);
+      setIsLoading(false);
+      setIsAiLoading(false);
+      return;
+    }
+
+    const formatRecipeItem = (item: ApiRecipeItem, index: number): RecipeItem => {
+      const isAiRecipe = !!item.aiProvider || item.isAi || false;
+      const recipeTitle = item.recipeName || item.title || "";
+
+      const imageUrl = item.image?.trim() || item.images?.[0]?.imageUrl?.trim();
+      const finalImage =
+        imageUrl && imageUrl.startsWith("http")
+          ? imageUrl
+          : getAiImageUrl(recipeTitle || queryTitle, index);
+
+      // 🟢 รวมวัตถุดิบจากทุกฟิลด์ที่ API ส่งมา
+      let tempTags: string[] = [];
+
+      if (Array.isArray(item.recipeIngredients)) {
+        item.recipeIngredients.forEach((ri) => {
+          if (ri?.ingredient?.name) tempTags.push(ri.ingredient.name);
+        });
+      }
+
+      if (Array.isArray(item.ingredients)) {
+        tempTags = [...tempTags, ...item.ingredients];
+      }
+
+      if (Array.isArray(item.tags)) {
+        tempTags = [...tempTags, ...item.tags];
+      }
+
+      let mappedTags = Array.from(new Set(tempTags.filter((t) => typeof t === "string" && t.trim() !== "")));
+
+      if (mappedTags.length === 0) {
+        mappedTags = queryTitle.split(",").map((t) => t.trim()).filter(Boolean);
+      }
+
+      const aiAuthor = getAiAuthor(item.aiProvider);
+      return {
+        id: item.id,
+        title: recipeTitle,
+        image: finalImage,
+        tags: mappedTags,
+        author:
+          aiAuthor?.name ||
+          item.user?.username ||
+          item.aiProvider ||
+          item.author ||
+          "ผู้ใช้งานทั่วไป",
+        authorAvatar:
+          aiAuthor?.logo ||
+          item.user?.avatarUrl ||
+          item.authorAvatar ||
+          "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
+        likes: item.favoriteCount || item.likes || 0,
+        rating: item.rating || 0,
+        initialFavorite: false,
+        isAi: isAiRecipe,
+      };
+    };
+
     setIsLoading(true);
+    setIsAiLoading(false);
+
+    // บันทึกประวัติการค้นหาสำหรับผู้ใช้ที่ล็อกอิน (ทั้งการค้นหาด้วยคำและชุดวัตถุดิบ)
+    fetch("/api/search-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ searchQuery: queryTitle.trim() }),
+    }).catch(() => {
+      // Best-effort: history saving must never block UI
+    });
+
+    const abortController = new AbortController();
+
+    // บันทึกประวัติการค้นหาสำหรับผู้ใช้ที่ล็อกอิน (ทั้งการค้นหาด้วยคำและชุดวัตถุดิบ)
+    fetch("/api/search-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ searchQuery: queryTitle.trim() }),
+    }).catch(() => {
+      // Best-effort: history saving must never block UI
+    });
 
     const fetchResults = async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(queryTitle)}`);
-        
+        // 1. ดึงสูตรจริงจากฐานข้อมูลของผู้ใช้ขึ้นมาก่อนทันที (เร็วมาก)
+        const response = await fetch(
+          isIngredientSearch
+            ? `/api/search?ingredients=${encodeURIComponent(queryTitle)}`
+            : `/api/search?q=${encodeURIComponent(queryTitle)}`,
+          { signal: abortController.signal }
+        );
+
         if (!response.ok) {
           throw new Error("Failed to fetch real data");
         }
 
-        const data: ApiRecipeItem[] = await response.json();
+        const parsedResponse = await response.json();
+        let data: ApiRecipeItem[] = Array.isArray(parsedResponse) ? parsedResponse : [];
 
-        if (data && data.length > 0) {
-          const formattedData: RecipeItem[] = data.map((item) => {
-            const isAiRecipe = !!item.aiProvider || item.isAi || false;
-            const recipeTitle = item.recipeName || item.title || "";
-
-            const finalImage = item.images?.[0]?.imageUrl || item.image || 
-                               (isAiRecipe ? getAiImageUrl(recipeTitle) : "https://images.unsplash.com/photo-1490474418585-ba9f52fce124");
-
-            const mappedTags = item.recipeIngredients
-              ?.map((ri) => ri.ingredient?.name)
-              .filter((name): name is string => Boolean(name))
-              .slice(0, 5) || item.tags || [];
-
-            return {
-              id: item.id,
-              title: recipeTitle,
-              image: finalImage,
-              tags: mappedTags,
-              author: item.user?.username || item.author || "ผู้ใช้งานทั่วไป",
-              authorAvatar: item.user?.avatarUrl || item.authorAvatar || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
-              likes: item.favoriteCount || item.likes || 0,
-              rating: item.rating || 0,
-              initialFavorite: false,
-              isAi: isAiRecipe,
-            };
-          });
-
-          const sortedAndSlicedData = formatAndSortResults(formattedData);
-
-          if (isMounted) {
-            setResults(sortedAndSlicedData);
-            setupFavorites(sortedAndSlicedData);
-          }
-        } else {
-          throw new Error("Real data is empty, using fallback");
+        if (isIngredientSearch) {
+          data = data.filter((item) => !item.aiProvider);
         }
 
-      } catch (error) {
-        console.warn("Using mock data fallback:", error);
-        if (!isMounted) return;
-
-        if (queryTitle.toLowerCase().includes("ไม่มี") || queryTitle.toLowerCase().includes("empty")) {
-          setResults([]);
-        } else {
-          const sortedMockData = formatAndSortResults(mockSearchResults);
-          setResults(sortedMockData);
-          setupFavorites(sortedMockData);
-        }
-      } finally {
         if (isMounted) {
-          setIsLoading(false);
+          const userFormatted = data.map((item, idx) => formatRecipeItem(item, idx));
+          setResults(userFormatted);
+          setupFavorites(userFormatted);
+          setIsLoading(false); // แสดงผลสูตรของผู้ใช้ทันที!
+        }
+
+        const ingredientList = queryTitle
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        // 2. ✨ เมื่อเป็นการค้นหาด้วยวัตถุดิบ ให้เรียกขอเมนูจาก AI ใน Background แบบ Asynchronous
+        if (isIngredientSearch && ingredientList.length > 0) {
+          setIsAiLoading(true);
+          try {
+            const aiResponse = await fetch("/api/ai/generate-recipe", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ingredients: ingredientList }),
+              signal: abortController.signal,
+            });
+
+            if (aiResponse.ok && isMounted) {
+              const aiJson = await aiResponse.json();
+              const aiData: ApiRecipeItem[] = Array.isArray(aiJson)
+                ? aiJson
+                : (aiJson?.items ?? []);
+
+              if (aiData.length > 0) {
+                const aiFormatted = aiData.map((item, idx) => formatRecipeItem(item, idx));
+                setResults((prev) => {
+                  const existingIds = new Set(prev.map((r) => r.id));
+                  const uniqueAi = aiFormatted.filter((a) => !existingIds.has(a.id));
+                  const merged = [...uniqueAi, ...prev];
+                  setupFavorites(merged);
+                  return merged;
+                });
+              }
+            } else if (aiResponse.status === 429) {
+              console.warn("AI generation rate limited");
+            }
+          } catch (aiError: unknown) {
+            if (!(aiError instanceof Error) || aiError.name !== "AbortError") {
+              console.warn("AI Generate error:", aiError);
+            }
+          } finally {
+            if (isMounted) {
+              setIsAiLoading(false);
+            }
+          }
+        }
+      } catch (error: unknown) {
+        if (!(error instanceof Error) || error.name !== "AbortError") {
+          console.warn("API Search Error:", error);
+          if (isMounted) {
+            setResults([]);
+            setIsLoading(false);
+          }
         }
       }
     };
 
-    const timer = setTimeout(fetchResults, 800);
+    fetchResults();
     return () => { 
-      isMounted = false; 
-      clearTimeout(timer);
+      isMounted = false;
+      abortController.abort();
     };
-  }, [queryTitle]);
+  }, [queryTitle, isIngredientSearch]);
 
-  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI
-  const toggleFavorite = async (id: string) => {
-    // ดักไม่ให้กดย้ำๆ ระหว่างที่ API ยังส่งคำขอไม่เสร็จ
-    if (isLiking[id]) return;
-
+  // 🌟 ฟังก์ชันจัดการกดถูกใจ + Optimistic UI (ตอบสนองทันทีทุกคลิก)
+  const toggleFavorite = (id: string) => {
     // 1. Optimistic UI: สลับสถานะหัวใจให้ผู้ใช้เห็นทันที
     setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
-    setIsLiking((prev) => ({ ...prev, [id]: true }));
 
-    try {
-      // 2. ยิง API บันทึกข้อมูลไปหลังบ้าน
-      const res = await fetch("/api/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId: id }),
+    // 2. ยิง API; ถ้า server ปฏิเสธให้ revert กลับเพื่อซิงค์เสมอ
+    const revert = () => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    fetch("/api/favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId: id }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          console.warn("Favorite API failed, reverting UI state:", res.status);
+          revert();
+        }
+      })
+      .catch((error) => {
+        console.error("Network error toggling favorite:", error);
+        revert();
       });
-
-      if (!res.ok) {
-        // ในกรณีที่หลังบ้านพังหรือรอเชื่อมต่อ เราจะจำลองให้ UI เปลี่ยนต่อไปเพื่อการทดสอบ
-        console.warn("Favorite API failed or not ready yet. Simulating UI state.");
-      }
-    } catch (error) {
-      console.error("Network error toggling favorite:", error);
-    } finally {
-      // ปลดล็อคสถานะโหลด
-      setIsLiking((prev) => ({ ...prev, [id]: false }));
-    }
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-sm p-8 md:p-12 shadow-sm min-h-[500px]">
 
       {/* ส่วนหัว */}
-      <div className="mb-8 flex items-baseline gap-2">
-        <h1 className="text-3xl font-bold text-gray-900">{queryTitle}</h1>
-        {!isLoading && (
-          <span className="text-2xl font-medium text-gray-400">
-            ({results.length})
-          </span>
-        )}
+      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-3xl font-bold text-gray-900">{queryTitle}</h1>
+          {!isLoading && (
+            <span className="text-2xl font-medium text-gray-400">
+              ({results.length})
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* 🤖 แถบสถานะเมื่อ AI กำลังคิดค้นสูตรเพิ่มเติมใน Background */}
+      {isAiLoading && (
+        <div className="mb-6 rounded-xl border border-[#71B254]/30 bg-[#F3F9F0] px-4 py-3 flex items-center justify-between gap-3 shadow-sm animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-[#71B254] border-t-transparent rounded-full animate-spin shrink-0" />
+            <div>
+              <p className="font-bold text-sm text-[#3B6628]">
+                AI กำลังคิดค้นสูตรอาหารเพิ่มเติมจากวัตถุดิบที่คุณเลือก...
+              </p>
+              <p className="text-xs text-gray-600">
+                สูตรใหม่จาก AI จะเพิ่มเข้ามาในหน้านี้อัตโนมัติเมื่อสร้างเสร็จ
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ส่วนเนื้อหา */}
       <div className="flex flex-col gap-6">
@@ -311,27 +353,48 @@ function ResultsContent() {
         
         /* 2. Empty State */
         : results.length === 0 ? (
-          <div className="py-16 flex flex-col items-center justify-center text-center">
-            <div className="text-7xl mb-4 opacity-50">🧐</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">ไม่พบสูตรอาหารที่ตรงกัน</h3>
-            <p className="text-gray-500 text-lg max-w-md mb-8">
-              ระบบไม่พบสูตรอาหารสำหรับ &quot;{queryTitle}&quot; ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ
-            </p>
-            <Link
-              href="/search"
-              className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full hover:bg-[#5b9642] transition shadow-md"
-            >
-              กลับไปเลือกวัตถุดิบใหม่
-            </Link>
-          </div>
+          isAiLoading ? (
+            <div className="py-16 flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 border-4 border-[#71B254] border-t-transparent rounded-full animate-spin mb-4" />
+              <h3 className="text-2xl font-black text-gray-900 mb-2">
+                กำลังให้ AI ช่วยคิดค้นสูตรอาหาร...
+              </h3>
+              <p className="text-gray-500 text-base max-w-md">
+                ยังไม่พบสูตรจากผู้ใช้ กำลังนำวัตถุดิบไปให้ AI สร้างสรรค์เมนูใหม่ กรุณารอสักครู่
+              </p>
+            </div>
+          ) : (
+            <div className="py-16 flex flex-col items-center justify-center text-center">
+              <div className="text-7xl mb-4 opacity-50">🧐</div>
+              <h3 className="text-2xl font-black text-gray-900 mb-3">
+                {isIngredientSearch ? "ไม่มีสูตรอาหารที่ตรงกับวัตถุดิบ" : "ไม่พบสูตรอาหารที่ตรงกัน"}
+              </h3>
+              <p className="text-gray-500 text-lg max-w-md mb-8">
+                {isIngredientSearch
+                  ? "ระบบไม่พบสูตรอาหารที่มีวัตถุดิบครบตามที่เลือก ลองปรับเปลี่ยนหรือลดวัตถุดิบดูนะ"
+                  : `ระบบไม่พบสูตรอาหารสำหรับ "${queryTitle}" ลองปรับเปลี่ยนวัตถุดิบ หรือใช้คำค้นหาที่กว้างขึ้นดูนะ`}
+              </p>
+              <Link
+                href="/search"
+                className="px-8 py-3 bg-[#71B254] text-white font-bold rounded-full hover:bg-[#5b9642] transition shadow-md"
+              >
+                กลับไปเลือกวัตถุดิบใหม่
+              </Link>
+            </div>
+          )
         ) 
         
         /* 3. Results */
         : (
           results.map((recipe, index) => {
             const isLiked = favorites[recipe.id];
-            const isCurrentlyLiking = isLiking[recipe.id];
             const cardBorderClass = recipe.isAi ? "border-[#71B254]" : "border-gray-200";
+
+            // ✨ สูตรที่สร้างโดย AI ถูกบันทึกเป็น Recipe จริงในฐานข้อมูลแล้ว
+            // จึงเปิดด้วย id จากฐานข้อมูลเช่นเดียวกับสูตรปกติและสูตรแนะนำประจำสัปดาห์
+            // (ไม่ต้องส่งข้อมูลผ่าน query params — หน้า /recipe/[id] โหลดเต็มจาก DB
+            //  และแสดงเจ้าของเป็น AI ตาม aiProvider อัตโนมัติ)
+            const detailHref = `/recipe/${recipe.id}`;
 
             return (
               <div
@@ -395,7 +458,7 @@ function ResultsContent() {
                     {/* ยอดกดไลก์หัวใจ (เพิ่ม Animation การตอบสนอง) */}
                     <div
                       onClick={() => toggleFavorite(recipe.id)}
-                      className={`flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform ${isCurrentlyLiking ? 'opacity-70 cursor-wait' : ''}`}
+                      className="flex items-center gap-2 cursor-pointer select-none group active:scale-95 transition-transform"
                     >
                       <svg
                         width="20"
@@ -437,7 +500,7 @@ function ResultsContent() {
 
                   {/* ปุ่มเปิดดูวิธีทำตัวเต็ม */}
                   <Link
-                    href={`/recipe/${recipe.id}`}
+                    href={detailHref}
                     className="mt-4 md:mt-0 w-full md:w-auto px-5 py-2.5 bg-[#71B254] text-white rounded-full text-sm font-bold hover:bg-[#5b9642] transition text-center shadow-sm block"
                   >
                     ดูสูตรอาหาร

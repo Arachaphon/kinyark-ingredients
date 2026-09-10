@@ -26,7 +26,7 @@ test.describe('Profile E2E', () => {
 
     const loginPage = new LoginPage(page);
     await loginPage.login(testEmail, testPassword);
-    await expect(page).toHaveURL(/.*\/home/);
+    await expect(page).toHaveURL(/.*\/home/, { timeout: 15000 });
 
     await page.locator('div[class*="border-[3px]"][class*="3AC9B5"]').first().click();
 

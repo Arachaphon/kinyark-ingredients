@@ -15,6 +15,7 @@ const recipeListFields = {
   createdAt: true,
   bgColor: true,
   visibility: true,
+  aiProvider: true,
 } as const
 
 // Standard select for recipe list items: core fields + cover image (+ optional author/ingredients)

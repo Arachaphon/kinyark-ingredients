@@ -52,3 +52,7 @@ export const TTL_RECIPES_MINE      = 15_000  // my recipes list: 15s
 export const TTL_RECOMMENDED = 120_000       // recommended: 2 min
 export const TTL_RATINGS     = 30_000        // recipe ratings: 30s
 export const TTL_INGREDIENTS = 300_000       // ingredients: 5 min
+
+// Persistent markers stored inside SearchHistory.searchQuery.
+export const REC_CACHE_PREFIX = "__rec_cache__:"   // per-user sticky recommendation payload
+export const FEATURED_SEARCH_MARKER = "__featured__" // internal flag row

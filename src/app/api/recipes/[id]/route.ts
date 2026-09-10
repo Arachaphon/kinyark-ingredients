@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
+import { upsertRecipeIngredients } from "@/lib/ingredients"
 import { recipeIdParamSchema, updateRecipeSchema } from "@/lib/validations/recipe.schema"
 import { cache, TTL_RECIPE } from "@/lib/cache"
 import { createClient } from "@/lib/supabase/server"
@@ -14,14 +15,43 @@ class HttpError extends Error {
   }
 }
 
+function isDeadlockError(err: unknown): boolean {
+  if (err && typeof err === "object") {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2034" || err.code === "P2002")) {
+      return true
+    }
+    const msg = String((err as { message?: string }).message || "").toLowerCase()
+    return (
+      msg.includes("deadlock detected") ||
+      msg.includes("40p01") ||
+      msg.includes("deadlock")
+    )
+  }
+  return false
+}
+
+async function runWithRetries<T>(fn: () => Promise<T>, retries = 3, baseDelay = 100): Promise<T> {
+  let attempt = 0
+  while (true) {
+    try {
+      return await fn()
+    } catch (err) {
+      attempt++
+      if (attempt > retries || !isDeadlockError(err)) throw err
+      await new Promise((r) => setTimeout(r, baseDelay * Math.pow(2, attempt - 1)))
+    }
+  }
+}
+
 export const dynamic = "force-dynamic"
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const { id } = await params
+    const params = await props.params
+    const id = params?.id
 
     const parsed = recipeIdParamSchema.safeParse({ id })
 
@@ -35,94 +65,101 @@ export async function GET(
     const userRole = _request.headers.get("x-user-role")
     const user = userId ? { id: userId, role: userRole } : null
 
-    // Cache key = recipe body only (shared for all users)
-    // isFavorite is user-specific so it is always fetched fresh
     const cacheKey = `recipe:${recipeId}`
+
+    // Reviews are NEVER cached — always fetched fresh per request so that
+    // newly created/edited/deleted reviews show up immediately.
+    const fetchFreshReviews = () =>
+      prisma.review.findMany({
+        where: { recipeId },
+        include: {
+          user: { select: { id: true, username: true, avatarUrl: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      })
+
+    let cachedBase: Record<string, unknown> | undefined
     if (process.env.NODE_ENV !== 'test') {
-      const cached = cache.get<object>(cacheKey)
-
-      if (cached) {
-        // isFavorite still needs a fresh DB lookup per user
-        const isFavorite = user
-          ? !!(await prisma.favorite.findUnique({
-              where: { userId_recipeId: { userId: user.id, recipeId } },
-            }))
-          : false
-        return Response.json({ data: { ...cached, isFavorite } }, { status: 200 })
-      }
+      cachedBase = cache.get<Record<string, unknown>>(cacheKey)
     }
 
-    const [recipe, recipeIngredients, equipmentItems, images, videos, reviews, storePosts] =
-      await Promise.all([
-        prisma.recipe.findUnique({
-          where: { id: recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-          },
-        }),
-        prisma.recipeIngredient.findMany({
-          where: { recipeId },
-          include: { ingredient: { include: { category: true } } },
-          orderBy: { ingredient: { name: "asc" } },
-        }),
-        prisma.recipeEquipment.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.recipeImage.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.recipeVideo.findMany({
-          where: { recipeId },
-          orderBy: { createdAt: "asc" },
-        }),
-        prisma.review.findMany({
-          where: { recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.storePost.findMany({
-          where: { recipeId },
-          include: {
-            user: { select: { id: true, username: true, avatarUrl: true } },
-            images: { orderBy: { createdAt: "asc" } },
-            videos: { orderBy: { createdAt: "asc" } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-      ])
+    let base: Record<string, unknown>
+    if (cachedBase) {
+      base = cachedBase
+    } else {
+      const [recipe, recipeIngredients, equipmentItems, images, videos, storePosts] =
+        await Promise.all([
+          prisma.recipe.findUnique({
+            where: { id: recipeId },
+            include: {
+              user: { select: { id: true, username: true, avatarUrl: true } },
+            },
+          }),
+          prisma.recipeIngredient.findMany({
+            where: { recipeId },
+            include: { ingredient: { include: { category: true } } },
+            orderBy: { ingredient: { name: "asc" } },
+          }),
+          prisma.recipeEquipment.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.recipeImage.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.recipeVideo.findMany({
+            where: { recipeId },
+            orderBy: { createdAt: "asc" },
+          }),
+          prisma.storePost.findMany({
+            where: { recipeId },
+            include: {
+              user: { select: { id: true, username: true, avatarUrl: true } },
+              images: { orderBy: { createdAt: "asc" } },
+              videos: { orderBy: { createdAt: "asc" } },
+            },
+            orderBy: { createdAt: "desc" },
+          }),
+        ])
 
-    if (!recipe) {
-      return Response.json({ error: "Recipe not found" }, { status: 404 })
-    }
-
-    const fullRecipe = {
-      ...recipe,
-      recipeIngredients,
-      equipmentItems,
-      images,
-      videos,
-      reviews,
-      storePosts,
-    }
-
-    const isStorePostOwner = user
-       ? storePosts.some((sp) => sp.userId === user.id)
-       : false
-
-    if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
-        recipe.userId !== user?.id && !isStorePostOwner) {
-      return Response.json({ error: "Recipe not found" }, { status: 404 })
-    }
-
-    if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
-      if (user.role === "STORE") {
+      if (!recipe) {
         return Response.json({ error: "Recipe not found" }, { status: 404 })
       }
+
+      const fullRecipe = {
+        ...recipe,
+        recipeIngredients,
+        equipmentItems,
+        images,
+        videos,
+        storePosts,
+      }
+
+      const isStorePostOwner = user
+         ? storePosts.some((sp) => sp.userId === user.id)
+         : false
+
+      if ((recipe.visibility === "private" || recipe.visibility === "draft") &&
+          recipe.userId !== user?.id && !isStorePostOwner) {
+        return Response.json({ error: "Recipe not found" }, { status: 404 })
+      }
+
+      if (recipe.visibility === "protected" && user && recipe.userId !== user.id && !isStorePostOwner) {
+        if (user.role === "STORE") {
+          return Response.json({ error: "Recipe not found" }, { status: 404 })
+        }
+      }
+
+      base = fullRecipe
+
+      // Cache the recipe body (without reviews/isFavorite) — shared across all users
+      if (process.env.NODE_ENV !== 'test') {
+        cache.set(cacheKey, base, TTL_RECIPE)
+      }
     }
+
+    const reviews = await fetchFreshReviews()
 
     const ratingBreakdown = {
       "5": 0,
@@ -137,14 +174,6 @@ export async function GET(
       }
     })
 
-    const fullRecipeWithBreakdown = {
-      ...fullRecipe,
-      ratingBreakdown,
-    }
-
-    // Cache the recipe body (without isFavorite) — shared across all users
-    cache.set(cacheKey, fullRecipeWithBreakdown, TTL_RECIPE)
-
     const isFavorite = user
       ? !!(await prisma.favorite.findUnique({
           where: { userId_recipeId: { userId: user.id, recipeId } },
@@ -152,7 +181,7 @@ export async function GET(
       : false
 
     return Response.json(
-      { data: { ...fullRecipeWithBreakdown, isFavorite } },
+      { data: { ...base, reviews, ratingBreakdown, isFavorite } },
       { status: 200 }
     )
   } catch (error) {
@@ -163,7 +192,7 @@ export async function GET(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   const userId = await getAuthUserId(request)
 
@@ -172,9 +201,15 @@ export async function DELETE(
   }
 
   const user = { id: userId }
-  const supabase = await createClient()
+  let supabase = null
+  try {
+    supabase = await createClient()
+  } catch {
+    // cookies() unavailable in test context
+  }
 
-  const { id: rawId } = await params
+  const params = await props.params
+  const rawId = params?.id
 
   const parsedId = recipeIdParamSchema.safeParse({ id: rawId })
   if (!parsedId.success) {
@@ -210,28 +245,82 @@ export async function DELETE(
     const storeImageUrls = recipe.storePosts.flatMap((sp) => sp.images.map((img) => img.imageUrl))
     const storeVideoUrls = recipe.storePosts.flatMap((sp) => sp.videos.map((vid) => vid.videoUrl))
 
-    // 3. Delete related relations and recipe record from Database
-    await prisma.$transaction([
-      prisma.reviewLike.deleteMany({ where: { review: { recipeId } } }),
-      prisma.review.deleteMany({ where: { recipeId } }),
-      prisma.favorite.deleteMany({ where: { recipeId } }),
-      prisma.recipeIngredient.deleteMany({ where: { recipeId } }),
-      prisma.recipeEquipment.deleteMany({ where: { recipeId } }),
-      prisma.recipeImage.deleteMany({ where: { recipeId } }),
-      prisma.recipeVideo.deleteMany({ where: { recipeId } }),
-      prisma.recipe.delete({ where: { id: recipeId } }),
-    ])
+    // 3. Delete related relations and recipe record from Database with retry on deadlock/concurrency
+    await runWithRetries(async () => {
+      return prisma.$transaction(
+        async (tx) => {
+          // 1) Gather store post ids
+          const storePosts = await tx.storePost.findMany({
+            where: { recipeId },
+            select: { id: true },
+          })
+          const storePostIds = (storePosts || []).map((p) => p.id)
 
-    // 4. Delete files from Supabase Storage Bucket
-    for (const url of [...imageUrls, ...storeImageUrls]) {
-      await deleteFileByUrl(supabase, url)
+          // 2) Remove store post images/videos by FK
+          if (storePostIds.length > 0) {
+            await tx.storePostImage.deleteMany({ where: { storePostId: { in: storePostIds } } })
+            await tx.storePostVideo.deleteMany({ where: { storePostId: { in: storePostIds } } })
+          }
+
+          // 3) Remove store posts
+          await tx.storePost.deleteMany({ where: { recipeId } })
+
+          // 4) Gather reviews ids
+          const reviews = await tx.review.findMany({
+            where: { recipeId },
+            select: { id: true },
+          })
+          const reviewIds = (reviews || []).map((r) => r.id)
+
+          // 5) Remove review likes by FK
+          if (reviewIds.length > 0) {
+            await tx.reviewLike.deleteMany({ where: { reviewId: { in: reviewIds } } })
+          }
+
+          // 6) Remove reviews
+          await tx.review.deleteMany({ where: { recipeId } })
+
+          // 7) Remove favorites
+          await tx.favorite.deleteMany({ where: { recipeId } })
+
+          // 8) Recipe-specific children
+          await tx.recipeIngredient.deleteMany({ where: { recipeId } })
+          await tx.recipeEquipment.deleteMany({ where: { recipeId } })
+          await tx.recipeImage.deleteMany({ where: { recipeId } })
+          await tx.recipeVideo.deleteMany({ where: { recipeId } })
+
+          // 9) Finally delete recipe
+          await tx.recipe.delete({ where: { id: recipeId } })
+        },
+        {
+          maxWait: 15000,
+          timeout: 30000,
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }
+      )
+    }, 3)
+
+    // 4. Delete files from Supabase Storage Bucket (guarded)
+    if (supabase) {
+      for (const url of [...imageUrls, ...storeImageUrls]) {
+        await deleteFileByUrl(supabase, url).catch((err) => {
+          console.error("Failed to delete storage file:", url, err)
+        })
+      }
+
+      for (const url of [...videoUrls, ...storeVideoUrls]) {
+        await deleteFileByUrl(supabase, url).catch((err) => {
+          console.error("Failed to delete storage file:", url, err)
+        })
+      }
+    } else {
+      console.warn("Supabase client unavailable; skipping storage deletes for recipe", recipeId)
     }
 
-    for (const url of [...videoUrls, ...storeVideoUrls]) {
-      await deleteFileByUrl(supabase, url)
-    }
-
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix('recipes:mine:')
     return Response.json({ data: { success: true, id: recipeId } }, { status: 200 })
   } catch (error) {
     console.error("DELETE /api/recipes/[id] error:", error)
@@ -244,7 +333,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  props: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const userId = await getAuthUserId(request)
@@ -253,7 +342,8 @@ export async function PATCH(
     }
     const user = { id: userId }
 
-    const { id } = await params
+    const params = await props.params
+    const id = params?.id
     const parsedId = recipeIdParamSchema.safeParse({ id })
 
     if (!parsedId.success) {
@@ -357,24 +447,7 @@ export async function PATCH(
         // Delete old ingredients
         await tx.recipeIngredient.deleteMany({ where: { recipeId } })
         
-        const savedIngredients = await Promise.all(
-          ingredients.map(async (ingredient) => {
-            const dataToCreate: { name: string; categoryId?: number } = { name: ingredient.name };
-            if (ingredient.category) {
-              const cat = await tx.category.findFirst({
-                where: { name: { equals: ingredient.category, mode: 'insensitive' } }
-              });
-              if (cat) {
-                dataToCreate.categoryId = cat.id;
-              }
-            }
-            return tx.ingredient.upsert({
-              where: { name: ingredient.name },
-              update: {},
-              create: dataToCreate,
-            })
-          })
-        );
+        const savedIngredients = await upsertRecipeIngredients(tx, ingredients)
 
         recipeIngredientsToCreate = savedIngredients.map((savedIngredient, index) => {
           const requestedIngredient = ingredients[index];
@@ -542,7 +615,10 @@ export async function PATCH(
       timeout: 30000,
     })
 
+    cache.del(`recipe:${recipeId}`)
     cache.delPrefix(`recipe:${recipeId}:`)
+    cache.delPrefix('recipes:list:')
+    cache.delPrefix('recipes:mine:')
     return Response.json({ data: updatedRecipe })
   } catch (error) {
     console.error("PATCH /api/recipes/[id] error:", error)

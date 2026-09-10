@@ -80,6 +80,9 @@ model Recipe {
   images             RecipeImage[]
   videos             RecipeVideo[]
 
+  weeklyRecommendations WeeklyRecommendation[]
+  ingredientPairRecipes  IngredientPairRecipe[]
+
   storePosts         StorePost[]
 
   @@index([userId])
@@ -176,6 +179,32 @@ model RecipeEquipment {
   createdAt DateTime @default(now()) @db.Timestamptz
   recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   @@map("recipe_equipment")
+}
+
+model WeeklyRecommendation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weekKey   String
+  type      String
+  recipeId  String   @db.Uuid
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([weekKey])
+  @@map("weekly_recommendations")
+}
+
+model IngredientPairRecipe {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ingredientKey String
+  monthKey      String
+  provider      String
+  recipeId      String?  @db.Uuid
+  recipe        Recipe?  @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+
+  @@unique([ingredientKey, provider])
+  @@index([monthKey])
+  @@map("ingredient_pair_recipes")
 }
 
 model Favorite {

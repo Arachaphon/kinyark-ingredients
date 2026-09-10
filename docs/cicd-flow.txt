@@ -1,0 +1,70 @@
+========================================================================================
+             KINYARK INGREDIENTS — COMPLETE CI/CD & DEPLOYMENT PIPELINE
+========================================================================================
+
+[Phase 1: Feature Development & PR Trigger]
+  │
+  ├─► Event: Developer pushes to `test/*` or opens PR to `dev` / `main`
+  │   (คำอธิบาย: นักพัฒนาส่งโค้ดขึ้น GitHub เพื่อขอรวมโค้ดเข้าสู่ระบบหลัก)
+  │
+  ▼
+[Phase 2: Continuous Integration (CI Quality Gates)]
+  │
+  ├───────► Job A: ci.yml (Code Hygiene)
+  │             ├── 1. Setup Node.js 20 & npm ci (ติดตั้ง dependencies จาก lockfile)
+  │             ├── 2. npx prisma generate (สร้าง TypeScript Client ให้ฐานข้อมูล)
+  │             ├── 3. npx tsc --noEmit (ตรวจจับคำผิดและข้อผิดพลาดของ Type ทั้งหมด)
+  │             ├── 4. npx eslint . --max-warnings 0 (ตรวจระเบียบและรูปแบบการเขียนโค้ด)
+  │             └── 5. npm audit --audit-level=high (สแกนช่องโหว่ความปลอดภัยของแพ็กเกจ)
+  │             (คำอธิบาย: ด่านตรวจระเบียบ ความถูกต้องของไวยากรณ์ และความปลอดภัยของโค้ด)
+  │
+  ├───────► Job B: jest.yml (Unit & Integration Tests)
+  │             ├── 1. Setup Test Database Context (เตรียมข้อมูลจำลองสำหรับทดสอบ)
+  │             ├── 2. npx jest --ci --runInBand (รันชุดทดสอบระบบคำนวณและ Logic หลังบ้าน)
+  │             └── 3. Coverage Threshold Verification (ตรวจวัดความครอบคลุมของการทดสอบ)
+  │             (คำอธิบาย: ด่านตรวจความถูกต้องของฟังก์ชันคำนวณและ Service Layer)
+  │
+  ├───────► Job C: playwright.yml (End-to-End Automated Testing)
+  │             ├── 1. Install Headless Chromium Browser (ติดตั้งเบราว์เซอร์สำหรับรันเทส)
+  │             ├── 2. Next.js Production Build (`npm run build` จำลองการเปิดเว็บจริง)
+  │             ├── 3. Run 28 E2E Functional Test Specs (จำลองคนเล่นเว็บจริงครบทั้ง 28 เคส)
+  │             └── 4. Upload HTML Artifact Report (บันทึกรายงานผลการทดสอบเก็บไว้ 30 วัน)
+  │             (คำอธิบาย: ด่านจำลองการใช้งานหน้าเว็บจริงทุกฟีเจอร์ตั้งแต่สมัคร ล็อกอิน ยันค้นหาเมนู)
+  │
+  └───────► Job D: Vercel Preview Deploy (Ephemeral Environment)
+                ├── 1. Automatic Isolated Preview URL (สร้างเว็บจำลองแยกเฉพาะสำหรับ PR นั้นๆ)
+                └── 2. Bot Comments Deployment URL (บอทแปะลิงก์เว็บจำลองลงในหน้า PR อัตโนมัติ)
+                (คำอธิบาย: สร้างหน้าเว็บทดสอบชั่วคราวให้ทีมงานคลิกเข้าไปลองเล่นจริงก่อนรวมโค้ด)
+  │
+  ▼
+[Phase 3: Code Review & Merge Gate]
+  │
+  ├─► All Status Checks = SUCCESS (ผ่านการตรวจอัตโนมัติจากทุกด่านของ CI)
+  ├─► Code Review Approval (ได้รับการอนุมัติและตรวจโค้ดจากทีมงาน/Admin)
+  ├─► Merge PR into `main` Branch (รวมโค้ดที่ผ่านการทดสอบเข้าสู่ Branch หลัก)
+  │   (คำอธิบาย: ขั้นตอนตรวจสอบขั้นสุดท้ายโดยมนุษย์ก่อนอนุมัติปล่อยขึ้นระบบจริง)
+  │
+  ▼
+[Phase 4: Continuous Deployment (CD Production Release)]
+  │
+  ├───────► Job: deploy-production.yml (Trigger: Push to `main`)
+  │             │
+  │             ├── [Gate 4.1: GitHub Environment Approval]
+  │             │     (คำอธิบาย: ระบบรอให้ Admin กดยืนยันอนุมัติบน GitHub ก่อนเริ่ม Migrate)
+  │             │
+  │             ├── [Step 4.2: Database Migration]
+  │             │     └── npx prisma migrate deploy (อัปเดตโครงสร้างตารางบน Supabase DB จริง)
+  │             │     (คำอธิบาย: ปรับปรุงโครงสร้างฐานข้อมูลจริงให้อัปเดตตรงกับโค้ดใหม่)
+  │             │
+  │             └── [Step 4.3: Cloud Production Deploy]
+  │                   └── npx vercel --prod --yes (ปล่อยโค้ดเวอร์ชันใหม่ออนไลน์บน Vercel ทันที)
+  │                   (คำอธิบาย: นำเว็บขึ้นเผยแพร่สู่ผู้ใช้งานจริงทั่วโลก)
+  │
+  ▼
+[Phase 5: Post-Deployment & Maintenance]
+  │
+  ├─► 5.1 Vercel Live Production URL (เว็บจริงเปิดให้บริการอย่างสมบูรณ์แบบ)
+  ├─► 5.2 Post-Deployment Smoke Testing (ทดสอบเปิดหน้าเว็บจริงคร่าวๆ เพื่อเช็กความพร้อม)
+  └─► 5.3 Database Keep-Alive (keepalive.yml ยิง Ping Supabase ทุก 3 วันเพื่อป้องกัน DB หยุดทำงาน)
+      (คำอธิบาย: การบำรุงรักษาและดูแลระบบหลังการปล่อยใช้งานจริงให้ทำงานราบรื่น 24/7)
+========================================================================================

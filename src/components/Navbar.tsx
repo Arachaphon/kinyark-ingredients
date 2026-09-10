@@ -21,27 +21,54 @@ export interface UserProfile {
   avatarUrl?: string | null;
 }
 
-// ข้อมูลจำลองสำหรับระบบค้นหา
-const searchData = [
-  "สลัดผักสวนครัว",
-  "สลัดผลไม้",
-  "ส้มตำไทยรสจัด",
-  "สลัดไก่",
-  "ต้มยำกุ้ง",
-  "ผัดไทย",
-];
-
 export default function Navbar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestLoading, setIsSuggestLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
-  const filteredResults = searchData.filter((item) =>
-    item.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch real recipe suggestions from the DB (debounced 300ms).
+  useEffect(() => {
+    const term = searchTerm.trim();
+    if (!term) {
+      setSuggestions([]);
+      setIsSuggestLoading(false);
+      return;
+    }
+
+    setIsSuggestLoading(true);
+    const controller = new AbortController();
+    const debounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error("Search failed");
+        const data: { recipeName?: string }[] = await res.json();
+        const names = Array.from(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((item) => item.recipeName)
+              .filter((n): n is string => Boolean(n))
+          )
+        ).slice(0, 8);
+        if (!controller.signal.aborted) setSuggestions(names);
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") setSuggestions([]);
+      } finally {
+        if (!controller.signal.aborted) setIsSuggestLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(debounce);
+    };
+  }, [searchTerm]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -61,8 +88,21 @@ export default function Navbar() {
   const userProfile = userData?.user ?? null;
 
   const handleSearchSubmit = (term: string) => {
-    if (!term.trim()) return;
-    router.push(`/search/results?query=${encodeURIComponent(term)}`);
+    const trimmed = term.trim();
+    if (!trimmed) return;
+
+    // Persist search history for logged-in users (ignored for guests).
+    if (userProfile?.id) {
+      fetch("/api/search-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ searchQuery: trimmed }),
+      }).catch(() => {
+        // Best-effort: history saving must never block navigation.
+      });
+    }
+
+    router.push(`/search/results?query=${encodeURIComponent(trimmed)}`);
     setIsDropdownOpen(false);
   };
 
@@ -114,7 +154,7 @@ export default function Navbar() {
           <input
             id="search-recipe" // 👈 เพิ่ม ID ตรงนี้
             type="text"
-            placeholder="ค้นหา..."
+            placeholder="กรอกสูตรอาหาหารหรือวัตถุดิบที่ต้องการค้นหา..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -148,8 +188,12 @@ export default function Navbar() {
           {/* กล่องเด้งแนะแนวคำค้นหา (Dropdown Suggestions) */}
           {isDropdownOpen && searchTerm.length > 0 && (
             <div className="absolute top-[110%] left-0 w-full bg-white rounded-[24px] shadow-lg border border-gray-100 py-4 z-10 animate-fade-in overflow-hidden">
-              {filteredResults.length > 0 ? (
-                filteredResults.map((item, index) => (
+              {isSuggestLoading && suggestions.length === 0 ? (
+                <div className="px-8 py-3 text-gray-400 italic text-lg">
+                  กำลังค้นหา...
+                </div>
+              ) : suggestions.length > 0 ? (
+                suggestions.map((item, index) => (
                   <div
                     key={index}
                     className="px-8 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-4 text-gray-700 transition"
@@ -176,7 +220,7 @@ export default function Navbar() {
                 ))
               ) : (
                 <div className="px-8 py-3 text-gray-400 italic text-lg">
-                  ไม่พบสูตรอาหารสำหรับ &quot;{searchTerm}&quot;
+                  ไม่พบสูตรอาหารสำหรับ &quot;{searchTerm}&quot; ลองกดป้อนเพื่อค้นหาทั้งหมด
                 </div>
               )}
             </div>
@@ -184,37 +228,54 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ */}
-      <div className="flex-shrink-0 flex items-center gap-4">
-        <Link
-          href="/create-recipe"
-          className="px-4 py-2 sm:px-6 sm:py-3 rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-sm sm:text-base md:text-lg"
-        >
-          + เผยแพร่สูตรอาหาร
-        </Link>
+      {/* 3. ปุ่ม Create และ รูปโปรไฟล์ / ปุ่มเข้าสู่ระบบ */}
+      <div className="flex-shrink-0 flex items-center gap-4 xl:translate-y-[32px]">
+        {userProfile ? (
+          <>
+            <Link
+              href="/create-recipe"
+              className="h-[50px] sm:h-[60px] px-4 sm:px-6 inline-flex items-center justify-center whitespace-nowrap rounded-full border-2 border-[#ffffff] text-[#ffffff] font-bold bg-[#71B254] hover:bg-[#6DA84A] transition text-sm sm:text-base md:text-lg"
+            >
+              + เผยแพร่สูตรอาหาร
+            </Link>
 
-        <div
-          onClick={() => setIsSettingOpen(true)}
-          className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
-        >
-          {userProfile?.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
-            <img
-              src={userProfile.avatarUrl}
-              alt="User Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-             <span className="text-xl font-bold text-gray-500">{userProfile?.username?.charAt(0).toUpperCase() || userProfile?.email?.charAt(0).toUpperCase() || "U"}</span>
-          )}
-        </div>
+            <div
+              onClick={() => setIsSettingOpen(true)}
+              className="w-[50px] h-[50px] sm:w-[60px] sm:h-[60px] shrink-0 rounded-full border-[3px] border-[#3AC9B5] overflow-hidden shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all bg-gray-100 flex items-center justify-center"
+            >
+              {userProfile?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- TODO: user-controlled arbitrary domain, no validation yet
+                <img
+                  src={userProfile.avatarUrl}
+                  alt="User Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-xl font-bold text-gray-500">
+                  {userProfile?.username?.charAt(0).toUpperCase() ||
+                    userProfile?.email?.charAt(0).toUpperCase() ||
+                    "U"}
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="h-[50px] sm:h-[60px] px-5 sm:px-7 inline-flex items-center justify-center whitespace-nowrap rounded-full border-2 border-[#71B254] text-[#71B254] font-bold hover:bg-[#71B254] hover:text-white transition text-sm sm:text-base md:text-lg"
+          >
+            เข้าสู่ระบบ
+          </Link>
+        )}
       </div>
 
-      <SettingModal
-        isOpen={isSettingOpen}
-        onClose={() => setIsSettingOpen(false)}
-        userProfile={userProfile}
-      />
+      {userProfile && (
+        <SettingModal
+          isOpen={isSettingOpen}
+          onClose={() => setIsSettingOpen(false)}
+          userProfile={userProfile}
+        />
+      )}
     </header>
   );
 }

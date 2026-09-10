@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="groq" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F55050"/>
+      <stop offset="100%" stop-color="#FF8A3D"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="32" fill="white"/>
+  <text x="32" y="41" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="url(#groq)">G</text>
+  <path d="M14 48 C20 44 26 52 32 48 C38 44 44 52 50 48" stroke="url(#groq)" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>
