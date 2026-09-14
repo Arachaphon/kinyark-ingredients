@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Anuphan } from "next/font/google";
 import { createClient } from "@/lib/supabase/client";
 
@@ -12,12 +12,37 @@ const anuphan = Anuphan({
   display: "swap",
 });
 
-export default function ForgotPasswordPage() {
+export function translateRecoveryError(raw: string | null): string {
+  if (!raw) return "";
+  const msg = raw.toLowerCase();
+  if (
+    msg.includes("pkce") ||
+    msg.includes("code verifier") ||
+    msg.includes("expired") ||
+    msg.includes("invalid") ||
+    msg.includes("not found")
+  ) {
+    return "ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง กรุณากรอกอีเมลเพื่อขอส่งลิงก์ใหม่";
+  }
+  return "ลิงก์รีเซ็ตรหัสผ่านใช้ไม่ได้ กรุณาขอส่งลิงก์ใหม่";
+}
+
+function ForgotPasswordContent() {
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // โชว์สาเหตุที่โดนส่งกลับมาจาก /auth/callback (เช่น ลิงก์หมดอายุ) เป็นภาษาไทย
+  // แทนการเห็นฟอร์มเปล่า ๆ แล้วงงว่าทำไมไม่ได้ไปหน้า reset
+  useEffect(() => {
+    const rawError = searchParams.get("error");
+    const friendly = translateRecoveryError(rawError);
+    if (friendly) setErrorMessage(friendly);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -157,5 +182,13 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <ForgotPasswordContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { createRouteHandlerClient } from "@/lib/supabase/server";
 import { logResetEvent } from "@/lib/reset-log";
 
 /** True when a Supabase Auth error is a rate-limit rejection (status/code first, message as fallback). */
@@ -20,12 +21,12 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return Response.json({ error: "รูปแบบคำขอไม่ถูกต้อง" }, { status: 400 });
+      return NextResponse.json({ error: "รูปแบบคำขอไม่ถูกต้อง" }, { status: 400 });
     }
 
     const parsed = resetRequestSchema.safeParse(body);
     if (!parsed.success) {
-      return Response.json(
+      return NextResponse.json(
         { error: parsed.error.issues[0]?.message ?? "รูปแบบอีเมลไม่ถูกต้อง" },
         { status: 400 }
       );
@@ -43,16 +44,20 @@ export async function POST(request: Request) {
     if (!dbUser) {
       // ไม่พบ user: ตอบ generic เสมอ (กัน account enumeration) แต่ log ฝั่ง server ไว้
       logResetEvent("reset_skipped_user_not_found", email);
-      return Response.json({
+      return NextResponse.json({
         success: true,
         message: "หากอีเมลนี้มีในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปแล้ว",
       });
     }
 
-    const supabase = await createClient();
+    // ต้องใช้ Route Handler client ที่ capture cookies — PKCE code verifier ที่
+    // resetPasswordForEmail สร้างต้องถูกส่งกลับไปเก็บใน browser ไม่งั้นตอนกดลิงก์
+    // ในอีเมล callback จะแลก code ไม่ผ่าน (PKCE code verifier not found)
+    // แล้วผู้ใช้จะโดนโยนไป /forgotpassword แทน /resetpassword
+    const { supabase, applyTo } = await createRouteHandlerClient();
     const origin =
-      request.headers.get("origin") ||
       process.env.NEXT_PUBLIC_SITE_URL ||
+      request.headers.get("origin") ||
       "http://localhost:3000";
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -64,7 +69,7 @@ export async function POST(request: Request) {
       if (isRateLimitError(error)) {
         // โดน rate limit: บอก user ตรง ๆ ให้รอ (ไม่กลืนเป็น success หลอก)
         logResetEvent("reset_rate_limited", email);
-        return Response.json(
+        return NextResponse.json(
           { error: "ขอมากเกินไป กรุณารอ 1 ชั่วโมงแล้วลองใหม่" },
           { status: 429 }
         );
@@ -72,18 +77,20 @@ export async function POST(request: Request) {
       // ส่งล้มเหลวจริง (เช่น SMTP พัง): log เต็มฝั่ง server, ตอบ client แบบ generic
       console.error("Supabase Email Error:", error.message);
       logResetEvent("reset_smtp_error", email);
-      return Response.json(
+      return NextResponse.json(
         { error: "ไม่สามารถส่งอีเมลได้ กรุณาลองใหม่ภายหลัง" },
         { status: 500 }
       );
     }
 
-    return Response.json({
-      success: true,
-      message: "หากอีเมลนี้มีในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปแล้ว",
-    });
+    return applyTo(
+      NextResponse.json({
+        success: true,
+        message: "หากอีเมลนี้มีในระบบ เราได้ส่งลิงก์รีเซ็ตรหัสผ่านไปแล้ว",
+      })
+    );
   } catch (error) {
     console.error("Reset password API error:", error);
-    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
