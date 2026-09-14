@@ -29,11 +29,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
-      - name: Run Prisma Database Migrations
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      # NOTE: ตัด migrate deploy ออกชั่วคราว — DB production สร้างด้วย db push
+      # ไม่ได้สร้างด้วย migrate ทำให้ _prisma_migrations มีแค่ 2 แถวและ P3009
+      # บล็อกทุก deploy (Vercel ไม่ได้ deploy ตามไปด้วย) ทั้งที่ app รันได้ปกติ
+      # ถ้าวันไหนอยากกลับมาใช้ migrate ให้ baseline DB ก่อน (resolve --applied
+      # ทั้ง 12 migrations หลัง migrate diff ว่าง) แล้วค่อยเอา step นี้กลับมา
 
       - name: Deploy to Vercel
         run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
