@@ -13,15 +13,26 @@ jest.mock("next/font/google", () => ({
 
 const mockPush = jest.fn();
 let mockSearchEmail: string | null = "user@example.com";
+let mockSearchError: string | null = null;
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
-  useSearchParams: () => ({ get: (key: string) => (key === "email" ? mockSearchEmail : null) }),
+  useSearchParams: () => ({
+    get: (key: string) => {
+      if (key === "email") return mockSearchEmail;
+      if (key === "error") return mockSearchError;
+      return null;
+    },
+  }),
 }));
 
+const mockUnsubscribe = jest.fn();
 const mockSupabaseAuth = {
   signOut: jest.fn(),
   getSession: jest.fn(),
   updateUser: jest.fn(),
+  onAuthStateChange: jest.fn(() => ({
+    data: { subscription: { unsubscribe: mockUnsubscribe } },
+  })) as jest.Mock,
 };
 jest.mock("@/lib/supabase/client", () => ({
   createClient: () => ({ auth: mockSupabaseAuth }),
@@ -32,9 +43,13 @@ const STRONG_PASSWORD = "StrongP@ss1";
 beforeEach(() => {
   jest.clearAllMocks();
   mockSearchEmail = "user@example.com";
+  mockSearchError = null;
   mockSupabaseAuth.signOut.mockResolvedValue({ error: null });
   mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: null } });
   mockSupabaseAuth.updateUser.mockResolvedValue({ data: {}, error: null });
+  mockSupabaseAuth.onAuthStateChange.mockReturnValue({
+    data: { subscription: { unsubscribe: mockUnsubscribe } },
+  });
   global.fetch = jest.fn();
   localStorage.clear();
 });
@@ -117,6 +132,16 @@ describe("ForgotPasswordPage", () => {
     );
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  test("shows Thai message when redirected back with PKCE error", async () => {
+    mockSearchError =
+      "PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different browser or device";
+    render(<ForgotPasswordPage />);
+
+    expect(await screen.findByTestId("forgot-error-message")).toHaveTextContent(
+      "ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง"
+    );
+  });
 });
 
 describe("ResetPasswordPage", () => {
@@ -181,6 +206,34 @@ describe("ResetPasswordPage", () => {
       "ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง"
     );
     expect(mockSupabaseAuth.updateUser).not.toHaveBeenCalled();
+  });
+
+  test("late PASSWORD_RECOVERY event clears invalid link error", async () => {
+    mockSupabaseAuth.getSession.mockResolvedValue({ data: { session: null } });
+    let recoveryHandler: ((event: string, session: unknown) => void) | null = null;
+    mockSupabaseAuth.onAuthStateChange.mockImplementation(
+      (cb?: (event: string, session: unknown) => void) => {
+        if (cb) recoveryHandler = cb;
+        return { data: { subscription: { unsubscribe: mockUnsubscribe } } };
+      }
+    );
+    render(<ResetPasswordPage />);
+
+    // ตอนแรกไม่มี session จึงขึ้น invalid
+    expect(await screen.findByTestId("reset-error-message")).toHaveTextContent(
+      "ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง"
+    );
+
+    // session มาถึงช้า 1 tick หลัง callback — ต้องล้าง error ให้กดยืนยันต่อได้
+    // ไม่ใช่ค้าง invalid แล้วบังคับกลับไป forgotpassword
+    const { act } = await import("@testing-library/react");
+    await act(async () => {
+      recoveryHandler?.("PASSWORD_RECOVERY", { access_token: "recovery-token" });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("reset-error-message")).not.toBeInTheDocument();
+    });
   });
 });
 

@@ -17,6 +17,14 @@ export async function proxy(request: NextRequest) {
     .some((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))
 
   let session: { access_token?: string } | null = null
+  // สร้าง response ตั้งแต่ต้นเพื่อให้ setAll แปะ cookie ลง response ได้
+  // (pattern มาตรฐาน @supabase/ssr — ถ้าเขียนแค่ request.cookies session/refresh จะหาย)
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  })
+
   if (hasAuthCookie) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,7 +35,10 @@ export async function proxy(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -58,22 +69,31 @@ export async function proxy(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     const redirectResponse = NextResponse.redirect(loginUrl)
     redirectResponse.headers.set('Cache-Control', 'no-store, max-age=0, must-revalidate')
+    // คง Supabase cookies ที่ refresh ระหว่างทางไว้บน redirect ด้วย
+    response.cookies.getAll().forEach((c) => {
+      redirectResponse.cookies.set(c.name, c.value, c as Parameters<typeof redirectResponse.cookies.set>[2])
+    })
     return redirectResponse
   }
 
   // 5. ส่งต่อ Request ไปยังจุดหมายปลายทาง
-  const response = NextResponse.next({
+  // NOTE: ต้องสร้าง response ใหม่พร้อม headers กัน spoofing แล้ว copy Supabase
+  // cookies ที่ refresh ระหว่างทางกลับมา (NextResponse.next ใหม่จะทิ้ง cookies เดิม)
+  const finalResponse = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   })
+  response.cookies.getAll().forEach((c) => {
+    finalResponse.cookies.set(c.name, c.value, c as Parameters<typeof finalResponse.cookies.set>[2])
+  })
 
   // ป้องกัน Browser Cache สำหรับหน้าเว็บ เพื่อไม่ให้กดย้อนกลับมาดูข้อมูลเก่าหลัง Logout ได้
   if (!pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    finalResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   }
 
-  return response
+  return finalResponse
 }
 
 export const config = {

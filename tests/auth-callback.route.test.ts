@@ -1,7 +1,12 @@
 const mockExchangeCodeForSession = jest.fn();
+const mockApplyTo = jest.fn((res) => res);
 jest.mock("@/lib/supabase/server", () => ({
-  createClient: jest.fn(() => ({
-    auth: { exchangeCodeForSession: mockExchangeCodeForSession },
+  createRouteHandlerClient: jest.fn(() => ({
+    supabase: {
+      auth: { exchangeCodeForSession: mockExchangeCodeForSession },
+    },
+    getCookiesToSet: jest.fn(() => []),
+    applyTo: mockApplyTo,
   })),
 }));
 
@@ -70,5 +75,25 @@ describe("GET /auth/callback", () => {
 
     expect(mockExchangeCodeForSession).not.toHaveBeenCalled();
     expect(res.headers.get("location")).toBe("http://localhost:3000/home");
+  });
+
+  test("persists supabase cookies on success redirect (session not lost)", async () => {
+    await GET(callbackRequest("?code=abc123&next=/resetpassword"));
+
+    expect(mockApplyTo).toHaveBeenCalled();
+    const appliedResponse = mockApplyTo.mock.calls[0][0];
+    expect(appliedResponse.headers.get("location")).toBe(
+      "http://localhost:3000/resetpassword"
+    );
+  });
+
+  test("persists supabase cookies on error redirect to forgotpassword", async () => {
+    mockExchangeCodeForSession.mockResolvedValue({
+      error: { message: "code expired" },
+    });
+
+    await GET(callbackRequest("?code=stale&next=/resetpassword"));
+
+    expect(mockApplyTo).toHaveBeenCalled();
   });
 });

@@ -30,15 +30,41 @@ export default function ResetPasswordPage() {
   const supabase = createClient();
 
   // เช็กตั้งแต่เปิดหน้าว่ามี recovery session หรือไม่ ถ้าไม่มีให้บอกตั้งแต่ต้น
+  // ฟัง PASSWORD_RECOVERY/SIGNED_IN ด้วย เพราะ session จาก /auth/callback อาจมาถึง
+  // browser client ช้ากว่า render แรก 1 tick — ถ้าไม่ฟังจะเห็น error ปลอมแล้วกดไป forgotpassword
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!cancelled && !data.session) {
+    let subscription: { unsubscribe: () => void } | null = null;
+    const markInvalid = () => {
+      if (!cancelled) {
         setLinkInvalid(true);
         setErrorMessage("ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง กรุณากดขอส่งลิงก์ใหม่");
       }
+    };
+    const markValid = () => {
+      if (!cancelled) {
+        setLinkInvalid(false);
+        setErrorMessage("");
+      }
+    };
+    if (typeof supabase.auth.onAuthStateChange === "function") {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        if (cancelled) return;
+        if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) {
+          markValid();
+        }
+      });
+      subscription = data.subscription;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (data.session) {
+        markValid();
+      } else {
+        markInvalid();
+      }
     }).catch(() => {});
-    return () => { cancelled = true; };
+    return () => { cancelled = true; subscription?.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

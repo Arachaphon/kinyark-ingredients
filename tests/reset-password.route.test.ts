@@ -10,9 +10,12 @@ jest.mock("@/lib/prisma", () => ({
 const mockSupabaseAuth = {
   resetPasswordForEmail: jest.fn(),
 };
+const mockApplyTo = jest.fn((res) => res);
 jest.mock("@/lib/supabase/server", () => ({
-  createClient: jest.fn(() => ({
-    auth: mockSupabaseAuth,
+  createRouteHandlerClient: jest.fn(() => ({
+    supabase: { auth: mockSupabaseAuth },
+    getCookiesToSet: jest.fn(() => []),
+    applyTo: mockApplyTo,
   })),
 }));
 
@@ -133,5 +136,15 @@ describe("POST /api/reset-password", () => {
 
     expect(res.status).toBe(429);
     expect(body.error).toContain("รอ 1 ชั่วโมง");
+  });
+
+  test("persists PKCE verifier cookies on success (applyTo called)", async () => {
+    mockPrisma.user.findFirst.mockResolvedValue({ id: "user-1" });
+
+    await POST(postRequest({ email: "user@example.com" }));
+
+    // ถ้าไม่แปะ cookies กลับ browser จะเจอ PKCE code verifier not found
+    // แล้วโดนโยนไป /forgotpassword แทน /resetpassword
+    expect(mockApplyTo).toHaveBeenCalled();
   });
 });
