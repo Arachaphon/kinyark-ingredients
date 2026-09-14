@@ -115,6 +115,14 @@ const mockFeatured = {
   imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80"
 };
 
+// ย่อฟอนต์ชื่อสูตรอัตโนมัติตามความยาว (ชื่อไทยยาวไม่มีช่องไฟตัดคำ) — คงสูงสุด 2 บรรทัดแบบไม่มีไข่ปลา
+function getFeaturedTitleSizeClass(name?: string | null): string {
+  const len = (name ?? "").length;
+  if (len > 25) return "text-xl sm:text-2xl xl:text-3xl";
+  if (len > 15) return "text-2xl sm:text-3xl xl:text-4xl";
+  return "text-3xl sm:text-4xl xl:text-5xl";
+}
+
 export default function HomePage() {
   const { data: weeklyData } = useSWR<WeeklyResponse>(
     "/api/weekly-recommendations",
@@ -222,7 +230,7 @@ export default function HomePage() {
               </div>
               
               <h1 
-                className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-bold text-[#3AC9B5] mb-4 sm:mb-5 leading-tight line-clamp-2"
+                className={`font-bold text-[#3AC9B5] mb-4 sm:mb-5 leading-snug max-h-[2.75em] overflow-hidden [text-overflow:clip] [overflow-wrap:anywhere] ${getFeaturedTitleSizeClass(featured.recipeName)}`}
                 title={featured.recipeName}
               >
                 {featured.recipeName}
