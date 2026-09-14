@@ -7,7 +7,8 @@
 export type ResetLogEvent =
   | "reset_skipped_user_not_found"
   | "reset_rate_limited"
-  | "reset_smtp_error";
+  | "reset_smtp_error"
+  | "reset_email_sent";
 
 /** Show first char + domain only, e.g. Test@Example.com -> "t***@example.com". */
 export function maskEmail(email: string): string {
@@ -19,7 +20,8 @@ export function maskEmail(email: string): string {
   return `${head}***@${domain}`;
 }
 
-export function logResetEvent(event: ResetLogEvent, email: string): void {
+export function logResetEvent(event: ResetLogEvent, email: string, detail?: string): void {
   const timestamp = new Date().toISOString();
-  console.log(`[reset-password] ${timestamp} ${event} ${maskEmail(email)}`);
+  const suffix = detail ? ` ${detail}` : "";
+  console.log(`[reset-password] ${timestamp} ${event} ${maskEmail(email)}${suffix}`);
 }

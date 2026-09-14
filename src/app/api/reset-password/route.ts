@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     // resetPasswordForEmail สร้างต้องถูกส่งกลับไปเก็บใน browser ไม่งั้นตอนกดลิงก์
     // ในอีเมล callback จะแลก code ไม่ผ่าน (PKCE code verifier not found)
     // แล้วผู้ใช้จะโดนโยนไป /forgotpassword แทน /resetpassword
-    const { supabase, applyTo } = await createRouteHandlerClient();
+    const { supabase, applyTo, getCookiesToSet } = await createRouteHandlerClient();
     const origin =
       process.env.NEXT_PUBLIC_SITE_URL ||
       request.headers.get("origin") ||
@@ -83,6 +83,9 @@ export async function POST(request: Request) {
       );
     }
 
+    // log จำนวน cookies ที่ส่งกลับ (ต้อง > 0 ถึงจะมี PKCE verifier ใน browser)
+    // ถ้าเป็น 0 แปลว่า Supabase ไม่ขอเก็บอะไรเลย — เป็น smoking gun ฝั่ง library
+    logResetEvent("reset_email_sent", email, `cookies=${getCookiesToSet().length}`);
     return applyTo(
       NextResponse.json({
         success: true,
