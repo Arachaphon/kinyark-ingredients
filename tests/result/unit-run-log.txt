@@ -1,0 +1,186 @@
+﻿node.exe : PASS tests/unit/recipe-detail.test.ts
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS tests/unit/recipe-detail.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Recipe Detail ΓÇö store-set banner
+    ΓêÜ recipe α╕ùα╕╡α╣êα╕íα╕╡ store post α╕£α╕╣α╕üα╕¡α╕óα╕╣α╣ê ΓåÆ α╣üα╕¬α╕öα╕ç banner (18 ms)
+    ΓêÜ recipe α╕ùα╕╡α╣êα╣äα╕íα╣êα╕íα╕╡ store post ΓåÆ α╣äα╕íα╣êα╣üα╕¬α╕öα╕ç banner (1 ms)
+    ΓêÜ α╕íα╕╡α╣üα╕òα╣ê store post α╕ùα╕╡α╣êα╣äα╕íα╣êα╣âα╕èα╣ê public (draft/private) ΓåÆ α╣äα╕íα╣êα╣üα╕¬α╕öα╕ç banner 
+(2 ms)
+    ΓêÜ recipe α╕ùα╕╡α╣êα╣äα╕íα╣êα╕íα╕╡α╕¡α╕óα╕╣α╣êα╕êα╕úα╕┤α╕ç ΓåÆ NotFoundError (1 ms)
+
+PASS tests/unit/ai-generation.test.ts
+  AI Generation ΓÇö daily rate limit
+    ΓêÜ α╣âα╕èα╣ëα╕çα╕▓α╕Öα╕áα╕▓α╕óα╣âα╕òα╣ëα╣éα╕äα╕ºα╕òα╣ëα╕▓ ΓåÆ α╕¡α╕Öα╕╕α╕ìα╕▓α╕ò (remaining α╕Ñα╕öα╕Ñα╕ç) (23 ms)
+    ΓêÜ α╣Çα╕üα╕┤α╕Öα╣éα╕äα╕ºα╕òα╣ëα╕▓α╕ºα╕▒α╕Ö ΓåÆ α╕Üα╕Ñα╣çα╕¡α╕üα╕₧α╕úα╣ëα╕¡α╕í retryAfterMs 
+α╣üα╕Ñα╕░α╕éα╣ëα╕¡α╕äα╕ºα╕▓α╕íα╕èα╕▒α╕öα╣Çα╕êα╕Ö (4 ms)
+    ΓêÜ α╕éα╕╢α╣ëα╕Öα╕ºα╕▒α╕Öα╣âα╕½α╕íα╣ê ΓåÆ α╣éα╕äα╕ºα╕òα╣ëα╕▓α╕úα╕╡α╣Çα╕ïα╣çα╕ò (5 ms)
+  AI Generation ΓÇö timeout handling
+    ΓêÜ AI α╕òα╕¡α╕Üα╕èα╣ëα╕▓α╣Çα╕üα╕┤α╕Ö timeout ΓåÆ α╕éα╣ëα╕¡α╕äα╕ºα╕▓α╕íα╕èα╕▒α╕öα╣Çα╕êα╕Ö + retryable (α╣äα╕íα╣ê 
+crash) (53 ms)
+    ΓêÜ AI throw error α╕ùα╕▒α╣êα╕ºα╣äα╕¢ ΓåÆ α╕éα╣ëα╕¡α╕äα╕ºα╕▓α╕íα╕üα╕Ñα╕▓α╕ç + retryable (2 ms)
+
+PASS tests/unit/account-deletion.test.ts
+  Account Deletion ΓÇö delete operation
+    ΓêÜ α╕Ñα╕Ü user α╕öα╣ëα╕ºα╕ó user.delete α╕äα╕úα╕▒α╣ëα╕çα╣Çα╕öα╕╡α╕óα╕º (cascade α╣Çα╕üα╕┤α╕öα╕ùα╕╡α╣ê DB) (22 ms)
+    ΓêÜ α╕Ñα╕Ü user α╕ùα╕╡α╣êα╣äα╕íα╣êα╕íα╕╡α╕¡α╕óα╕╣α╣êα╕êα╕úα╕┤α╕ç (P2025) ΓåÆ NotFoundError (2 ms)
+  Account Deletion ΓÇö schema cascade contract
+    ΓêÜ α╕Ñα╕Ü User α╣üα╕Ñα╣ëα╕ºα╕òα╣ëα╕¡α╕ç cascade α╕Ñα╕Ü Recipe, Review, Favorite, SearchHistory, ReviewLike, 
+StorePost (6 ms)
+    ΓêÜ referenceRecipeId α╣Çα╕¢α╣çα╕Ö SetNull ΓÇö α╕Ñα╕Ü recipe α╕òα╣ëα╕Öα╕ùα╕▓α╕çα╣äα╕íα╣ê error (1 ms)
+    ΓêÜ StorePost.recipeId α╣üα╕Ñα╕░ IngredientPairRecipe.recipeId α╣Çα╕¢α╣çα╕Ö SetNull (2 ms)
+
+PASS tests/unit/ai-recommendation.test.ts
+  AI Weekly Recommendation ΓÇö fallback
+    ΓêÜ AI α╕Ñα╣ëα╕íα╣Çα╕½α╕Ñα╕º ΓåÆ α╕äα╕╖α╕Öα╕éα╣ëα╕¡α╕íα╕╣α╕Ñ cached α╣üα╕ùα╕Öα╕üα╕▓α╕ú throw error (19 ms)
+    ΓêÜ AI α╕Ñα╣ëα╕íα╣Çα╕½α╕Ñα╕º + α╣äα╕íα╣êα╕íα╕╡ cache ΓåÆ α╕äα╕╖α╕Ö mock data (α╣äα╕íα╣ê throw) (2 ms)
+    ΓêÜ AI α╕¬α╕│α╣Çα╕úα╣çα╕ê ΓåÆ α╕äα╕╖α╕Öα╕£α╕Ñα╕¬α╕öα╕₧α╕úα╣ëα╕¡α╕í fallback: false (1 ms)
+  AI Weekly Recommendation ΓÇö AI Recipe badge
+    ΓêÜ badge "AI Recipe" α╕òα╕┤α╕öα╣Çα╕ëα╕₧α╕▓α╕░α╕£α╕Ñα╕Ñα╕▒α╕₧α╕ÿα╣îα╕ùα╕╡α╣êα╕íα╕▓α╕êα╕▓α╕ü AI (2 ms)
+    ΓêÜ α╕£α╕Ñα╕ùα╕╡α╣êα╕íα╕╡ aiProvider α╕úα╕╣α╣ëα╕êα╕▒α╕ü (groq) α╕ûα╕╖α╕¡α╣Çα╕¢α╣çα╕Ö AI ΓÇö α╕£α╕Ñα╣äα╕íα╣êα╕íα╕╡ 
+provider α╣äα╕íα╣êα╕íα╕╡ badge (1 ms)
+
+PASS tests/unit/validation.test.ts
+  recipe.schema.ts
+    ΓêÜ recipeName valid ΓÇö accepts non-empty name (22 ms)
+    ΓêÜ recipeName empty reject ΓÇö rejects empty string (3 ms)
+    ΓêÜ ingredients α╕ºα╕▓α╕çα╣üα╕Ñα╣ëα╕º reject ΓÇö rejects empty array (1 ms)
+    ΓêÜ instructions valid ΓÇö optional field passes when provided (2 ms)
+    ΓêÜ recipeName too long reject (1 ms)
+    ΓêÜ featuredImageUrl invalid URL reject (8 ms)
+    ΓêÜ featuredImageUrl valid URL pass (3 ms)
+    ΓêÜ quantity must be positive (1 ms)
+    ΓêÜ visibility enum invalid reject (16 ms)
+    ΓêÜ store requires non-empty storeName (3 ms)
+    ΓêÜ store sellingPrice cannot be negative (2 ms)
+    ΓêÜ systemRecipeId invalid uuid reject (1 ms)
+  ingredient.schema.ts
+    ΓêÜ ingredientId valid ΓÇö accepts positive integer (1 ms)
+    ΓêÜ ingredientId negative reject ΓÇö rejects negative number (1 ms)
+    ΓêÜ ingredientId string reject ΓÇö rejects string value (1 ms)
+    ΓêÜ createIngredient requires name (2 ms)
+    ΓêÜ createIngredient rejects both category and categoryId (1 ms)
+    ΓêÜ updateIngredient rejects empty body (2 ms)
+    ΓêÜ updateIngredient accepts a single field
+  review.schema.ts
+    ΓêÜ rating 1-5 α╕£α╣êα╕▓α╕Ö ΓÇö accepts rating of 3 (1 ms)
+    ΓêÜ rating 0 reject ΓÇö rejects rating below minimum (1 ms)
+    ΓêÜ rating 6 reject ΓÇö rejects rating above maximum (1 ms)
+  search.schema.ts
+    ΓêÜ query valid ΓÇö accepts valid search string (1 ms)
+    ΓêÜ ingredientIds valid ΓÇö accepts array of positive integers (1 ms)
+    ΓêÜ invalid array reject ΓÇö rejects array with non-integer items (1 ms)
+
+PASS tests/unit/rate-limit.test.ts
+  throttle ΓÇö min-interval rate limiter
+    ΓêÜ allows the first call for a key (2 ms)
+    ΓêÜ blocks a second call within the interval (2 ms)
+    ΓêÜ allows again after the interval elapses (4 ms)
+    ΓêÜ tracks each key separately (1 ms)
+    ΓêÜ favorite toggle cooldown is 2 seconds (1 ms)
+
+PASS tests/unit/profile-management.test.ts
+  Profile Management ΓÇö validation
+    ΓêÜ username α╕ïα╣ëα╕│α╕üα╕▒α╕Üα╕£α╕╣α╣ëα╣âα╕èα╣ëα╕¡α╕╖α╣êα╕Öα╕òα╣ëα╕¡α╕ç reject (25 ms)
+    ΓêÜ email α╕£α╕┤α╕ö format α╕òα╣ëα╕¡α╕ç reject (2 ms)
+    ΓêÜ α╕úα╕½α╕▒α╕¬α╕£α╣êα╕▓α╕Öα╣âα╕½α╕íα╣êα╣äα╕íα╣êα╕íα╕╡α╕òα╕▒α╕ºα╕₧α╕┤α╕íα╕₧α╣îα╣âα╕½α╕ìα╣êα╕òα╣ëα╕¡α╕ç reject 
+(α╕üα╕Äα╣Çα╕öα╕╡α╕óα╕ºα╕üα╕▒α╕Ü auth.schema) (2 ms)
+    ΓêÜ α╕úα╕½α╕▒α╕¬α╕£α╣êα╕▓α╕Öα╣âα╕½α╕íα╣êα╣äα╕íα╣êα╕íα╕╡α╕¡α╕▒α╕üα╕éα╕úα╕░α╕₧α╕┤α╣Çα╕¿α╕⌐α╕òα╣ëα╕¡α╕ç reject (7 ms)
+    ΓêÜ payload α╕ºα╣êα╕▓α╕ç (α╣äα╕íα╣êα╕íα╕╡ field α╕ùα╕╡α╣êα╕¡α╕▒α╕¢α╣Çα╕öα╕ò) α╕òα╣ëα╕¡α╕ç reject (1 ms)
+  Profile Management ΓÇö happy path
+    ΓêÜ α╕¡α╕▒α╕¢α╣Çα╕öα╕ò username/email α╕ùα╕╡α╣êα╕ûα╕╣α╕üα╕òα╣ëα╕¡α╕çα╕òα╣ëα╕¡α╕çα╕¬α╕│α╣Çα╕úα╣çα╕ê (2 ms)
+    ΓêÜ α╣éα╕¢α╕úα╣äα╕ƒα╕Ñα╣îα╕ùα╕╡α╣êα╣äα╕íα╣êα╕íα╕╡α╕¡α╕óα╕╣α╣êα╕êα╕úα╕┤α╕ç ΓåÆ NotFoundError (1 ms)
+
+PASS tests/unit/auth.schema.test.ts
+  auth.schema.ts
+    registerSchema
+      ΓêÜ valid registration data (20 ms)
+      ΓêÜ rejects invalid email format (2 ms)
+      ΓêÜ rejects short password (1 ms)
+      ΓêÜ rejects password without uppercase (1 ms)
+      ΓêÜ rejects password without lowercase (1 ms)
+      ΓêÜ rejects password without number (1 ms)
+      ΓêÜ rejects password without special character (7 ms)
+    loginSchema
+      ΓêÜ valid login data (1 ms)
+      ΓêÜ rejects empty email (1 ms)
+      ΓêÜ rejects empty password (1 ms)
+
+PASS tests/unit/store-set.test.ts
+  Store Set Module ΓÇö validation
+    ΓêÜ α╕úα╕▓α╕äα╕▓α╕òα╕┤α╕öα╕Ñα╕Üα╕òα╣ëα╕¡α╕ç reject (sellingPrice < 0) (19 ms)
+    ΓêÜ α╣äα╕íα╣êα╕üα╕úα╕¡α╕üα╕úα╕▓α╕äα╕▓α╕òα╣ëα╕¡α╕ç reject (sellingPrice α╕ºα╣êα╕▓α╕ç) (3 ms)
+  Store Set Module ΓÇö linking & lifecycle
+    ΓêÜ α╕£α╕╣α╕ü setIngredients α╕üα╕▒α╕Ü recipeId α╕ùα╕╡α╣êα╕íα╕╡α╕¡α╕óα╕╣α╣êα╕êα╕úα╕┤α╕ç (6 ms)
+    ΓêÜ α╕¬α╕┤α╕Öα╕äα╣ëα╕▓α╕½α╕íα╕ö: visibility α╣Çα╕¢α╕Ñα╕╡α╣êα╕óα╕Ö public ΓåÆ private (1 ms)
+    ΓêÜ α╣éα╕₧α╕¬α╕òα╣îα╕ùα╕╡α╣êα╣äα╕íα╣êα╣âα╕èα╣ê public (α╣Çα╕èα╣êα╕Ö draft) 
+α╕òα╣ëα╕¡α╕çα╕äα╕çα╕¬α╕ûα╕▓α╕Öα╕░α╣Çα╕öα╕┤α╕í (1 ms)
+    ΓêÜ α╕¬α╕úα╣ëα╕▓α╕ç store post α╕öα╣ëα╕ºα╕ó recipeId α╕ùα╕╡α╣êα╣äα╕íα╣êα╕íα╕╡α╕¡α╕óα╕╣α╣êα╕êα╕úα╕┤α╕çα╕òα╣ëα╕¡α╕ç 
+reject (2 ms)
+
+PASS tests/unit/proxy.test.ts
+  Proxy Middleware Header Injection
+    ΓêÜ strips client-side spoofed x-user-id header when unauthenticated (15 ms)
+    ΓêÜ injects verified x-user-id and x-user-role when session access_token is valid (3 ms)
+    ΓêÜ does not set x-user-id if verifySupabaseJWT returns no userId (2 ms)
+    ΓêÜ redirects unauthenticated users attempting to access protected routes to /login (2 ms)
+    ΓêÜ allows unauthenticated users to access public routes like /home or /recipe/123 (1 ms)
+
+PASS tests/unit/services.test.ts
+  recipeService
+    ΓêÜ createRecipe() ΓÇö creates a recipe and returns the created record (6 ms)
+    ΓêÜ getRecipeById() ΓÇö returns a recipe with ingredients and reviews (1 ms)
+    ΓêÜ getRecipes() ΓÇö returns paginated recipe feed (1 ms)
+    ΓêÜ updateRecipe() ΓÇö updates recipe data and enforces owner check (4 ms)
+    ΓêÜ deleteRecipe() ΓÇö deletes recipe and enforces owner check (1 ms)
+  reviewService
+    ΓêÜ addReview() ΓÇö adds a review to a recipe (2 ms)
+    ΓêÜ duplicate review blocked ΓÇö throws if user already reviewed this recipe (1 ms)
+    ΓêÜ rating recalculated ΓÇö updates recipe.rating after new review (1 ms)
+  favoriteService
+    ΓêÜ add favorite ΓÇö saves a recipe to user favorites (1 ms)
+    ΓêÜ remove favorite ΓÇö removes a recipe from user favorites (1 ms)
+    ΓêÜ get favorites ΓÇö returns user's favorite recipes list (1 ms)
+  userService
+    ΓêÜ get profile ΓÇö returns user profile by userId (2 ms)
+    ΓêÜ update profile ΓÇö updates username or avatar_url (1 ms)
+    ΓêÜ delete account ΓÇö removes user and cascades all related data (1 ms)
+  searchService
+    ΓêÜ searchByQuery() ΓÇö returns recipes matching a text query (2 ms)
+    ΓêÜ searchByIngredients() ΓÇö returns recipes matching ingredient IDs (2 ms)
+    ΓêÜ saveSearchHistory() ΓÇö persists search query for a user (3 ms)
+    ΓêÜ getSearchHistory() ΓÇö returns saved search history for a user (1 ms)
+    ΓêÜ deleteSearchHistory() ΓÇö deletes a specific history entry (1 ms)
+
+PASS tests/unit/auth-context.test.tsx
+  AuthContext ΓÇö 3 scenarios after fix
+    ΓêÜ Scenario 1: session persists after page refresh (onAuthStateChange fires with session) (69 ms)
+    ΓêÜ Scenario 2: logout in one tab updates auth state via onAuthStateChange callback (12 ms)
+    ΓêÜ Scenario 3: no race condition ΓÇö onAuthStateChange fires synchronously before first render completes (8 ms)
+    ΓêÜ no session on first load ΓÇö status is unauthenticated (6 ms)
+    ΓêÜ unsubscribe on unmount ΓÇö no memory leak (7 ms)
+    ΓêÜ refreshUser is still available via context (3 ms)
+
+PASS tests/unit/create-recipe-ui.test.tsx
+  CreateRecipePage UI Authorization
+    ΓêÜ USER cannot access Store Recipe toggle (120 ms)
+    ΓêÜ STORE can access Store Recipe toggle (99 ms)
+    ΓêÜ ADMIN can access Store Recipe toggle (77 ms)
+
+PASS tests/unit/auth.test.tsx (5.127 s)
+  Authentication
+    ΓêÜ login page loads (82 ms)
+    ΓêÜ register page loads (31 ms)
+    ΓêÜ login with wrong credentials shows error (710 ms)
+    ΓêÜ navigate from login to register (55 ms)
+    ΓêÜ register with password mismatch shows client error (1241 ms)
+    ΓêÜ register with weak password shows client error (794 ms)
+
+Test Suites: 14 passed, 14 total
+Tests:       111 passed, 111 total
+Snapshots:   0 total
+Time:        8.587 s
+Ran all test suites matching /tests\\unit/i.
