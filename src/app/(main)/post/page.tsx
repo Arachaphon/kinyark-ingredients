@@ -154,7 +154,7 @@ export default function PostsFeedPage() {
     <div className={`min-h-screen bg-[#F5EFD7] pb-20 overflow-x-hidden ${anuphan.className}`}>
       <Navbar />
 
-      <main className="w-[95%] max-w-[900px] mx-auto px-4 -mt-3 md:-mt-8 xl:-mt-24">
+      <main className="w-[95%] max-w-[900px] mx-auto px-4 -mt-3 md:-mt-8 xl:-mt-24 relative z-[60]">
         {/* Category Tabs: ทั้งหมด, ผู้ใช้งาน, สร้างโดย AI */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white/80 backdrop-blur-sm p-3 sm:p-4 rounded-xl shadow-sm border border-gray-100">
           <div className="flex flex-wrap items-center gap-2">
